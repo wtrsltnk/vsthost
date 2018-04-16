@@ -10,7 +10,8 @@
 
 #pragma warning(push)
 #pragma warning(disable : 4996)
-#include "VST3 SDK/pluginterfaces/vst2.x/aeffectx.h"
+#include <pluginterfaces/vst2.x/aeffectx.h>
+#include <public.sdk/source/vst2.x/audioeffect.h>
 #pragma warning(pop)
 
 class VstPlugin {
@@ -23,6 +24,8 @@ public:
     size_t  getSampleRate()     const { return 44100; }
     size_t  getBlockSize()      const { return 1024; }
     size_t  getChannelCount()   const { return 2; }
+    std::string const &getEffectName()    const { return vstEffectName; }
+    std::string const &getVendorName()    const { return vstVendorName; }
     static const char*  getVendorString() { return "TEST_VENDOR"; }
     static const char*  getProductString() { return "TEST_PRODUCT"; }
     static int          getVendorVersion() { return 1; }
@@ -77,6 +80,8 @@ protected:
 
     std::vector<VstMidiEvent>   vstMidiEvents;
     std::vector<char>           vstEventBuffer;
+    std::string                 vstEffectName;
+    std::string                 vstVendorName;
 
     struct {
         std::vector<VstMidiEvent>   events;

@@ -184,6 +184,12 @@ bool VstPlugin::init(const wchar_t* vstModulePath, HWND hWndParent) {
     dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32);
     dispatcher(effMainsChanged, 0, 1);
     dispatcher(effStartProcess);
+    char ceffname[kVstMaxEffectNameLen] = "";
+    dispatcher(effGetEffectName, 0, 0, ceffname, 0.0f);
+    vstEffectName = ceffname;
+    char cvendor[kVstMaxVendorStrLen] = "";
+    dispatcher(effGetVendorString, 0, 0, cvendor, 0.0f);
+    vstVendorName = cvendor;
 
     return true;
 }

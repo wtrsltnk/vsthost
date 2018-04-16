@@ -52,5 +52,6 @@ target_compile_definitions(imgui-vsthost
 
 target_include_directories(imgui-vsthost
     PRIVATE include
+    PRIVATE "VST3 SDK"
     PRIVATE imgui
     )

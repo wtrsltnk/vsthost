@@ -276,11 +276,11 @@ void ImGui_ImplGlfwGL2_NewFrame()
     // (we already got mouse wheel, keyboard keys & characters from glfw callbacks polled in glfwPollEvents())
     if (glfwGetWindowAttrib(g_Window, GLFW_FOCUSED))
     {
-        if (io.WantMoveMouse)
-        {
-            glfwSetCursorPos(g_Window, (double)io.MousePos.x, (double)io.MousePos.y);   // Set mouse position if requested by io.WantMoveMouse flag (used when io.NavMovesTrue is enabled by user and using directional navigation)
-        }
-        else
+//        if (io.WantCaptureMouse)
+//        {
+//            glfwSetCursorPos(g_Window, (double)io.MousePos.x, (double)io.MousePos.y);   // Set mouse position if requested by io.WantMoveMouse flag (used when io.NavMovesTrue is enabled by user and using directional navigation)
+//        }
+//        else
         {
             double mouse_x, mouse_y;
             glfwGetCursorPos(g_Window, &mouse_x, &mouse_y);
