@@ -8,19 +8,19 @@ ComInit::ComInit()  { CoInitializeEx(nullptr, COINIT_MULTITHREADED); }
 ComInit::~ComInit() { CoUninitialize(); }
 
 Wasapi::Wasapi(Wasapi::RefillFunc refillFunc, int hnsBufferDuration) {
-    HRESULT hr = S_OK;
+    HRESULT hr = 0;
 
-    hClose       = CreateEventEx(0, 0, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
-    hRefillEvent = CreateEventEx(0, 0, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
+    hClose       = CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
+    hRefillEvent = CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
     this->refillFunc = refillFunc;
 
-    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), 0, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&mmDeviceEnumerator));
+    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&mmDeviceEnumerator));
     ASSERT_THROW(SUCCEEDED(hr), "CoCreateInstance(MMDeviceEnumerator) failed");
 
     hr = mmDeviceEnumerator->GetDefaultAudioEndpoint(eRender, eMultimedia, &mmDevice);
     ASSERT_THROW(SUCCEEDED(hr), "mmDeviceEnumerator->GetDefaultAudioEndpoint() failed");
 
-    hr = mmDevice->Activate(__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, 0, reinterpret_cast<void**>(&audioClient));
+    hr = mmDevice->Activate(__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, nullptr, reinterpret_cast<void**>(&audioClient));
     ASSERT_THROW(SUCCEEDED(hr), "mmDevice->Activate() failed");
 
     audioClient->GetMixFormat(&mixFormat);
@@ -52,7 +52,7 @@ Wasapi::Wasapi(Wasapi::RefillFunc refillFunc, int hnsBufferDuration) {
     ASSERT_THROW(SUCCEEDED(hr), "audioRenderClient->ReleaseBuffer() failed");
 
     unsigned threadId = 0;
-    hThread = reinterpret_cast<HANDLE>(_beginthreadex(0, 0, tmpThreadFunc, reinterpret_cast<void*>(this), 0, &threadId));
+    hThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, tmpThreadFunc, reinterpret_cast<void*>(this), 0, &threadId));
 
     hr = audioClient->Start();
     ASSERT_THROW(SUCCEEDED(hr), "audioClient->Start() failed");
@@ -82,17 +82,15 @@ Wasapi::~Wasapi() {
 }
 
 unsigned __stdcall Wasapi::tmpThreadFunc(void* arg) {
-    return (unsigned int)(reinterpret_cast<Wasapi*>(arg))->threadFunc();
+    return static_cast<unsigned int>((reinterpret_cast<Wasapi*>(arg))->threadFunc());
 }
 
 unsigned int Wasapi::threadFunc() {
     ComInit comInit {};
-    bool flag = false;
     const HANDLE events[2] = { hClose, hRefillEvent };
     for(bool run = true; run; ) {
         const auto r = WaitForMultipleObjects(_countof(events), events, FALSE, INFINITE);
         if(WAIT_OBJECT_0 == r) {    // hClose
-            if (flag != flag) continue;
             run = false;
         } else if(WAIT_OBJECT_0+1 == r) {   // hRefillEvent
             UINT32 c = 0;
