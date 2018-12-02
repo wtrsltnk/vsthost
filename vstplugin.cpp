@@ -1,5 +1,6 @@
 #include "vstplugin.h"
 #include "common.h"
+#include <iostream>
 
 VstPlugin::VstPlugin(const wchar_t* vstModulePath, HWND hWndParent)
 {
@@ -24,7 +25,7 @@ void VstPlugin::resizeEditor(const RECT& clientRc) const
         const auto exStyle = GetWindowLongPtr(editorHwnd, GWL_EXSTYLE);
         const BOOL fMenu = GetMenu(editorHwnd) != nullptr;
         AdjustWindowRectEx(&rc, style, fMenu, exStyle);
-        MoveWindow(editorHwnd, 0, 0, rc.right - rc.left, rc.bottom - rc.top, TRUE);
+        MoveWindow(editorHwnd, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
     }
 }
 
@@ -60,19 +61,24 @@ void VstPlugin::openEditor(HWND hWndParent)
         wcex.lpszClassName = L"Minimal VST host - Guest VST Window Frame";
         RegisterClassEx(&wcex);
 
+        auto xscreen = GetSystemMetrics(SM_CXSCREEN);
+        auto yscreen = GetSystemMetrics(SM_CYSCREEN);
+
         const auto style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
         editorHwnd = CreateWindow(
             wcex.lpszClassName, L"VST Plugin", style,
-            0, 0, 0, 0, hWndParent, 0, 0,
+            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hWndParent, 0, 0,
             reinterpret_cast<LPVOID>(this));
         dispatcher(effEditOpen, 0, 0, editorHwnd);
         RECT rc{};
         ERect* erc = nullptr;
         dispatcher(effEditGetRect, 0, 0, &erc);
-        rc.left = erc->left;
-        rc.top = erc->top;
-        rc.right = erc->right;
-        rc.bottom = erc->bottom;
+        auto xoffset = (xscreen - (erc->right - erc->left)) / 2;
+        auto yoffset = (yscreen - (erc->bottom - erc->top)) / 2;
+        rc.left = xoffset + erc->left;
+        rc.top = yoffset + erc->top;
+        rc.right = xoffset + erc->right;
+        rc.bottom = yoffset + erc->bottom;
         resizeEditor(rc);
     }
 
