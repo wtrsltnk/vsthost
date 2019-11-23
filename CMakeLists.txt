@@ -4,6 +4,8 @@ find_package(OpenGL REQUIRED)
 
 project(vsthost)
 
+set(CMAKE_CXX_STANDARD 14)
+
 add_executable(minimal-vsthost
     minimal_vst2x_host.cpp
     )

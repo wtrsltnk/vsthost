@@ -34,6 +34,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <functional>
 #include <vector>
 
 #pragma warning(push)
