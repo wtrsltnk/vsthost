@@ -57,12 +57,12 @@ private:
     VstIntPtr hostCallback(VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float);
 
 protected:
-    HWND editorHwnd{nullptr};
-    HMODULE hModule{nullptr};
-    AEffect *aEffect{nullptr};
-    std::atomic<size_t> samplePos{0};
-    VstTimeInfo timeinfo{};
-    std::string directoryMultiByte{};
+    HWND editorHwnd;
+    HMODULE hModule;
+    AEffect *aEffect;
+    std::atomic<size_t> samplePos;
+    VstTimeInfo timeinfo;
+    std::string directoryMultiByte;
 
     std::vector<float> outputBuffer;
     std::vector<float *> outputBufferHeads;

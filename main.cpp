@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <set>
 #include <sstream>
 
 #include "imgui.h"
@@ -195,9 +196,117 @@ int LongestTrack(std::vector<Track> const &tracks)
     return result;
 }
 
-// This function is called from Wasapi::threadFunc() which is running in audio thread.
-bool refillCallback(std::vector<Instrument> &instruments, float *const data, uint32_t availableFrameCount, const WAVEFORMATEX *const mixFormat)
+static unsigned int BPM = 138;
+static Track *activeTrack = nullptr;
+class OpenNote
 {
+public:
+    OpenNote(OpenNote const &o);
+    OpenNote(int n, unsigned int sl, VstPlugin *p) : note(n), samplesLeft(sl), plugin(p) {}
+    int note;
+    unsigned int samplesLeft;
+    VstPlugin *plugin;
+    bool operator<(OpenNote const &o) const;
+    OpenNote &operator=(OpenNote const &o);
+};
+
+OpenNote::OpenNote(OpenNote const &o)
+    : note(o.note), samplesLeft(o.samplesLeft), plugin(o.plugin)
+{}
+
+bool OpenNote::operator<(OpenNote const &o) const
+{
+    return note < o.note;
+}
+
+OpenNote &OpenNote::operator=(OpenNote const &o)
+{
+    note = o.note;
+    samplesLeft = o.samplesLeft;
+    plugin = o.plugin;
+
+    return *this;
+}
+
+static struct
+{
+    std::map<int, OpenNote> samplesLeft;
+    std::unique_lock<std::mutex> lock() const
+    {
+        return std::unique_lock<std::mutex>(mutex);
+    }
+
+private:
+    std::mutex mutable mutex;
+} openNotes;
+
+void step(
+    unsigned int samplesPerSecond)
+{
+    if (activeTrack == nullptr)
+    {
+        return;
+    }
+    if (activeTrack->_instrument == nullptr)
+    {
+        return;
+    }
+    if (activeTrack->_instrument->_plugin == nullptr)
+    {
+        return;
+    }
+
+    auto length = ((samplesPerSecond * 60) / BPM) * 0.5;
+    auto m = openNotes.lock();
+    activeTrack->_instrument->_plugin->sendMidiNote(0, 63, true, 100);
+    openNotes.samplesLeft.insert(std::make_pair(63, OpenNote(63, static_cast<unsigned int>(length), activeTrack->_instrument->_plugin)));
+}
+
+void stepSequence(
+    unsigned int sampleCount,
+    unsigned int samplesPerSecond)
+{
+    static unsigned int samplesUntilNextStep = 0;
+
+    auto m = openNotes.lock();
+    std::vector<OpenNote> toRemove;
+    for (auto &pair : openNotes.samplesLeft)
+    {
+        if (pair.second.samplesLeft < sampleCount)
+        {
+            toRemove.push_back(pair.second);
+        }
+        else
+        {
+            pair.second.samplesLeft -= sampleCount;
+        }
+    }
+    for (auto r : toRemove)
+    {
+        r.plugin->sendMidiNote(0, r.note, false, 0);
+        openNotes.samplesLeft.erase(r.note);
+    }
+    m.unlock();
+
+    if (samplesUntilNextStep < sampleCount)
+    {
+        step(samplesPerSecond);
+        samplesUntilNextStep = (samplesPerSecond * 60) / (BPM * 4);
+    }
+    else
+    {
+        samplesUntilNextStep -= sampleCount;
+    }
+}
+
+// This function is called from Wasapi::threadFunc() which is running in audio thread.
+bool refillCallback(
+    std::vector<Instrument> &instruments,
+    float *const data,
+    uint32_t sampleCount,
+    const WAVEFORMATEX *const mixFormat)
+{
+    stepSequence(sampleCount, mixFormat->nSamplesPerSec);
 
     const auto nDstChannels = mixFormat->nChannels;
 
@@ -214,10 +323,10 @@ bool refillCallback(std::vector<Instrument> &instruments, float *const data, uin
         const auto vstSamplesPerBlock = vstPlugin->getBlockSize();
 
         int ofs = 0;
-        while (availableFrameCount > 0)
+        while (sampleCount > 0)
         {
             size_t outputFrameCount = 0;
-            float **vstOutput = vstPlugin->processAudio(availableFrameCount, outputFrameCount);
+            float **vstOutput = vstPlugin->processAudio(sampleCount, outputFrameCount);
 
             // VST vstOutput[][] format :
             //  vstOutput[a][b]
@@ -242,7 +351,7 @@ bool refillCallback(std::vector<Instrument> &instruments, float *const data, uin
                 }
             }
 
-            availableFrameCount -= nFrame;
+            sampleCount -= nFrame;
             ofs += nFrame * nDstChannels;
         }
     }
@@ -361,7 +470,6 @@ int main(int, char **)
     std::vector<Track> tracks;
     Settings settings;
     Region *activeRegion = nullptr;
-    Track *activeTrack = nullptr;
 
     auto instrument = Instrument();
     instrument._name = "Instrument1";
@@ -394,12 +502,9 @@ int main(int, char **)
 
     struct Key
     {
-        Key(int midiNote)
-            : midiNote{midiNote}
-        {
-        }
-        int midiNote{};
-        bool status{false};
+        Key(int midiNote) : midiNote(midiNote), status(false) {}
+        int midiNote;
+        bool status;
     };
 
     std::map<int, Key> keyMap{
@@ -706,7 +811,6 @@ int main(int, char **)
                     {
                         if (instrument._plugin != nullptr)
                         {
-                            std::cout << instrument._name << std::endl;
                             instrument._plugin->sendMidiNote(0, key.midiNote, on, 100);
                         }
                     }

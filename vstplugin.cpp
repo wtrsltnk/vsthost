@@ -3,6 +3,7 @@
 #include <iostream>
 
 VstPlugin::VstPlugin(const wchar_t *vstModulePath)
+    : editorHwnd(nullptr), hModule(nullptr), aEffect(nullptr)
 {
     init(vstModulePath);
 }

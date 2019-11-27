@@ -27,6 +27,7 @@ target_compile_definitions(minimal-vsthost
 
 add_executable(imgui-vsthost
     main.cpp
+    common.h
     imgui_impl_win32_gl2.cpp
     imgui_impl_win32_gl2.h
     imgui/imgui.cpp
@@ -35,6 +36,7 @@ add_executable(imgui-vsthost
     vstplugin.cpp
     vstplugin.h
     wasapi.cpp
+    wasapi.h
     glad.c
     )
 

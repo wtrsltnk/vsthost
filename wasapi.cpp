@@ -4,9 +4,6 @@
 #include <mmdeviceapi.h>
 #include <windows.h>
 
-ComInit::ComInit() { CoInitializeEx(nullptr, COINIT_MULTITHREADED); }
-ComInit::~ComInit() { CoUninitialize(); }
-
 Wasapi::Wasapi(Wasapi::RefillFunc refillFunc, int hnsBufferDuration)
 {
     HRESULT hr = 0;
@@ -87,7 +84,6 @@ unsigned __stdcall Wasapi::tmpThreadFunc(void *arg)
 
 unsigned int Wasapi::threadFunc()
 {
-    ComInit comInit{};
     const HANDLE events[2] = {hClose, hRefillEvent};
     for (bool run = true; run;)
     {
