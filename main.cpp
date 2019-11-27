@@ -21,37 +21,40 @@
 #include "vstplugin.h"
 #include "wasapi.h"
 
-class Settings {
+class Settings
+{
 public:
     int _additionlTrackLength = 300;
 };
 
-class State {
+class State
+{
 public:
     int _width;
     int _height;
-
-    bool _showInspector = true;
 };
 
-class Instrument {
+class Instrument
+{
 public:
     std::string _name;
     int _midiChannel;
-    VstPlugin* _plugin = nullptr;
+    VstPlugin *_plugin = nullptr;
 };
 
-enum class RegionTypes {
+enum class RegionTypes
+{
     Audio,
     Midi,
 };
 
-class Region {
+class Region
+{
 private:
     RegionTypes _type;
 
 protected:
-    Region(std::string const& name, RegionTypes type, int start);
+    Region(std::string const &name, RegionTypes type, int start);
 
 public:
     virtual ~Region();
@@ -63,10 +66,8 @@ public:
     virtual int Size() const = 0;
 };
 
-Region::Region(std::string const& name, RegionTypes type, int start)
-    : _type(type)
-    , _name(name)
-    , _start(start)
+Region::Region(std::string const &name, RegionTypes type, int start)
+    : _type(type), _name(name), _start(start)
 {
 }
 
@@ -81,15 +82,16 @@ RegionTypes Region::Type() const
 
 #define MIN_REGION_SIZE 100
 
-class MidiRegion : public Region {
+class MidiRegion : public Region
+{
 public:
-    MidiRegion(std::string const& name, int start);
+    MidiRegion(std::string const &name, int start);
     virtual ~MidiRegion();
 
     virtual int Size() const;
 };
 
-MidiRegion::MidiRegion(std::string const& name, int start)
+MidiRegion::MidiRegion(std::string const &name, int start)
     : Region(name, RegionTypes::Midi, start)
 {
 }
@@ -103,15 +105,16 @@ int MidiRegion::Size() const
     return MIN_REGION_SIZE;
 }
 
-class AudioRegion : public Region {
+class AudioRegion : public Region
+{
 public:
-    AudioRegion(std::string const& name, int start);
+    AudioRegion(std::string const &name, int start);
     virtual ~AudioRegion();
 
     virtual int Size() const;
 };
 
-AudioRegion::AudioRegion(std::string const& name, int start)
+AudioRegion::AudioRegion(std::string const &name, int start)
     : Region(name, RegionTypes::Audio, start)
 {
 }
@@ -125,7 +128,8 @@ int AudioRegion::Size() const
     return MIN_REGION_SIZE;
 }
 
-class Channel {
+class Channel
+{
 public:
     virtual ~Channel();
 
@@ -134,14 +138,16 @@ public:
 
 Channel::~Channel() {}
 
-class InputChannel : public Channel {
+class InputChannel : public Channel
+{
 public:
     virtual ~InputChannel();
 };
 
 InputChannel::~InputChannel() {}
 
-class InstrumentChannel : public InputChannel {
+class InstrumentChannel : public InputChannel
+{
 public:
     virtual ~InstrumentChannel();
 
@@ -150,20 +156,22 @@ public:
 
 InstrumentChannel::~InstrumentChannel() {}
 
-class OutputChannel : public Channel {
+class OutputChannel : public Channel
+{
 public:
     virtual ~OutputChannel();
 };
 
 OutputChannel::~OutputChannel() {}
 
-class Track {
+class Track
+{
 public:
-    InputChannel* _channel = nullptr;
-    OutputChannel* _outputChannel = nullptr;
-    Instrument* _instrument = nullptr;
+    InputChannel *_channel = nullptr;
+    OutputChannel *_outputChannel = nullptr;
+    Instrument *_instrument = nullptr;
     std::string _name;
-    std::vector<Region*> _regions;
+    std::vector<Region *> _regions;
 
     int TotalLength() const;
 };
@@ -174,11 +182,13 @@ int Track::TotalLength() const
     return _regions.back()->_start + _regions.back()->Size();
 }
 
-int LongestTrack(std::vector<Track> const& tracks)
+int LongestTrack(std::vector<Track> const &tracks)
 {
     int result = 0;
-    for (auto track : tracks) {
-        if (result < track.TotalLength()) {
+    for (auto track : tracks)
+    {
+        if (result < track.TotalLength())
+        {
             result = track.TotalLength();
         }
     }
@@ -186,14 +196,16 @@ int LongestTrack(std::vector<Track> const& tracks)
 }
 
 // This function is called from Wasapi::threadFunc() which is running in audio thread.
-bool refillCallback(std::vector<Instrument>& instruments, float* const data, uint32_t availableFrameCount, const WAVEFORMATEX* const mixFormat)
+bool refillCallback(std::vector<Instrument> &instruments, float *const data, uint32_t availableFrameCount, const WAVEFORMATEX *const mixFormat)
 {
 
     const auto nDstChannels = mixFormat->nChannels;
 
-    for (auto instrument : instruments) {
+    for (auto instrument : instruments)
+    {
         auto vstPlugin = instrument._plugin;
-        if (vstPlugin == nullptr) {
+        if (vstPlugin == nullptr)
+        {
             continue;
         }
         vstPlugin->processEvents();
@@ -202,9 +214,10 @@ bool refillCallback(std::vector<Instrument>& instruments, float* const data, uin
         const auto vstSamplesPerBlock = vstPlugin->getBlockSize();
 
         int ofs = 0;
-        while (availableFrameCount > 0) {
+        while (availableFrameCount > 0)
+        {
             size_t outputFrameCount = 0;
-            float** vstOutput = vstPlugin->processAudio(availableFrameCount, outputFrameCount);
+            float **vstOutput = vstPlugin->processAudio(availableFrameCount, outputFrameCount);
 
             // VST vstOutput[][] format :
             //  vstOutput[a][b]
@@ -217,8 +230,10 @@ bool refillCallback(std::vector<Instrument>& instruments, float* const data, uin
             //      frame   = floor(x / mixFormat->nChannels);
 
             const auto nFrame = outputFrameCount;
-            for (size_t iFrame = 0; iFrame < nFrame; ++iFrame) {
-                for (size_t iChannel = 0; iChannel < nDstChannels; ++iChannel) {
+            for (size_t iFrame = 0; iFrame < nFrame; ++iFrame)
+            {
+                for (size_t iChannel = 0; iChannel < nDstChannels; ++iChannel)
+                {
                     const unsigned int sChannel = iChannel % nSrcChannels;
                     const unsigned int vstOutputPage = (iFrame / vstSamplesPerBlock) * sChannel + sChannel;
                     const unsigned int vstOutputIndex = (iFrame % vstSamplesPerBlock);
@@ -236,18 +251,19 @@ bool refillCallback(std::vector<Instrument>& instruments, float* const data, uin
 }
 
 static int trackStartX = 0;
-namespace ImGui {
-bool MovableRegion(Region* region, int& location)
+namespace ImGui
+{
+bool MovableRegion(Region *region, int &location)
 {
     ImGui::SameLine();
-    ImGuiContext* context = ImGui::GetCurrentContext();
+    ImGuiContext *context = ImGui::GetCurrentContext();
     auto window = context->CurrentWindow;
     const ImGuiID id = window->GetID(region); // use the pointer address as identifier
     const ImVec2 text_pos(trackStartX, window->DC.CursorPos.y);
 
     ImGuiButtonFlags flags = 0;
 
-    const ImGuiStyle& style = context->Style;
+    const ImGuiStyle &style = context->Style;
 
     ImVec2 handle_pos(text_pos.x + (location - (location % 20)), text_pos.y);
 
@@ -255,12 +271,13 @@ bool MovableRegion(Region* region, int& location)
 
     ImRect rect;
     rect = ImRect(handle_pos.x,
-        handle_pos.y,
-        handle_pos.x + region->Size(),
-        handle_pos.y + 80);
+                  handle_pos.y,
+                  handle_pos.x + region->Size(),
+                  handle_pos.y + 80);
 
     ItemSize(rect, style.FramePadding.y);
-    if (!ItemAdd(rect, id)) {
+    if (!ItemAdd(rect, id))
+    {
         return false;
     }
 
@@ -268,64 +285,65 @@ bool MovableRegion(Region* region, int& location)
     bool pressed = ButtonBehavior(rect, id, &hovered, &held, flags);
     bool is_active = ImGui::IsItemActive();
 
-    const ImGuiCol_ color_enum = (hovered
-                                     || is_active
-                                     || pressed
-                                     || held)
-        ? ImGuiCol_ButtonHovered
-        : ImGuiCol_Button;
+    const ImGuiCol_ color_enum = (hovered || is_active || pressed || held)
+                                     ? ImGuiCol_ButtonHovered
+                                     : ImGuiCol_Button;
 
     auto handle_color = ImColor(ImGui::GetStyle().Colors[color_enum]);
 
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    ImDrawList *draw_list = ImGui::GetWindowDrawList();
 
     draw_list->AddRectFilled(rect.Min, rect.Max, handle_color, 4.0f);
     draw_list->AddText(handle_pos, ImColor(ImGui::GetStyle().Colors[ImGuiCol_Text]), region->_name.c_str());
 
-    if (is_active && ImGui::IsMouseDragging(0)) {
-        location += ImGui::GetIO().MouseDelta.x;
+    if (is_active && ImGui::IsMouseDragging(0))
+    {
+        location += static_cast<int>(ImGui::GetIO().MouseDelta.x);
 
-        if (location < 0) {
+        if (location < 0)
+        {
             location = 0;
         }
     }
 
     return is_active;
 }
-}
+} // namespace ImGui
 
 #include <commdlg.h>
 #include <windows.h>
 
-VstPlugin* loadPlugin(HWND hwnd)
+VstPlugin *loadPlugin()
 {
-    wchar_t fn[MAX_PATH + 1]{};
-    OPENFILENAME ofn{ sizeof(ofn) };
+    wchar_t fn[MAX_PATH + 1];
+    OPENFILENAME ofn{sizeof(ofn)};
     ofn.lpstrFilter = L"VSTi DLL(*.dll)\0*.dll\0All Files(*.*)\0*.*\0\0";
     ofn.lpstrFile = fn;
     ofn.nMaxFile = _countof(fn);
     ofn.lpstrTitle = L"Select VST DLL";
     ofn.Flags = OFN_FILEMUSTEXIST | OFN_ENABLESIZING;
-    if (GetOpenFileName(&ofn)) {
-        return new VstPlugin(fn, hwnd);
+    if (GetOpenFileName(&ofn))
+    {
+        return new VstPlugin(fn);
     }
 
     return nullptr;
 }
 
-int main(int, char**)
+int main(int, char **)
 {
-    if (!glfwInit()) {
+    if (!glfwInit())
+    {
         return 1;
     }
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, L"ImGui OpenGL2 example", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(1280, 720, L"ImGui OpenGL2 example", nullptr, nullptr);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
     // Setup ImGui binding
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     (void)io;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
     ImGui_ImplGlfwGL2_Init(window, true);
@@ -342,8 +360,8 @@ int main(int, char**)
     std::vector<Instrument> instruments;
     std::vector<Track> tracks;
     Settings settings;
-    Region* activeRegion = nullptr;
-    Track* activeTrack = nullptr;
+    Region *activeRegion = nullptr;
+    Track *activeTrack = nullptr;
 
     auto instrument = Instrument();
     instrument._name = "Instrument1";
@@ -370,57 +388,61 @@ int main(int, char**)
     t2._regions.push_back(new AudioRegion("Screeky guitar", 170));
     tracks.push_back(t2);
 
-    Wasapi wasapi{ [&instruments](float* const data, uint32_t availableFrameCount, const WAVEFORMATEX* const mixFormat) {
+    Wasapi wasapi([&instruments](float *const data, uint32_t availableFrameCount, const WAVEFORMATEX *const mixFormat) {
         return refillCallback(instruments, data, availableFrameCount, mixFormat);
-    } };
+    });
 
-    struct Key {
+    struct Key
+    {
         Key(int midiNote)
-            : midiNote{ midiNote }
+            : midiNote{midiNote}
         {
         }
         int midiNote{};
-        bool status{ false };
+        bool status{false};
     };
 
     std::map<int, Key> keyMap{
-        { '2', { 61 } },
-        { '3', { 63 } },
-        { '5', { 66 } },
-        { '6', { 68 } },
-        { '7', { 70 } },
-        { 'Q', { 60 } },
-        { 'W', { 62 } },
-        { 'E', { 64 } },
-        { 'R', { 65 } },
-        { 'T', { 67 } },
-        { 'Y', { 69 } },
-        { 'U', { 71 } },
-        { 'I', { 72 } },
+        {'2', {61}},
+        {'3', {63}},
+        {'5', {66}},
+        {'6', {68}},
+        {'7', {70}},
+        {'Q', {60}},
+        {'W', {62}},
+        {'E', {64}},
+        {'R', {65}},
+        {'T', {67}},
+        {'Y', {69}},
+        {'U', {71}},
+        {'I', {72}},
 
-        { 'S', { 49 } },
-        { 'D', { 51 } },
-        { 'G', { 54 } },
-        { 'H', { 56 } },
-        { 'J', { 58 } },
-        { 'Z', { 48 } },
-        { 'X', { 50 } },
-        { 'C', { 52 } },
-        { 'V', { 53 } },
-        { 'B', { 55 } },
-        { 'N', { 57 } },
-        { 'M', { 59 } },
-        { VK_OEM_COMMA, { 60 } },
+        {'S', {49}},
+        {'D', {51}},
+        {'G', {54}},
+        {'H', {56}},
+        {'J', {58}},
+        {'Z', {48}},
+        {'X', {50}},
+        {'C', {52}},
+        {'V', {53}},
+        {'B', {55}},
+        {'N', {57}},
+        {'M', {59}},
+        {VK_OEM_COMMA, {60}},
     };
-    char const* channelLabels[]{
-        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"
-    };
+    char const *channelLabels[]{
+        "0", "1", "2", "3",
+        "4", "5", "6", "7",
+        "8", "9", "10", "11",
+        "12", "13", "14", "15"};
 
     const int toolbarHeight = 80;
     const int inspectorWidth = 350;
 
     // Main loop
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(window))
+    {
         glfwPollEvents();
         ImGui_ImplGlfwGL2_NewFrame();
         glfwGetWindowSize(window, &(state._width), &(state._height));
@@ -492,54 +514,72 @@ int main(int, char**)
         //            ImGui::End();
         //        }
 
-        ImGui::Begin("Inspector", &(state._showInspector), ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+        ImGui::Begin("Inspector", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
         {
             ImGui::SetWindowPos(ImVec2(0, toolbarHeight));
             ImGui::SetWindowSize(ImVec2(inspectorWidth, state._height - toolbarHeight));
 
-            if (ImGui::CollapsingHeader("Quick Help", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::CollapsingHeader("Quick Help", ImGuiTreeNodeFlags_DefaultOpen))
+            {
                 ImGui::Text("Help!");
             }
 
-            if (activeRegion != nullptr) {
-                if (ImGui::CollapsingHeader((std::string("Region: ") + activeRegion->_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (activeRegion != nullptr)
+            {
+                if (ImGui::CollapsingHeader((std::string("Region: ") + activeRegion->_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                {
                     ImGui::Text("active region");
                 }
             }
 
-            if (activeTrack != nullptr) {
-                if (ImGui::CollapsingHeader((std::string("Track: ") + activeTrack->_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-                    auto instrumentChannel = static_cast<InstrumentChannel*>(activeTrack->_channel);
-                    if (instrumentChannel != nullptr) {
+            if (activeTrack != nullptr)
+            {
+                if (ImGui::CollapsingHeader((std::string("Track: ") + activeTrack->_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    auto instrumentChannel = static_cast<InstrumentChannel *>(activeTrack->_channel);
+                    if (instrumentChannel != nullptr)
+                    {
                         ImGui::Combo("MIDI Channel", &(instrumentChannel->_midiChannel), channelLabels, 16);
                     }
 
-                    if (activeTrack->_instrument != nullptr) {
+                    if (activeTrack->_instrument != nullptr)
+                    {
                         auto vstPlugin = activeTrack->_instrument->_plugin;
 
-                        if (vstPlugin == nullptr) {
-                            if (ImGui::Button("Add plugin")) {
-                                activeTrack->_instrument->_plugin = loadPlugin(window->hwnd);
+                        if (vstPlugin == nullptr)
+                        {
+                            if (ImGui::Button("Add plugin"))
+                            {
+                                activeTrack->_instrument->_plugin = loadPlugin();
                             }
                             ImGui::Separator();
-                        } else {
-                            ImGui::Text(vstPlugin->getEffectName().c_str());
+                        }
+                        else
+                        {
+                            ImGui::Text("%s", vstPlugin->getEffectName().c_str());
                             ImGui::SameLine();
                             ImGui::Text(" by ");
                             ImGui::SameLine();
-                            ImGui::Text(vstPlugin->getVendorName().c_str());
-                            if (vstPlugin != nullptr) {
-                                if (ImGui::Button("Change plugin")) {
-                                    activeTrack->_instrument->_plugin = loadPlugin(window->hwnd);
+                            ImGui::Text("%s", vstPlugin->getVendorName().c_str());
+                            if (vstPlugin != nullptr)
+                            {
+                                if (ImGui::Button("Change plugin"))
+                                {
+                                    activeTrack->_instrument->_plugin = loadPlugin();
                                 }
                                 ImGui::SameLine();
                             }
-                            if (!vstPlugin->isEditorOpen()) {
-                                if (ImGui::Button("Open plugin")) {
+                            if (!vstPlugin->isEditorOpen())
+                            {
+                                if (ImGui::Button("Open plugin"))
+                                {
                                     vstPlugin->openEditor(window->hwnd);
                                 }
-                            } else {
-                                if (ImGui::Button("Close plugin")) {
+                            }
+                            else
+                            {
+                                if (ImGui::Button("Close plugin"))
+                                {
                                     vstPlugin->closeEditor();
                                 }
                             }
@@ -549,7 +589,7 @@ int main(int, char**)
                 }
             }
 
-            ImGuiWindow* wnd = ImGui::GetCurrentWindow();
+            ImGuiWindow *wnd = ImGui::GetCurrentWindow();
             ImGui::BeginChild("channelstrip");
 
             ImGui::Columns(3);
@@ -598,27 +638,31 @@ int main(int, char**)
 
         ImGui::Begin("Tracks", nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
         {
-            auto pos = ImVec2(state._showInspector ? inspectorWidth : 0, toolbarHeight);
+            auto pos = ImVec2(inspectorWidth, toolbarHeight);
             ImGui::SetWindowPos(pos);
             ImGui::SetWindowSize(ImVec2(state._width - pos.x, state._height - toolbarHeight));
 
             auto minimalWidth = LongestTrack(tracks) + settings._additionlTrackLength;
             ImGui::BeginChild("scrolling", ImVec2(std::max(float(minimalWidth), ImGui::GetWindowContentRegionWidth()), 0), true, 0);
 
-            for (size_t i = 0; i < tracks.size(); i++) {
+            for (size_t i = 0; i < tracks.size(); i++)
+            {
                 ImGui::PushID(static_cast<int>(i));
 
-                ImGuiContext* context = ImGui::GetCurrentContext();
+                ImGuiContext *context = ImGui::GetCurrentContext();
                 auto window = context->CurrentWindow;
                 trackStartX = static_cast<int>(window->DC.CursorPos.x + 150);
 
-                if (ImGui::Button(tracks[i]._name.c_str())) {
+                if (ImGui::Button(tracks[i]._name.c_str()))
+                {
                     activeTrack = &tracks[i];
                     activeRegion = nullptr;
                 }
 
-                for (auto region : tracks[i]._regions) {
-                    if (ImGui::MovableRegion(region, region->_start)) {
+                for (auto region : tracks[i]._regions)
+                {
+                    if (ImGui::MovableRegion(region, region->_start))
+                    {
                         activeRegion = region;
                         activeTrack = &tracks[i];
                     }
@@ -649,14 +693,19 @@ int main(int, char**)
         ImGui_ImplGlfwGL2_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
 
-        if (instruments.size() > 0) {
-            for (auto& e : keyMap) {
-                auto& key = e.second;
+        if (instruments.size() > 0)
+        {
+            for (auto &e : keyMap)
+            {
+                auto &key = e.second;
                 const auto on = (GetKeyState(e.first) & 0x8000) != 0;
-                if (key.status != on) {
+                if (key.status != on)
+                {
                     key.status = on;
-                    for (auto instrument : instruments) {
-                        if (instrument._plugin != nullptr) {
+                    for (auto instrument : instruments)
+                    {
+                        if (instrument._plugin != nullptr)
+                        {
                             std::cout << instrument._name << std::endl;
                             instrument._plugin->sendMidiNote(0, key.midiNote, on, 100);
                         }
@@ -666,9 +715,11 @@ int main(int, char**)
         }
     }
 
-    while (!instruments.empty()) {
+    while (!instruments.empty())
+    {
         auto item = instruments.back();
-        if (item._plugin != nullptr) {
+        if (item._plugin != nullptr)
+        {
             delete item._plugin;
         }
         instruments.pop_back();

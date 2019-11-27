@@ -33,6 +33,7 @@ add_executable(imgui-vsthost
     imgui/imgui_draw.cpp
     imgui/imgui_demo.cpp
     vstplugin.cpp
+    vstplugin.h
     wasapi.cpp
     glad.c
     )
