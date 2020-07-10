@@ -21,6 +21,7 @@ public:
 
     ~VstPlugin();
 
+    AEffect *getEffect() { return aEffect; }
     size_t getSamplePos() const { return samplePos; }
     size_t getSampleRate() const { return 44100; }
     size_t getBlockSize() const { return 1024; }

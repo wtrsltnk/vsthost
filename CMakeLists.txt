@@ -26,18 +26,21 @@ target_compile_definitions(minimal-vsthost
     )
 
 add_executable(imgui-vsthost
-    main.cpp
+    RtError.h
+    RtMidi.cpp
+    RtMidi.h
     common.h
+    glad.c
+    imgui/imgui.cpp
+    imgui/imgui_demo.cpp
+    imgui/imgui_draw.cpp
     imgui_impl_win32_gl2.cpp
     imgui_impl_win32_gl2.h
-    imgui/imgui.cpp
-    imgui/imgui_draw.cpp
-    imgui/imgui_demo.cpp
+    main.cpp
     vstplugin.cpp
     vstplugin.h
     wasapi.cpp
     wasapi.h
-    glad.c
     )
 
 target_compile_features(imgui-vsthost
@@ -48,11 +51,13 @@ target_compile_features(imgui-vsthost
 
 target_link_libraries(imgui-vsthost
     ${OPENGL_LIBRARIES}
+    winmm
     )
 
 target_compile_definitions(imgui-vsthost
     PRIVATE -DUNICODE
     PRIVATE -D_WIN32_WINNT=0x602
+    PRIVATE -D__WINDOWS_MM__
     )
 
 target_include_directories(imgui-vsthost
