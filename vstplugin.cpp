@@ -2,11 +2,9 @@
 #include "common.h"
 #include <iostream>
 
-VstPlugin::VstPlugin(const wchar_t *vstModulePath)
+VstPlugin::VstPlugin()
     : editorHwnd(nullptr), hModule(nullptr), aEffect(nullptr)
-{
-    init(vstModulePath);
-}
+{}
 
 VstPlugin::~VstPlugin()
 {

@@ -17,9 +17,11 @@
 class VstPlugin
 {
 public:
-    VstPlugin(const wchar_t *vstModulePath);
+    VstPlugin();
 
     ~VstPlugin();
+
+    char const *title = nullptr;
 
     AEffect *getEffect() { return aEffect; }
     size_t getSamplePos() const { return samplePos; }
@@ -51,9 +53,10 @@ public:
     // This function is called from refillCallback() which is running in audio thread.
     float **processAudio(size_t frameCount, size_t &outputFrameCount);
 
-private:
     bool init(const wchar_t *vstModulePath);
     void cleanup();
+
+private:
     static VstIntPtr hostCallback_static(AEffect *effect, VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float opt);
     VstIntPtr hostCallback(VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float);
 

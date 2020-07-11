@@ -10,26 +10,34 @@
 
 #include <GL/wglext.h>
 #include <algorithm>
+#include <commdlg.h>
 #include <iostream>
 #include <map>
 #include <numeric>
 #include <set>
 #include <sstream>
+#include <windows.h>
 
 #include "imgui.h"
 #include "imgui_impl_win32_gl2.h"
 #include "imgui_internal.h"
 
+#include "IconsFontaudio.h"
+#include "IconsForkAwesome.h"
 #include "RtError.h"
 #include "RtMidi.h"
 #include "vstplugin.h"
 #include "wasapi.h"
 
-class Settings
+namespace ImGui
 {
-public:
-    int _additionlTrackLength = 300;
-};
+    void MoveCursorPos(
+        ImVec2 delta)
+    {
+        auto pos = GetCursorPos();
+        SetCursorPos(ImVec2(pos.x + delta.x, pos.y + delta.y));
+    }
+} // namespace ImGui
 
 class State
 {
@@ -46,154 +54,103 @@ public:
     VstPlugin *_plugin = nullptr;
 };
 
-enum class RegionTypes
+enum class MidiEventTypes
 {
-    Audio,
-    Midi,
+    M_NOTE = 1,       // note
+    M_CONTROLLER = 2, // controller
+    M_PGMCHANGE = 3,  // program change
+    M_PRESSURE = 4    // polyphonic aftertouch
 };
+
+struct MidiEvent
+{
+    MidiEvent();
+    unsigned int channel; // the midi channel for the event
+    MidiEventTypes type;  // type=1 for note, type=2 for controller
+    unsigned int num;     // note, controller or program number
+    unsigned int value;   // velocity or controller value
+};
+
+enum MidiControllers
+{
+    C_bankselectmsb = 0,
+    C_pitchwheel = 1000,
+    C_NULL = 1001,
+    C_expression = 11,
+    C_panning = 10,
+    C_bankselectlsb = 32,
+    C_filtercutoff = 74,
+    C_filterq = 71,
+    C_bandwidth = 75,
+    C_modwheel = 1,
+    C_fmamp = 76,
+    C_volume = 7,
+    C_sustain = 64,
+    C_allnotesoff = 123,
+    C_allsoundsoff = 120,
+    C_resetallcontrollers = 121,
+    C_portamento = 65,
+    C_resonance_center = 77,
+    C_resonance_bandwidth = 78,
+
+    C_dataentryhi = 0x06,
+    C_dataentrylo = 0x26,
+    C_nrpnhi = 99,
+    C_nrpnlo = 98
+};
+
+MidiEvent::MidiEvent()
+    : channel(0),
+      type(MidiEventTypes::M_NOTE),
+      num(0),
+      value(0)
+{}
 
 class Region
 {
-private:
-    RegionTypes _type;
-
-protected:
-    Region(std::string const &name, RegionTypes type, int start);
-
 public:
-    virtual ~Region();
-
-    std::string _name;
-    int _start;
-
-    RegionTypes Type() const;
-    virtual int Size() const = 0;
+    int _length;
+    std::map<int, MidiEvent> _events; // the int key of the map is the relaive start of the note from the beginning of the region
 };
-
-Region::Region(std::string const &name, RegionTypes type, int start)
-    : _type(type), _name(name), _start(start)
-{
-}
-
-Region::~Region()
-{
-}
-
-RegionTypes Region::Type() const
-{
-    return _type;
-}
-
-#define MIN_REGION_SIZE 100
-
-class MidiRegion : public Region
-{
-public:
-    MidiRegion(std::string const &name, int start);
-    virtual ~MidiRegion();
-
-    virtual int Size() const override;
-};
-
-MidiRegion::MidiRegion(std::string const &name, int start)
-    : Region(name, RegionTypes::Midi, start)
-{
-}
-
-MidiRegion::~MidiRegion()
-{
-}
-
-int MidiRegion::Size() const
-{
-    return MIN_REGION_SIZE;
-}
-
-class AudioRegion : public Region
-{
-public:
-    AudioRegion(std::string const &name, int start);
-    virtual ~AudioRegion();
-
-    virtual int Size() const override;
-};
-
-AudioRegion::AudioRegion(std::string const &name, int start)
-    : Region(name, RegionTypes::Audio, start)
-{
-}
-
-AudioRegion::~AudioRegion()
-{
-}
-
-int AudioRegion::Size() const
-{
-    return MIN_REGION_SIZE;
-}
-
-class Channel
-{
-public:
-    virtual ~Channel();
-
-    std::string _name;
-};
-
-Channel::~Channel() {}
-
-class InputChannel : public Channel
-{
-public:
-    virtual ~InputChannel();
-};
-
-InputChannel::~InputChannel() {}
-
-class InstrumentChannel : public InputChannel
-{
-public:
-    virtual ~InstrumentChannel();
-
-    int _midiChannel;
-};
-
-InstrumentChannel::~InstrumentChannel() {}
-
-class OutputChannel : public Channel
-{
-public:
-    virtual ~OutputChannel();
-};
-
-OutputChannel::~OutputChannel() {}
 
 class Track
 {
 public:
-    InputChannel *_channel = nullptr;
-    OutputChannel *_outputChannel = nullptr;
     Instrument *_instrument = nullptr;
+    std::map<int, Region> _regions; // the int key of the map is the absolute start (in ms?) of the region from the beginning of the song
     std::string _name;
-    std::vector<Region *> _regions;
-
-    int TotalLength() const;
+    bool _muted = false;
 };
 
+static RtMidiIn *midiIn = nullptr;
+static State state;
+static std::vector<Instrument *> instruments;
+static std::vector<Track *> tracks;
 static Track *activeTrack = nullptr;
+static Track *soloTrack = nullptr;
 
 // This function is called from Wasapi::threadFunc() which is running in audio thread.
 bool refillCallback(
-    std::vector<Instrument> const &instruments,
+    std::vector<Track *> const &tracks,
     float *const data,
     uint32_t sampleCount,
     const WAVEFORMATEX *const mixFormat)
 {
     const auto nDstChannels = mixFormat->nChannels;
 
-    for (auto instrument : instruments)
+    for (size_t iFrame = 0; iFrame < sampleCount; ++iFrame)
     {
-        auto vstPlugin = instrument._plugin;
+        for (size_t iChannel = 0; iChannel < nDstChannels; ++iChannel)
+        {
+            const unsigned int wasapiWriteIndex = iFrame * nDstChannels + iChannel;
+            *(data + wasapiWriteIndex) = 0;
+        }
+    }
+
+    for (auto track : tracks)
+    {
+        auto tmpsampleCount = sampleCount;
+        auto vstPlugin = track->_instrument->_plugin;
         if (vstPlugin == nullptr)
         {
             continue;
@@ -204,10 +161,10 @@ bool refillCallback(
         const auto vstSamplesPerBlock = vstPlugin->getBlockSize();
 
         int ofs = 0;
-        while (sampleCount > 0)
+        while (tmpsampleCount > 0)
         {
             size_t outputFrameCount = 0;
-            float **vstOutput = vstPlugin->processAudio(sampleCount, outputFrameCount);
+            float **vstOutput = vstPlugin->processAudio(tmpsampleCount, outputFrameCount);
 
             // VST vstOutput[][] format :
             //  vstOutput[a][b]
@@ -228,20 +185,20 @@ bool refillCallback(
                     const unsigned int vstOutputPage = (iFrame / vstSamplesPerBlock) * sChannel + sChannel;
                     const unsigned int vstOutputIndex = (iFrame % vstSamplesPerBlock);
                     const unsigned int wasapiWriteIndex = iFrame * nDstChannels + iChannel;
-                    *(data + ofs + wasapiWriteIndex) = vstOutput[vstOutputPage][vstOutputIndex];
+                    if (!track->_muted && (soloTrack == track || soloTrack == nullptr))
+                    {
+                        *(data + ofs + wasapiWriteIndex) += vstOutput[vstOutputPage][vstOutputIndex];
+                    }
                 }
             }
 
-            sampleCount -= nFrame;
+            tmpsampleCount -= nFrame;
             ofs += nFrame * nDstChannels;
         }
     }
 
     return true;
 }
-
-#include <commdlg.h>
-#include <windows.h>
 
 VstPlugin *loadPlugin()
 {
@@ -255,7 +212,9 @@ VstPlugin *loadPlugin()
     ofn.Flags = OFN_FILEMUSTEXIST | OFN_ENABLESIZING;
     if (GetOpenFileName(&ofn))
     {
-        return new VstPlugin(fn);
+        auto result = new VstPlugin();
+        result->init(fn);
+        return result;
     }
 
     return nullptr;
@@ -267,24 +226,10 @@ void SendMidiNote(
     bool onOff,
     int velocity)
 {
-    if (activeTrack == nullptr)
+    for (auto instrument : instruments)
     {
-        return;
+        instrument->_plugin->sendMidiNote(midiChannel, noteNumber, onOff, velocity);
     }
-
-    if (activeTrack->_instrument == nullptr)
-    {
-        return;
-    }
-
-    if (activeTrack->_instrument->_plugin == nullptr)
-    {
-        return;
-    }
-
-    std::cout << noteNumber << std::endl;
-
-    activeTrack->_instrument->_plugin->sendMidiNote(midiChannel, noteNumber, onOff, velocity);
 }
 
 static std::map<int, bool> _keyStates;
@@ -459,60 +404,6 @@ void PianoWindow(
     ImGui::End();
 }
 
-enum class MidiEventTypes
-{
-    M_NOTE = 1,       // note
-    M_CONTROLLER = 2, // controller
-    M_PGMCHANGE = 3,  // program change
-    M_PRESSURE = 4    // polyphonic aftertouch
-};
-
-struct MidiEvent
-{
-    MidiEvent();
-    unsigned int channel; // the midi channel for the event
-    MidiEventTypes type;  // type=1 for note, type=2 for controller
-    unsigned int num;     // note, controller or program number
-    unsigned int value;   // velocity or controller value
-    unsigned int time;    // time offset of event (used only in jack->jack case at the moment)
-};
-
-enum MidiControllers
-{
-    C_bankselectmsb = 0,
-    C_pitchwheel = 1000,
-    C_NULL = 1001,
-    C_expression = 11,
-    C_panning = 10,
-    C_bankselectlsb = 32,
-    C_filtercutoff = 74,
-    C_filterq = 71,
-    C_bandwidth = 75,
-    C_modwheel = 1,
-    C_fmamp = 76,
-    C_volume = 7,
-    C_sustain = 64,
-    C_allnotesoff = 123,
-    C_allsoundsoff = 120,
-    C_resetallcontrollers = 121,
-    C_portamento = 65,
-    C_resonance_center = 77,
-    C_resonance_bandwidth = 78,
-
-    C_dataentryhi = 0x06,
-    C_dataentrylo = 0x26,
-    C_nrpnhi = 99,
-    C_nrpnlo = 98
-};
-
-MidiEvent::MidiEvent()
-    : channel(0),
-      type(MidiEventTypes::M_NOTE),
-      num(0),
-      value(0),
-      time(0)
-{}
-
 void callback(double /*timeStamp*/, std::vector<unsigned char> *message, void * /*userData*/)
 {
     MidiEvent ev;
@@ -576,8 +467,72 @@ void callback(double /*timeStamp*/, std::vector<unsigned char> *message, void * 
             return;
         }
     }
+}
 
-    //    MidiInputManager::Instance().PutEvent(ev);
+Track *addVstTrack(
+    wchar_t const *plugin = nullptr)
+{
+    std::stringstream instrumentName;
+    instrumentName << "Instrument " << (tracks.size() + 1);
+
+    auto newi = new Instrument();
+    newi->_name = instrumentName.str();
+    newi->_midiChannel = 0;
+    newi->_plugin = nullptr;
+    if (plugin != nullptr)
+    {
+        newi->_plugin = new VstPlugin();
+        newi->_plugin->init(plugin);
+    }
+
+    instruments.push_back(newi);
+
+    std::stringstream trackName;
+    trackName << "Track " << (tracks.size() + 1);
+
+    auto newt = new Track();
+    newt->_instrument = newi;
+    newt->_name = trackName.str();
+    tracks.push_back(newt);
+
+    return newt;
+}
+
+void removeTrack(Track *track)
+{
+    if (track == nullptr)
+    {
+        return;
+    }
+
+    for (auto t = tracks.begin(); t != tracks.end(); ++t)
+    {
+        if (*t == track)
+        {
+            tracks.erase(t);
+            delete track;
+            break;
+        }
+    }
+}
+
+static float tracksScrolly = 0;
+
+bool ActiveButton(char const *label, bool active)
+{
+    if (active)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_ButtonActive]);
+    }
+
+    auto result = ImGui::Button(label);
+
+    if (active)
+    {
+        ImGui::PopStyleColor();
+    }
+
+    return result;
 }
 
 int main(int, char **)
@@ -586,11 +541,6 @@ int main(int, char **)
     {
         return 1;
     }
-
-    RtMidiIn *midiIn = nullptr;
-    State state;
-    std::vector<Instrument> instruments;
-    std::vector<Track> tracks;
 
     midiIn = new RtMidiIn();
     midiIn->setCallback(callback);
@@ -609,20 +559,32 @@ int main(int, char **)
     ImGui::GetStyle().WindowRounding = 0;
     ImGui::GetStyle().ChildRounding = 0;
 
+    ImGuiIO &io = ImGui::GetIO();
+    io.Fonts->Clear();
+    ImFont *font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
+    if (font != nullptr)
+    {
+        io.FontDefault = font;
+    }
+    else
+    {
+        io.Fonts->AddFontDefault();
+    }
+
+    ImFontConfig config;
+    config.MergeMode = true;
+
+    static const ImWchar fontaudio_icon_ranges[] = {ICON_MIN_FAD, ICON_MAX_FAD, 0};
+    io.Fonts->AddFontFromFileTTF("fonts/fontaudio.ttf", 13.0f, &config, fontaudio_icon_ranges);
+
+    static const ImWchar forkawesome_icon_ranges[] = {ICON_MIN_FK, ICON_MAX_FK, 0};
+    io.Fonts->AddFontFromFileTTF("fonts/forkawesome-webfont.ttf", 12.0f, &config, forkawesome_icon_ranges);
+
+    io.Fonts->Build();
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    auto instrument = Instrument();
-    instrument._name = "Instrument1";
-    instrument._midiChannel = 0;
-    instrument._plugin = new VstPlugin(L"BBC Symphony Orchestra (64 Bit).dll");
-    instruments.push_back(instrument);
-
-    Track t;
-    t._instrument = &(instruments[0]);
-    t._name = "Track 1";
-    tracks.push_back(t);
-
-    activeTrack = &(*tracks.begin());
+    activeTrack = addVstTrack(L"BBC Symphony Orchestra (64 Bit).dll");
+    addVstTrack(L"LABS (64 Bit).dll");
 
     struct Key
     {
@@ -669,29 +631,13 @@ int main(int, char **)
     const int pianoHeight = 180;
     const int inspectorWidth = 350;
 
-    {
-        Wasapi wasapi([&instruments](float *const data, uint32_t availableFrameCount, const WAVEFORMATEX *const mixFormat) {
-            return refillCallback(instruments, data, availableFrameCount, mixFormat);
-        });
+    static int editTrackName = -1;
+    static char editTrackBuffer[128] = {0};
 
-        char const *channelLabels[]{
-            "0",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            "10",
-            "11",
-            "12",
-            "13",
-            "14",
-            "15",
-        };
+    {
+        Wasapi wasapi([&](float *const data, uint32_t availableFrameCount, const WAVEFORMATEX *const mixFormat) {
+            return refillCallback(tracks, data, availableFrameCount, mixFormat);
+        });
 
         // Main loop
         while (!glfwWindowShouldClose(window))
@@ -740,12 +686,6 @@ int main(int, char **)
                 {
                     if (ImGui::CollapsingHeader((std::string("Track: ") + activeTrack->_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
                     {
-                        auto instrumentChannel = static_cast<InstrumentChannel *>(activeTrack->_channel);
-                        if (instrumentChannel != nullptr)
-                        {
-                            ImGui::Combo("MIDI Channel", &(instrumentChannel->_midiChannel), channelLabels, 16);
-                        }
-
                         if (activeTrack->_instrument != nullptr)
                         {
                             auto vstPlugin = activeTrack->_instrument->_plugin;
@@ -755,6 +695,7 @@ int main(int, char **)
                                 if (ImGui::Button("Add plugin"))
                                 {
                                     activeTrack->_instrument->_plugin = loadPlugin();
+                                    activeTrack->_instrument->_plugin->title = activeTrack->_instrument->_name.c_str();
                                 }
                                 ImGui::Separator();
                             }
@@ -776,6 +717,7 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
                                 if (ImGui::Button("Change plugin"))
                                 {
                                     activeTrack->_instrument->_plugin = loadPlugin();
+                                    activeTrack->_instrument->_plugin->title = activeTrack->_instrument->_name.c_str();
                                 }
                                 ImGui::SameLine();
                                 if (!vstPlugin->isEditorOpen())
@@ -800,11 +742,194 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
             }
             ImGui::End();
 
-            ImGui::Begin("Tracks", nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+            ImGui::Begin("Tracks", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
             {
                 auto pos = ImVec2(inspectorWidth, toolbarHeight);
                 ImGui::SetWindowPos(pos);
-                ImGui::SetWindowSize(ImVec2(state._width - pos.x, state._height - toolbarHeight - pianoHeight));
+                auto size = ImVec2(state._width - pos.x, state._height - toolbarHeight - pianoHeight);
+                ImGui::SetWindowSize(size);
+
+                const int trackHeaderWidth = 200;
+                static int trackHeight = 200;
+                const int trackToolsHeight = 40;
+                int fullWidth = 1500 + 200;
+                int fullHeight = tracks.size() * (trackHeight + ImGui::GetStyle().ItemSpacing.y);
+
+                ImGui::BeginChild(
+                    "track_tools",
+                    ImVec2(size.y, trackToolsHeight));
+                {
+                    ImGui::Button(ICON_FK_PLUS);
+                    if (ImGui::BeginPopupContextItem("item context menu", 0))
+                    {
+                        if (ImGui::MenuItem("VST"))
+                        {
+                            activeTrack = addVstTrack();
+                        }
+
+                        ImGui::EndPopup();
+                    }
+
+                    ImGui::SameLine();
+
+                    ImGui::PushItemWidth(100);
+                    ImGui::SliderInt("track height", &trackHeight, 60, 300);
+                    ImGui::PopItemWidth();
+                }
+                ImGui::EndChild();
+
+                auto trackbgcol = ImColor(55, 55, 55, 55);
+                auto trackaltbgcol = ImColor(0, 0, 0, 0);
+                auto trackactivebgcol = ImColor(55, 88, 155, 55);
+                auto contentTop = ImGui::GetCursorPosY();
+                ImGui::MoveCursorPos(ImVec2(trackHeaderWidth, 0));
+                ImGui::BeginChild(
+                    "tracksContainer",
+                    ImVec2(size.x - trackHeaderWidth - ImGui::GetStyle().ItemSpacing.x, -10),
+                    false,
+                    ImGuiWindowFlags_HorizontalScrollbar);
+                {
+                    auto drawList = ImGui::GetWindowDrawList();
+                    ImGui::BeginGroup();
+                    {
+                        int t = 0;
+                        for (auto track : tracks)
+                        {
+                            auto pp = ImGui::GetCursorScreenPos();
+                            if (track == activeTrack)
+                            {
+                                drawList->AddRectFilled(pp, ImVec2(pp.x + fullWidth, pp.y + trackHeight), trackactivebgcol);
+                            }
+                            else if (t % 2 == 0)
+                            {
+                                drawList->AddRectFilled(pp, ImVec2(pp.x + fullWidth, pp.y + trackHeight), trackbgcol);
+                            }
+                            else
+                            {
+                                drawList->AddRectFilled(pp, ImVec2(pp.x + fullWidth, pp.y + trackHeight), trackaltbgcol);
+                            }
+                            ImGui::PushID(t);
+
+                            if (ImGui::InvisibleButton(track->_name.c_str(), ImVec2(fullWidth, trackHeight)))
+                            {
+                                activeTrack = track;
+                            }
+
+                            ImGui::PopID();
+                            t++;
+                        }
+                    }
+                    ImGui::EndGroup();
+
+                    tracksScrolly = ImGui::GetScrollY();
+                }
+                ImGui::EndChild();
+
+                ImGui::SetCursorPosY(contentTop);
+                ImGui::BeginChild(
+                    "headersContainer",
+                    ImVec2(trackHeaderWidth, -(10)),
+                    false,
+                    ImGuiWindowFlags_NoScrollbar);
+                {
+                    auto drawList = ImGui::GetWindowDrawList();
+                    ImGui::SetScrollY(tracksScrolly);
+
+                    ImGui::BeginChild(
+                        "headers",
+                        ImVec2(trackHeaderWidth, fullHeight + ImGui::GetStyle().ScrollbarSize),
+                        false,
+                        ImGuiWindowFlags_NoScrollbar);
+                    {
+                        int t = 0;
+                        for (auto track : tracks)
+                        {
+                            auto pp = ImGui::GetCursorScreenPos();
+                            if (track == activeTrack)
+                            {
+                                drawList->AddRectFilled(pp, ImVec2(pp.x + fullWidth, pp.y + trackHeight), trackactivebgcol);
+                            }
+                            else if (t % 2 == 0)
+                            {
+                                drawList->AddRectFilled(pp, ImVec2(pp.x + fullWidth, pp.y + trackHeight), trackbgcol);
+                            }
+                            else
+                            {
+                                drawList->AddRectFilled(pp, ImVec2(pp.x + fullWidth, pp.y + trackHeight), trackaltbgcol);
+                            }
+
+                            ImGui::PushID(t);
+                            auto p = ImGui::GetCursorPos();
+                            ImGui::BeginGroup();
+                            {
+                                if (ActiveButton(ICON_FAD_MUTE, track->_muted))
+                                {
+                                    track->_muted = !track->_muted;
+                                    if (track->_muted && soloTrack == track)
+                                    {
+                                        soloTrack = nullptr;
+                                    }
+                                    activeTrack = track;
+                                }
+
+                                ImGui::SameLine();
+
+                                if (ActiveButton(ICON_FAD_SOLO, soloTrack == track))
+                                {
+                                    if (soloTrack != track)
+                                    {
+                                        soloTrack = track;
+                                        track->_muted = false;
+                                    }
+                                    else
+                                    {
+                                        soloTrack = nullptr;
+                                    }
+                                    activeTrack = track;
+                                }
+
+                                ImGui::SameLine();
+
+                                if (editTrackName == t)
+                                {
+                                    ImGui::SetKeyboardFocusHere();
+                                    if (ImGui::InputText("##editName", editTrackBuffer, 128, ImGuiInputTextFlags_EnterReturnsTrue))
+                                    {
+                                        track->_name = editTrackBuffer;
+                                        editTrackName = -1;
+                                    }
+                                }
+                                else
+                                {
+                                    ImGui::Text("%s", track->_name.c_str());
+                                    if (ImGui::IsItemClicked())
+                                    {
+                                        editTrackName = t;
+                                        strcpy_s(editTrackBuffer, 128, track->_name.c_str());
+                                        activeTrack = track;
+                                    }
+                                }
+                            }
+                            ImGui::EndGroup();
+
+                            if (ImGui::BeginPopupContextItem("track context menu"))
+                            {
+                                if (ImGui::MenuItem("Remove track"))
+                                {
+                                    removeTrack(track);
+                                }
+
+                                ImGui::EndPopup();
+                            }
+
+                            ImGui::SetCursorPos(ImVec2(p.x, p.y + trackHeight + ImGui::GetStyle().ItemSpacing.y));
+                            ImGui::PopID();
+                            t++;
+                        }
+                    }
+                    ImGui::EndChild();
+                }
+                ImGui::EndChild();
             }
             ImGui::End();
 
@@ -812,6 +937,8 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
             auto size = ImVec2(state._width - pos.x, pianoHeight);
 
             PianoWindow(pos, size, 8);
+
+            ImGui::ShowDemoWindow();
 
             // Rendering
             int display_w, display_h;
@@ -823,7 +950,7 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
             ImGui_ImplGlfwGL2_RenderDrawData(ImGui::GetDrawData());
             glfwSwapBuffers(window);
 
-            if (instruments.size() > 0)
+            if (instruments.size() > 0 && editTrackName < 0)
             {
                 for (auto &e : keyMap)
                 {
@@ -842,11 +969,12 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
     while (!instruments.empty())
     {
         auto item = instruments.back();
-        if (item._plugin != nullptr)
+        if (item->_plugin != nullptr)
         {
-            delete item._plugin;
+            delete item->_plugin;
         }
         instruments.pop_back();
+        delete item;
     }
 
     // Cleanup
