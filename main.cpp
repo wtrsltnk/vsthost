@@ -17,6 +17,7 @@
 #include <numeric>
 #include <set>
 #include <sstream>
+#include <thread>
 #include <windows.h>
 
 #include "imgui.h"
@@ -29,6 +30,8 @@
 #include "RtMidi.h"
 #include "vstplugin.h"
 #include "wasapi.h"
+
+void KillAllNotes();
 
 namespace ImGui
 {
@@ -119,8 +122,16 @@ void State::TogglePlaying()
 
 void State::StopPlaying()
 {
-    _playing = false;
-    _cursor = 0;
+    if (_playing)
+    {
+        _playing = false;
+
+        KillAllNotes();
+    }
+    else
+    {
+        _cursor = 0;
+    }
 }
 
 bool State::IsPlaying() const
@@ -384,6 +395,30 @@ static int editTrackName = -1;
 static char editTrackBuffer[128] = {0};
 static GLFWwindow *window = nullptr;
 
+void KillAllNotes()
+{
+    for (auto &instrument : instruments)
+    {
+        for (int channel = 0; channel < 16; channel++)
+        {
+            for (int note = 0; note < 128; note++)
+            {
+                instrument->_plugin->sendMidiNote(
+                    channel,
+                    note,
+                    false,
+                    0);
+            }
+        }
+    }
+}
+
+void HandleIncomingMidiEvent(
+    int midiChannel,
+    int noteNumber,
+    bool onOff,
+    int velocity);
+
 // This function is called from Wasapi::threadFunc() which is running in audio thread.
 bool refillCallback(
     std::vector<Track *> const &tracks,
@@ -391,8 +426,33 @@ bool refillCallback(
     uint32_t sampleCount,
     const WAVEFORMATEX *const mixFormat)
 {
+    auto start = state._cursor;
     auto diff = sampleCount * (1000.0 / mixFormat->nSamplesPerSec);
     state.UpdateByDiff(diff);
+    auto end = state._cursor;
+
+    for (auto track : tracks)
+    {
+        for (auto region : track->_regions)
+        {
+            if (region.first > end) continue;
+            if (region.first + region.second._length < start) continue;
+
+            for (auto event : region.second._events)
+            {
+                if (event.first > end) continue;
+                if (event.first < start) continue;
+                for (auto m : event.second)
+                {
+                    track->_instrument->_plugin->sendMidiNote(
+                        m.channel,
+                        m.num,
+                        m.value != 0,
+                        m.value);
+                }
+            }
+        }
+    }
 
     const auto nDstChannels = mixFormat->nChannels;
 
@@ -946,18 +1006,53 @@ void TracksWindow(
                         ImGui::PushID(region.first);
                         ImGui::SetCursorPos(regionOrigin);
                         ImGui::Button("##test", ImVec2(TimeToPixels(region.second._length), trackHeight - 8));
+                        std::map<unsigned int, std::chrono::milliseconds::rep> activeNotes;
                         for (auto event : region.second._events)
                         {
                             auto h = (trackHeight - 12);
 
                             for (auto me : event.second)
                             {
+                                auto found = activeNotes.find(me.num);
                                 auto y = h - (h * float(me.num - region.second.GetMinNote()) / float(noteRange));
 
-                                ImGui::GetWindowDrawList()->AddRectFilled(
-                                    ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first), pp.y + y + 4),
-                                    ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) + 20, pp.y + y + 4 + 4),
-                                    ImColor(255, 255, 255, 255));
+                                if (me.type == MidiEventTypes::M_NOTE)
+                                {
+                                    ImGui::GetWindowDrawList()->AddRectFilled(
+                                        ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) - 1, pp.y + y + 4),
+                                        ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) + 1, pp.y + y + 4 + 4),
+                                        ImColor(255, 0, 0, 255));
+
+                                    if (me.value != 0 && found == activeNotes.end())
+                                    {
+                                        activeNotes.insert(std::make_pair(me.num, event.first));
+                                        continue;
+                                    }
+                                    else if (me.value == 0 && found != activeNotes.end())
+                                    {
+                                        ImGui::GetWindowDrawList()->AddRectFilled(
+                                            ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(found->second), pp.y + y + 4),
+                                            ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first), pp.y + y + 4 + 4),
+                                            ImColor(255, 255, 255, 255));
+
+                                        activeNotes.erase(found);
+                                    }
+                                }
+
+                                else if (me.type == MidiEventTypes::M_PRESSURE)
+                                {
+                                    ImGui::GetWindowDrawList()->AddRectFilled(
+                                        ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) - 1, pp.y + y + 4),
+                                        ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) + 1, pp.y + y + 4 + 4),
+                                        ImColor(255, 0, 255, 255));
+                                }
+                                else
+                                {
+                                    ImGui::GetWindowDrawList()->AddRectFilled(
+                                        ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) - 1, pp.y + y + 4),
+                                        ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) + 1, pp.y + y + 4 + 4),
+                                        ImColor(255, 255, 0, 255));
+                                }
                             }
                         }
                         ImGui::PopID();
@@ -1346,7 +1441,22 @@ int main(int, char **)
         {
             glfwPollEvents();
 
-            //state.Update();
+            if (glfwGetWindowAttrib(window, GLFW_FOCUSED))
+            {
+                if (instruments.size() > 0 && editTrackName < 0)
+                {
+                    for (auto &e : _keyboardToNoteMap)
+                    {
+                        auto &key = e.second;
+                        const auto on = (GetKeyState(e.first) & 0x8000) != 0;
+                        if (key.status != on)
+                        {
+                            key.status = on;
+                            HandleIncomingMidiEvent(0, key.midiNote, on, 100);
+                        }
+                    }
+                }
+            }
 
             ImGui_ImplGlfwGL2_NewFrame();
             glfwGetWindowSize(window, &(state._width), &(state._height));
@@ -1409,22 +1519,7 @@ int main(int, char **)
             ImGui_ImplGlfwGL2_RenderDrawData(ImGui::GetDrawData());
             glfwSwapBuffers(window);
 
-            if (glfwGetWindowAttrib(window, GLFW_FOCUSED))
-            {
-                if (instruments.size() > 0 && editTrackName < 0)
-                {
-                    for (auto &e : _keyboardToNoteMap)
-                    {
-                        auto &key = e.second;
-                        const auto on = (GetKeyState(e.first) & 0x8000) != 0;
-                        if (key.status != on)
-                        {
-                            key.status = on;
-                            HandleIncomingMidiEvent(0, key.midiNote, on, 100);
-                        }
-                    }
-                }
-            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
 
