@@ -28,214 +28,20 @@
 #include "IconsForkAwesome.h"
 #include "RtError.h"
 #include "RtMidi.h"
+#include "imguiutils.h"
+#include "instrument.h"
+#include "midicontrollers.h"
+#include "midievent.h"
+#include "region.h"
+#include "state.h"
+#include "track.h"
+#include "trackseditor.h"
+#include "tracksmanager.h"
 #include "vstplugin.h"
 #include "wasapi.h"
 
-void KillAllNotes();
-
-namespace ImGui
-{
-    void MoveCursorPos(
-        ImVec2 delta)
-    {
-        auto pos = GetCursorPos();
-        SetCursorPos(ImVec2(pos.x + delta.x, pos.y + delta.y));
-    }
-} // namespace ImGui
-
-class State
-{
-    bool _playing = false;
-
-public:
-    static std::chrono::milliseconds::rep CurrenTime();
-    void Update();
-    void UpdateByDiff(std::chrono::milliseconds::rep diff);
-    void StartPlaying();
-    void Pause();
-    void TogglePlaying();
-    void StopPlaying();
-    bool IsPlaying() const;
-    void StartRecording();
-    void ToggleRecording();
-    void StopRecording();
-    bool IsRecording() const;
-
-    int _width;
-    int _height;
-    std::chrono::milliseconds::rep _lastTime;
-    bool _recording = false;
-    bool _loop;
-    unsigned int _bpm = 48;
-    std::chrono::milliseconds::rep _cursor = 0;
-    int _pixelsPerStep = 20;
-};
-
-std::chrono::milliseconds::rep State::CurrenTime()
-{
-    auto now = std::chrono::system_clock::now().time_since_epoch();
-
-    return std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
-}
-
-void State::Update()
-{
-    auto currentTime = State::CurrenTime();
-
-    auto diff = currentTime - _lastTime;
-
-    UpdateByDiff(diff);
-}
-
-void State::UpdateByDiff(
-    std::chrono::milliseconds::rep diff)
-{
-    if (IsPlaying())
-    {
-        _lastTime = _cursor;
-        _cursor += diff;
-    }
-}
-
-void State::StartPlaying()
-{
-    _playing = true;
-    _lastTime = CurrenTime();
-}
-
-void State::Pause()
-{
-    _playing = false;
-}
-
-void State::TogglePlaying()
-{
-    if (IsPlaying())
-    {
-        Pause();
-    }
-    else
-    {
-        StartPlaying();
-    }
-}
-
-void State::StopPlaying()
-{
-    if (_playing)
-    {
-        _playing = false;
-
-        KillAllNotes();
-    }
-    else
-    {
-        _cursor = 0;
-    }
-}
-
-bool State::IsPlaying() const
-{
-    return _playing;
-}
-
-void State::StartRecording()
-{
-    _recording = true;
-    StartPlaying();
-}
-
-void State::ToggleRecording()
-{
-    if (IsRecording())
-    {
-        StopRecording();
-    }
-    else
-    {
-        StartRecording();
-    }
-}
-
-void State::StopRecording()
-{
-    _recording = false;
-}
-
-bool State::IsRecording() const
-{
-    return _recording;
-}
-
-class Instrument
-{
-public:
-    std::string _name;
-    int _midiChannel;
-    VstPlugin *_plugin = nullptr;
-};
-
-enum class MidiEventTypes
-{
-    M_NOTE = 1,       // note
-    M_CONTROLLER = 2, // controller
-    M_PGMCHANGE = 3,  // program change
-    M_PRESSURE = 4    // polyphonic aftertouch
-};
-
-struct MidiEvent
-{
-    MidiEvent();
-    unsigned int channel; // the midi channel for the event
-    MidiEventTypes type;  // type=1 for note, type=2 for controller
-    unsigned int num;     // note, controller or program number
-    unsigned int value;   // velocity or controller value
-};
-
-enum MidiControllers
-{
-    C_bankselectmsb = 0,
-    C_pitchwheel = 1000,
-    C_NULL = 1001,
-    C_expression = 11,
-    C_panning = 10,
-    C_bankselectlsb = 32,
-    C_filtercutoff = 74,
-    C_filterq = 71,
-    C_bandwidth = 75,
-    C_modwheel = 1,
-    C_fmamp = 76,
-    C_volume = 7,
-    C_sustain = 64,
-    C_allnotesoff = 123,
-    C_allsoundsoff = 120,
-    C_resetallcontrollers = 121,
-    C_portamento = 65,
-    C_resonance_center = 77,
-    C_resonance_bandwidth = 78,
-
-    C_dataentryhi = 0x06,
-    C_dataentrylo = 0x26,
-    C_nrpnhi = 99,
-    C_nrpnlo = 98
-};
-
-MidiEvent::MidiEvent()
-    : channel(0),
-      type(MidiEventTypes::M_NOTE),
-      num(0),
-      value(0)
-{}
-
-struct MidiNoteState
-{
-    explicit MidiNoteState(int midiNote) : midiNote(midiNote), status(false) {}
-    int midiNote;
-    bool status;
-};
-
 static std::map<int, bool> _noteStates;
-static std::map<int, MidiNoteState> _keyboardToNoteMap{
+static std::map<int, struct MidiNoteState> _keyboardToNoteMap{
     {'Z', MidiNoteState(60)}, // C-4
     {'S', MidiNoteState(61)}, // C#4
     {'X', MidiNoteState(62)}, // D-4
@@ -268,136 +74,16 @@ static std::map<int, MidiNoteState> _keyboardToNoteMap{
     {'0', MidiNoteState(87)}, // D#6
     {'P', MidiNoteState(88)}, // E-6
 };
-
-const int toolbarHeight = 80;
-const int pianoHeight = 180;
-const int inspectorWidth = 350;
-
-class Region
-{
-    unsigned int _minNote = std::numeric_limits<unsigned int>::max();
-    unsigned int _maxNote = 0;
-
-public:
-    std::chrono::milliseconds::rep _length;
-    std::map<std::chrono::milliseconds::rep, std::vector<MidiEvent>> _events; // the int key of the map is the relaive start of the note from the beginning of the region
-
-    unsigned int GetMinNote() const;
-
-    unsigned int GetMaxNote() const;
-
-    void AddEvent(
-        std::chrono::milliseconds::rep time,
-        unsigned int noteNumber,
-        bool onOff,
-        int velocity);
-};
-
-unsigned int Region::GetMinNote() const
-{
-    return _minNote;
-}
-
-unsigned int Region::GetMaxNote() const
-{
-    return _maxNote;
-}
-
-void Region::AddEvent(
-    std::chrono::milliseconds::rep time,
-    unsigned int noteNumber,
-    bool onOff,
-    int velocity)
-{
-    if (noteNumber < _minNote)
-    {
-        _minNote = noteNumber;
-    }
-    if (noteNumber > _maxNote)
-    {
-        _maxNote = noteNumber;
-    }
-
-    MidiEvent event;
-    event.num = noteNumber;
-    event.type = MidiEventTypes::M_NOTE;
-    event.value = onOff ? velocity : 0;
-    event.channel = 0;
-
-    _events.insert(std::make_pair(time, std::vector<MidiEvent>{event}));
-
-    auto requiredLength = time + 4000 - (time % 4000);
-    if (_length < requiredLength)
-    {
-        _length = requiredLength;
-    }
-}
-
-class Track
-{
-public:
-    Instrument *_instrument = nullptr;
-    std::map<std::chrono::milliseconds::rep, Region> _regions; // the int key of the map is the absolute start (in ms?) of the region from the beginning of the song
-    std::string _name;
-    bool _muted = false;
-    bool _readyForRecord = false;
-    ImColor _color;
-
-    void RecordMidiEvent(
-        std::chrono::milliseconds::rep time,
-        int noteNumber,
-        bool onOff,
-        int velocity);
-};
-
-std::map<std::chrono::milliseconds::rep, Region>::iterator GetActiveRegionAt(
-    std::map<std::chrono::milliseconds::rep, Region> &regions,
-    std::chrono::milliseconds::rep time)
-{
-    for (auto i = regions.begin(); i != regions.end(); ++i)
-    {
-        if (i->first <= time && (i->first + i->second._length + 4000) >= time)
-        {
-            return i;
-        }
-    }
-
-    return regions.end();
-}
-
-void Track::RecordMidiEvent(
-    std::chrono::milliseconds::rep time,
-    int noteNumber,
-    bool onOff,
-    int velocity)
-{
-    auto activeRegion = GetActiveRegionAt(_regions, time);
-    if (activeRegion == _regions.end())
-    {
-        Region region;
-        region._length = 4000;
-
-        _regions.insert(std::make_pair(time - (time % 4000), region));
-
-        activeRegion = GetActiveRegionAt(_regions, time);
-    }
-
-    activeRegion->second.AddEvent(time - activeRegion->first, noteNumber, onOff, velocity);
-}
-
 static RtMidiIn *midiIn = nullptr;
 static State state;
-static std::vector<Instrument *> instruments;
-static std::vector<Track *> tracks;
-static Track *activeTrack = nullptr;
-static Track *soloTrack = nullptr;
-static int editTrackName = -1;
-static char editTrackBuffer[128] = {0};
+static TracksManager _tracks;
 static GLFWwindow *window = nullptr;
+static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+static TracksEditor _tracksEditor;
 
 void KillAllNotes()
 {
-    for (auto &instrument : instruments)
+    for (auto &instrument : _tracks.instruments)
     {
         for (int channel = 0; channel < 16; channel++)
         {
@@ -503,7 +189,7 @@ bool refillCallback(
                     const unsigned int vstOutputPage = (iFrame / vstSamplesPerBlock) * sChannel + sChannel;
                     const unsigned int vstOutputIndex = (iFrame % vstSamplesPerBlock);
                     const unsigned int wasapiWriteIndex = iFrame * nDstChannels + iChannel;
-                    if (!track->_muted && (soloTrack == track || soloTrack == nullptr))
+                    if (!track->_muted && (_tracks.soloTrack == track || _tracks.soloTrack == nullptr))
                     {
                         *(data + ofs + wasapiWriteIndex) += vstOutput[vstOutputPage][vstOutputIndex];
                     }
@@ -546,7 +232,7 @@ void HandleIncomingMidiEvent(
 {
     if (state.IsRecording())
     {
-        for (auto &track : tracks)
+        for (auto &track : _tracks.tracks)
         {
             if (!track->_readyForRecord)
             {
@@ -561,7 +247,7 @@ void HandleIncomingMidiEvent(
         }
     }
 
-    for (auto &instrument : instruments)
+    for (auto &instrument : _tracks.instruments)
     {
         instrument->_plugin->sendMidiNote(
             midiChannel,
@@ -604,6 +290,7 @@ void HandleKeyUpDown(
     }
 }
 
+const int Note_C_OffsetFromC = 0;
 const int Note_CSharp_OffsetFromC = 1;
 const int Note_D_OffsetFromC = 2;
 const int Note_DSharp_OffsetFromC = 3;
@@ -700,7 +387,7 @@ void PianoWindow(
                 ImGui::SameLine();
             }
 
-            n = firstKeyNoteNumber + (i * 12);
+            n = firstKeyNoteNumber + (i * 12) + Note_C_OffsetFromC;
             ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
             HandleKeyUpDown(n);
             ImGui::SameLine();
@@ -788,7 +475,7 @@ void callback(double /*timeStamp*/, std::vector<unsigned char> *message, void * 
         {
             ev.type = MidiEventTypes::M_CONTROLLER;
             ev.channel = chan;
-            ev.num = C_pitchwheel;
+            ev.num = MidiControllers::C_pitchwheel;
             ev.value = (message->at(1) + message->at(2) * 128) - 8192;
             break;
         }
@@ -805,409 +492,6 @@ void callback(double /*timeStamp*/, std::vector<unsigned char> *message, void * 
             return;
         }
     }
-}
-
-Track *addVstTrack(
-    wchar_t const *plugin = nullptr)
-{
-    std::stringstream instrumentName;
-    instrumentName << "Instrument " << (tracks.size() + 1);
-
-    auto newi = new Instrument();
-    newi->_name = instrumentName.str();
-    newi->_midiChannel = 0;
-    newi->_plugin = nullptr;
-    if (plugin != nullptr)
-    {
-        newi->_plugin = new VstPlugin();
-        newi->_plugin->init(plugin);
-    }
-
-    instruments.push_back(newi);
-
-    std::stringstream trackName;
-    trackName << "Track " << (tracks.size() + 1);
-
-    auto newt = new Track();
-    newt->_instrument = newi;
-    newt->_name = trackName.str();
-
-    auto hue = tracks.size() * 0.05f;
-    newt->_color = ImColor::HSV(hue, 0.6f, 0.6f);
-    tracks.push_back(newt);
-
-    return newt;
-}
-
-void removeTrack(Track *track)
-{
-    if (track == nullptr)
-    {
-        return;
-    }
-
-    for (auto t = tracks.begin(); t != tracks.end(); ++t)
-    {
-        if (*t == track)
-        {
-            tracks.erase(t);
-            delete track;
-            break;
-        }
-    }
-}
-
-static float tracksScrolly = 0;
-
-bool ActiveButton(char const *label, bool active)
-{
-    if (active)
-    {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_ButtonActive]);
-    }
-
-    auto result = ImGui::Button(label);
-
-    if (active)
-    {
-        ImGui::PopStyleColor();
-    }
-
-    return result;
-}
-
-float TimeToPixels(
-    std::chrono::milliseconds::rep time)
-{
-    auto stepsPerSecond = (state._bpm * 4.0) / 60.0;
-    auto msPerStep = 1000.0 / stepsPerSecond;
-
-    return (time / msPerStep) * state._pixelsPerStep;
-}
-
-int MaxTracksWidth()
-{
-    int max = 0;
-
-    for (auto &track : tracks)
-    {
-        for (auto &region : track->_regions)
-        {
-            auto end = region.first + region.second._length;
-            if (end > max) max = end;
-        }
-    }
-
-    if (max < 1000)
-    {
-        return 1000;
-    }
-
-    return max;
-}
-
-void TracksWindow(
-    ImVec2 const &pos,
-    ImVec2 const &size)
-{
-
-    ImGui::Begin("Tracks", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-    {
-        ImGui::SetWindowPos(pos);
-        ImGui::SetWindowSize(size);
-
-        const int trackHeaderWidth = 200;
-        static int trackHeight = 200;
-        const int trackToolsHeight = 40;
-        auto trackWidth = MaxTracksWidth();
-        int fullHeight = tracks.size() * (trackHeight + ImGui::GetStyle().ItemSpacing.y);
-
-        ImGui::BeginChild(
-            "track_tools",
-            ImVec2(size.y, trackToolsHeight));
-        {
-            ImGui::Button(ICON_FK_PLUS);
-            if (ImGui::BeginPopupContextItem("item context menu", 0))
-            {
-                if (ImGui::MenuItem("VST"))
-                {
-                    activeTrack = addVstTrack();
-                }
-
-                ImGui::EndPopup();
-            }
-
-            ImGui::SameLine();
-
-            ImGui::PushItemWidth(100);
-            ImGui::SliderInt("track height", &trackHeight, 60, 300);
-            ImGui::SameLine();
-            ImGui::SliderInt("zoom", &(state._pixelsPerStep), 10, 200);
-            ImGui::PopItemWidth();
-        }
-        ImGui::EndChild();
-
-        auto trackbgcol = ImColor(55, 55, 55, 55);
-        auto trackaltbgcol = ImColor(0, 0, 0, 0);
-        auto trackactivebgcol = ImColor(55, 88, 155, 55);
-        auto contentTop = ImGui::GetCursorPosY();
-        ImGui::MoveCursorPos(ImVec2(trackHeaderWidth, 0));
-        ImGui::BeginChild(
-            "tracksContainer",
-            ImVec2(size.x - trackHeaderWidth - ImGui::GetStyle().ItemSpacing.x, -10),
-            false,
-            ImGuiWindowFlags_HorizontalScrollbar);
-        {
-            const ImVec2 p = ImGui::GetCursorScreenPos();
-            auto drawList = ImGui::GetWindowDrawList();
-            if (state._pixelsPerStep <= 0) state._pixelsPerStep = 1;
-            for (int g = 0; g < trackWidth; g += state._pixelsPerStep)
-            {
-                auto cursor = ImVec2(p.x + g, p.y);
-                ImGui::GetWindowDrawList()->AddLine(
-                    cursor,
-                    ImVec2(cursor.x, cursor.y + size.y),
-                    ImGui::GetColorU32(ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]),
-                    1.0f);
-            }
-            ImGui::BeginGroup();
-            {
-                int t = 0;
-                for (auto track : tracks)
-                {
-                    ImGui::PushStyleColor(ImGuiCol_Button, track->_color.Value);
-                    auto pp = ImGui::GetCursorScreenPos();
-                    if (track == activeTrack)
-                    {
-                        drawList->AddRectFilled(pp, ImVec2(pp.x + trackWidth, pp.y + trackHeight), trackactivebgcol);
-                    }
-                    else if (t % 2 == 0)
-                    {
-                        drawList->AddRectFilled(pp, ImVec2(pp.x + trackWidth, pp.y + trackHeight), trackbgcol);
-                    }
-                    else
-                    {
-                        drawList->AddRectFilled(pp, ImVec2(pp.x + trackWidth, pp.y + trackHeight), trackaltbgcol);
-                    }
-
-                    ImGui::PushID(t);
-
-                    auto trackOrigin = ImGui::GetCursorPos();
-                    if (ImGui::InvisibleButton(track->_name.c_str(), ImVec2(trackWidth, trackHeight)))
-                    {
-                        activeTrack = track;
-                    }
-
-                    for (auto region : track->_regions)
-                    {
-                        auto noteRange = region.second.GetMaxNote() - region.second.GetMinNote();
-
-                        auto regionOrigin = ImVec2(trackOrigin.x + TimeToPixels(region.first), trackOrigin.y + 4);
-                        ImGui::PushID(region.first);
-                        ImGui::SetCursorPos(regionOrigin);
-                        ImGui::Button("##test", ImVec2(TimeToPixels(region.second._length), trackHeight - 8));
-                        std::map<unsigned int, std::chrono::milliseconds::rep> activeNotes;
-                        for (auto event : region.second._events)
-                        {
-                            auto h = (trackHeight - 12);
-
-                            for (auto me : event.second)
-                            {
-                                auto found = activeNotes.find(me.num);
-                                auto y = h - (h * float(me.num - region.second.GetMinNote()) / float(noteRange));
-
-                                if (me.type == MidiEventTypes::M_NOTE)
-                                {
-                                    ImGui::GetWindowDrawList()->AddRectFilled(
-                                        ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) - 1, pp.y + y + 4),
-                                        ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) + 1, pp.y + y + 4 + 4),
-                                        ImColor(255, 0, 0, 255));
-
-                                    if (me.value != 0 && found == activeNotes.end())
-                                    {
-                                        activeNotes.insert(std::make_pair(me.num, event.first));
-                                        continue;
-                                    }
-                                    else if (me.value == 0 && found != activeNotes.end())
-                                    {
-                                        ImGui::GetWindowDrawList()->AddRectFilled(
-                                            ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(found->second), pp.y + y + 4),
-                                            ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first), pp.y + y + 4 + 4),
-                                            ImColor(255, 255, 255, 255));
-
-                                        activeNotes.erase(found);
-                                    }
-                                }
-
-                                else if (me.type == MidiEventTypes::M_PRESSURE)
-                                {
-                                    ImGui::GetWindowDrawList()->AddRectFilled(
-                                        ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) - 1, pp.y + y + 4),
-                                        ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) + 1, pp.y + y + 4 + 4),
-                                        ImColor(255, 0, 255, 255));
-                                }
-                                else
-                                {
-                                    ImGui::GetWindowDrawList()->AddRectFilled(
-                                        ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) - 1, pp.y + y + 4),
-                                        ImVec2(pp.x + TimeToPixels(region.first) + TimeToPixels(event.first) + 1, pp.y + y + 4 + 4),
-                                        ImColor(255, 255, 0, 255));
-                                }
-                            }
-                        }
-                        ImGui::PopID();
-                    }
-
-                    ImGui::PopID();
-                    t++;
-                    ImGui::PopStyleColor();
-                }
-            }
-            ImGui::EndGroup();
-
-            auto cursor = ImVec2(p.x + TimeToPixels(state._cursor), p.y);
-            ImGui::GetWindowDrawList()->AddLine(
-                cursor,
-                ImVec2(cursor.x, cursor.y + size.y),
-                ImGui::GetColorU32(ImGui::GetStyle().Colors[ImGuiCol_PlotHistogramHovered]),
-                3.0f);
-
-            tracksScrolly = ImGui::GetScrollY();
-        }
-        ImGui::EndChild();
-
-        ImGui::SetCursorPosY(contentTop);
-        ImGui::BeginChild(
-            "headersContainer",
-            ImVec2(trackHeaderWidth, -(10)),
-            false,
-            ImGuiWindowFlags_NoScrollbar);
-        {
-            auto drawList = ImGui::GetWindowDrawList();
-            ImGui::SetScrollY(tracksScrolly);
-
-            ImGui::BeginChild(
-                "headers",
-                ImVec2(trackHeaderWidth, fullHeight + ImGui::GetStyle().ScrollbarSize),
-                false,
-                ImGuiWindowFlags_NoScrollbar);
-            {
-                int t = 0;
-                for (auto track : tracks)
-                {
-                    auto pp = ImGui::GetCursorScreenPos();
-                    if (track == activeTrack)
-                    {
-                        drawList->AddRectFilled(pp, ImVec2(pp.x + trackWidth, pp.y + trackHeight), trackactivebgcol);
-                    }
-                    else if (t % 2 == 0)
-                    {
-                        drawList->AddRectFilled(pp, ImVec2(pp.x + trackWidth, pp.y + trackHeight), trackbgcol);
-                    }
-                    else
-                    {
-                        drawList->AddRectFilled(pp, ImVec2(pp.x + trackWidth, pp.y + trackHeight), trackaltbgcol);
-                    }
-
-                    ImGui::PushID(t);
-                    auto p = ImGui::GetCursorPos();
-                    ImGui::BeginGroup();
-                    {
-                        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-                        if (ActiveButton(ICON_FAD_MUTE, track->_muted))
-                        {
-                            track->_muted = !track->_muted;
-                            if (track->_muted && soloTrack == track)
-                            {
-                                soloTrack = nullptr;
-                            }
-                            activeTrack = track;
-                        }
-
-                        ImGui::SameLine();
-
-                        if (ActiveButton(ICON_FAD_SOLO, soloTrack == track))
-                        {
-                            if (soloTrack != track)
-                            {
-                                soloTrack = track;
-                                track->_muted = false;
-                            }
-                            else
-                            {
-                                soloTrack = nullptr;
-                            }
-                            activeTrack = track;
-                        }
-                        ImGui::PopStyleVar();
-
-                        ImGui::SameLine();
-
-                        if (editTrackName == t)
-                        {
-                            ImGui::SetKeyboardFocusHere();
-                            if (ImGui::InputText("##editName", editTrackBuffer, 128, ImGuiInputTextFlags_EnterReturnsTrue))
-                            {
-                                track->_name = editTrackBuffer;
-                                editTrackName = -1;
-                            }
-                        }
-                        else
-                        {
-                            ImGui::Text("%s", track->_name.c_str());
-                            if (ImGui::IsItemClicked())
-                            {
-                                editTrackName = t;
-                                strcpy_s(editTrackBuffer, 128, track->_name.c_str());
-                                activeTrack = track;
-                            }
-                        }
-
-                        if (track->_readyForRecord)
-                        {
-                            if (state._recording)
-                            {
-                                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1, 0, 0, 1));
-                            }
-                            else
-                            {
-                                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0, 0, 1));
-                            }
-                        }
-                        else
-                        {
-                            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_Button]);
-                        }
-
-                        if (ImGui::Button(ICON_FAD_RECORD))
-                        {
-                            track->_readyForRecord = !track->_readyForRecord;
-                        }
-
-                        ImGui::PopStyleColor();
-                    }
-                    ImGui::EndGroup();
-
-                    if (ImGui::BeginPopupContextItem("track context menu"))
-                    {
-                        if (ImGui::MenuItem("Remove track"))
-                        {
-                            removeTrack(track);
-                        }
-
-                        ImGui::EndPopup();
-                    }
-
-                    ImGui::SetCursorPos(ImVec2(p.x, p.y + trackHeight + ImGui::GetStyle().ItemSpacing.y));
-                    ImGui::PopID();
-                    t++;
-                }
-            }
-            ImGui::EndChild();
-        }
-        ImGui::EndChild();
-    }
-    ImGui::End();
 }
 
 void ToolbarWindow(
@@ -1263,7 +547,7 @@ void ToolbarWindow(
 
         ImGui::SameLine();
 
-        if (ActiveButton(ICON_FAD_LOOP, state._loop))
+        if (ImGui::ActiveButton(ICON_FAD_LOOP, state._loop))
         {
             state._loop = !state._loop;
         }
@@ -1279,133 +563,252 @@ void ToolbarWindow(
     ImGui::End();
 }
 
+const int toolbarHeight = 80;
+const int pianoHeight = 180;
+const int inspectorWidth = 350;
+
 void InspectorWindow(
+    int *currentInspectorWidth,
     ImVec2 const &pos,
     ImVec2 const &size)
 {
+
     ImGui::Begin("Inspector", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
     {
         ImGui::SetWindowPos(pos);
         ImGui::SetWindowSize(size);
 
-        if (ImGui::CollapsingHeader("Midi", ImGuiTreeNodeFlags_DefaultOpen))
+        if (*currentInspectorWidth != inspectorWidth)
         {
-            ImGui::Text("Midi ports");
-            int ports = midiIn->getPortCount();
-            std::string portName;
-            static int currentPort = -1;
-            ImGui::BeginGroup();
-            for (int i = 0; i < ports; i++)
+            ImGui::Begin("Inspector", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
             {
-                try
+                ImGui::SetWindowPos(ImVec2(0, toolbarHeight));
+                ImGui::SetWindowSize(ImVec2(*currentInspectorWidth, state._height - toolbarHeight));
+
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+                if (ImGui::Button(ICON_FK_EYE))
                 {
-                    portName = midiIn->getPortName(i);
-                    if (ImGui::RadioButton(portName.c_str(), currentPort == i))
-                    {
-                        midiIn->closePort();
-                        midiIn->openPort(i);
-                        currentPort = i;
-                    }
+                    *currentInspectorWidth = inspectorWidth;
                 }
-                catch (RtError &error)
-                {
-                    error.printMessage();
-                }
+                ImGui::PopStyleVar();
             }
-            ImGui::EndGroup();
+            ImGui::End();
         }
-        if (ImGui::CollapsingHeader("Quick Help", ImGuiTreeNodeFlags_DefaultOpen))
+        else
         {
-            ImGui::Text("Help!");
-        }
-
-        if (activeTrack != nullptr)
-        {
-            if (ImGui::CollapsingHeader((std::string("Track: ") + activeTrack->_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+            if (ImGui::Button(ICON_FK_EYE_SLASH))
             {
-                if (activeTrack->_instrument != nullptr)
+                *currentInspectorWidth = 36;
+            }
+
+            if (ImGui::CollapsingHeader("Midi", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::Text("Midi ports");
+                int ports = midiIn->getPortCount();
+                std::string portName;
+                static int currentPort = -1;
+                ImGui::BeginGroup();
+                for (int i = 0; i < ports; i++)
                 {
-                    auto vstPlugin = activeTrack->_instrument->_plugin;
-
-                    if (vstPlugin == nullptr)
+                    try
                     {
-                        if (ImGui::Button("Add plugin"))
+                        portName = midiIn->getPortName(i);
+                        if (ImGui::RadioButton(portName.c_str(), currentPort == i))
                         {
-                            activeTrack->_instrument->_plugin = loadPlugin();
-                            activeTrack->_instrument->_plugin->title = activeTrack->_instrument->_name.c_str();
+                            midiIn->closePort();
+                            midiIn->openPort(i);
+                            currentPort = i;
                         }
-                        ImGui::Separator();
                     }
-                    else
+                    catch (RtError &error)
                     {
-                        ImGui::Text("%s by %s",
-                                    vstPlugin->getEffectName().c_str(),
-                                    vstPlugin->getVendorName().c_str());
+                        error.printMessage();
+                    }
+                }
+                ImGui::EndGroup();
+            }
 
-                        /* Save plugin data
+            if (_tracks.activeTrack != nullptr)
+            {
+                if (ImGui::CollapsingHeader((std::string("Track: ") + _tracks.activeTrack->_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    if (_tracks.activeTrack->_instrument != nullptr)
+                    {
+                        auto vstPlugin = _tracks.activeTrack->_instrument->_plugin;
+
+                        if (vstPlugin == nullptr)
+                        {
+                            if (ImGui::Button("Add plugin"))
+                            {
+                                _tracks.activeTrack->_instrument->_plugin = loadPlugin();
+                                _tracks.activeTrack->_instrument->_plugin->title = _tracks.activeTrack->_instrument->_name.c_str();
+                            }
+                            ImGui::Separator();
+                        }
+                        else
+                        {
+                            ImGui::Text("%s by %s",
+                                        vstPlugin->getEffectName().c_str(),
+                                        vstPlugin->getVendorName().c_str());
+
+                            /* Save plugin data
 void *getLen;
     int length = plugin->dispatcher(plugin,effGetChunk,0,0,&getLen,0.f);
 */
 
-                        /* Load plugin data
+                            /* Load plugin data
 plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
 */
 
-                        if (ImGui::Button("Change plugin"))
-                        {
-                            activeTrack->_instrument->_plugin = loadPlugin();
-                            activeTrack->_instrument->_plugin->title = activeTrack->_instrument->_name.c_str();
-                        }
-                        ImGui::SameLine();
-                        if (!vstPlugin->isEditorOpen())
-                        {
-                            if (ImGui::Button("Open plugin"))
+                            if (ImGui::Button("Change plugin"))
                             {
-                                vstPlugin->openEditor(window->hwnd);
+                                _tracks.activeTrack->_instrument->_plugin = loadPlugin();
+                                _tracks.activeTrack->_instrument->_plugin->title = _tracks.activeTrack->_instrument->_name.c_str();
                             }
-                        }
-                        else
-                        {
-                            if (ImGui::Button("Close plugin"))
+                            ImGui::SameLine();
+                            if (!vstPlugin->isEditorOpen())
                             {
-                                vstPlugin->closeEditor();
+                                if (ImGui::Button("Open plugin"))
+                                {
+                                    vstPlugin->openEditor(window->hwnd);
+                                }
+                            }
+                            else
+                            {
+                                if (ImGui::Button("Close plugin"))
+                                {
+                                    vstPlugin->closeEditor();
+                                }
                             }
                         }
                     }
+                    ImGui::Separator();
                 }
-                ImGui::Separator();
+            }
+
+            if (ImGui::CollapsingHeader("Quick Help", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::Text("Help!");
             }
         }
     }
     ImGui::End();
 }
 
-int main(int, char **)
+void MainMenu()
 {
-    if (!glfwInit())
+    if (ImGui::BeginMainMenuBar())
     {
-        return 1;
+        if (ImGui::BeginMenu("File"))
+        {
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Edit"))
+        {
+            if (ImGui::MenuItem("Undo", "CTRL+Z"))
+            {
+            }
+            if (ImGui::MenuItem("Redo", "CTRL+Y", false, false))
+            {
+            } // Disabled item
+            ImGui::Separator();
+            if (ImGui::MenuItem("Cut", "CTRL+X"))
+            {
+            }
+            if (ImGui::MenuItem("Copy", "CTRL+C"))
+            {
+            }
+            if (ImGui::MenuItem("Paste", "CTRL+V"))
+            {
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
     }
+}
 
-    midiIn = new RtMidiIn();
+void HandleKeyboardToMidiEvents()
+{
+    if (_tracks.instruments.size() > 0 && _tracksEditor.EditTrackName() < 0)
+    {
+        for (auto &e : _keyboardToNoteMap)
+        {
+            auto &key = e.second;
+            const auto on = (GetKeyState(e.first) & 0x8000) != 0;
+            if (key.status != on)
+            {
+                key.status = on;
+                HandleIncomingMidiEvent(0, key.midiNote, on, 100);
+            }
+        }
+    }
+}
+
+void MainLoop()
+{
+    RtMidiIn localMidiIn;
+    midiIn = &localMidiIn;
     midiIn->setCallback(callback);
 
-    window = glfwCreateWindow(1280, 720, L"VstHost", nullptr, nullptr);
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // Enable vsync
+    Wasapi wasapi([&](float *const data, uint32_t availableFrameCount, const WAVEFORMATEX *const mixFormat) {
+        return refillCallback(_tracks.tracks, data, availableFrameCount, mixFormat);
+    });
 
-    // Setup ImGui binding
-    ImGui::CreateContext();
+    // Main loop
+    while (!glfwWindowShouldClose(window))
+    {
+        glfwPollEvents();
 
-    ImGui_ImplGlfwGL2_Init(window, true);
+        if (glfwGetWindowAttrib(window, GLFW_FOCUSED))
+        {
+            HandleKeyboardToMidiEvents();
+        }
 
-    // Setup style
-    ImGui::StyleColorsDark();
-    ImGui::GetStyle().WindowRounding = 0;
-    ImGui::GetStyle().ChildRounding = 0;
+        ImGui_ImplGlfwGL2_NewFrame();
 
+        glfwGetWindowSize(window, &(state._width), &(state._height));
+
+        static int currentInspectorWidth = inspectorWidth;
+
+        MainMenu();
+
+        ToolbarWindow(
+            ImVec2(0, ImGui::GetTextLineHeightWithSpacing()),
+            ImVec2(state._width, toolbarHeight - ImGui::GetTextLineHeightWithSpacing()));
+
+        InspectorWindow(
+            &currentInspectorWidth,
+            ImVec2(0, toolbarHeight),
+            ImVec2(currentInspectorWidth, state._height - toolbarHeight));
+
+        _tracksEditor.Render(
+            ImVec2(currentInspectorWidth, toolbarHeight),
+            ImVec2(state._width - currentInspectorWidth, state._height - toolbarHeight - pianoHeight));
+
+        PianoWindow(
+            ImVec2(currentInspectorWidth, state._height - pianoHeight),
+            ImVec2(state._width - currentInspectorWidth, pianoHeight),
+            8);
+
+        // Rendering
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        glViewport(0, 0, display_w, display_h);
+        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        glClear(GL_COLOR_BUFFER_BIT);
+        ImGui::Render();
+        ImGui_ImplGlfwGL2_RenderDrawData(ImGui::GetDrawData());
+        glfwSwapBuffers(window);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+}
+
+void SetupFonts()
+{
     ImGuiIO &io = ImGui::GetIO();
     io.Fonts->Clear();
+
     ImFont *font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
     if (font != nullptr)
     {
@@ -1424,115 +827,40 @@ int main(int, char **)
 
     static const ImWchar forkawesome_icon_ranges[] = {ICON_MIN_FK, ICON_MAX_FK, 0};
     io.Fonts->AddFontFromFileTTF("fonts/forkawesome-webfont.ttf", 13.0f, &config, forkawesome_icon_ranges);
-
     io.Fonts->Build();
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+}
 
-    activeTrack = addVstTrack(L"BBC Symphony Orchestra (64 Bit).dll");
-    addVstTrack(L"LABS (64 Bit).dll");
-
+int main(int, char **)
+{
+    if (!glfwInit())
     {
-        Wasapi wasapi([&](float *const data, uint32_t availableFrameCount, const WAVEFORMATEX *const mixFormat) {
-            return refillCallback(tracks, data, availableFrameCount, mixFormat);
-        });
-
-        // Main loop
-        while (!glfwWindowShouldClose(window))
-        {
-            glfwPollEvents();
-
-            if (glfwGetWindowAttrib(window, GLFW_FOCUSED))
-            {
-                if (instruments.size() > 0 && editTrackName < 0)
-                {
-                    for (auto &e : _keyboardToNoteMap)
-                    {
-                        auto &key = e.second;
-                        const auto on = (GetKeyState(e.first) & 0x8000) != 0;
-                        if (key.status != on)
-                        {
-                            key.status = on;
-                            HandleIncomingMidiEvent(0, key.midiNote, on, 100);
-                        }
-                    }
-                }
-            }
-
-            ImGui_ImplGlfwGL2_NewFrame();
-            glfwGetWindowSize(window, &(state._width), &(state._height));
-
-            if (ImGui::BeginMainMenuBar())
-            {
-                if (ImGui::BeginMenu("File"))
-                {
-                    ImGui::EndMenu();
-                }
-                if (ImGui::BeginMenu("Edit"))
-                {
-                    if (ImGui::MenuItem("Undo", "CTRL+Z"))
-                    {
-                    }
-                    if (ImGui::MenuItem("Redo", "CTRL+Y", false, false))
-                    {
-                    } // Disabled item
-                    ImGui::Separator();
-                    if (ImGui::MenuItem("Cut", "CTRL+X"))
-                    {
-                    }
-                    if (ImGui::MenuItem("Copy", "CTRL+C"))
-                    {
-                    }
-                    if (ImGui::MenuItem("Paste", "CTRL+V"))
-                    {
-                    }
-                    ImGui::EndMenu();
-                }
-                ImGui::EndMainMenuBar();
-            }
-
-            ToolbarWindow(
-                ImVec2(0, ImGui::GetTextLineHeightWithSpacing()),
-                ImVec2(state._width, toolbarHeight - ImGui::GetTextLineHeightWithSpacing()));
-
-            InspectorWindow(
-                ImVec2(0, toolbarHeight),
-                ImVec2(inspectorWidth, state._height - toolbarHeight));
-
-            TracksWindow(
-                ImVec2(inspectorWidth, toolbarHeight),
-                ImVec2(state._width - inspectorWidth, state._height - toolbarHeight - pianoHeight));
-
-            PianoWindow(
-                ImVec2(inspectorWidth, state._height - pianoHeight),
-                ImVec2(state._width - inspectorWidth, pianoHeight),
-                8);
-
-            //            ImGui::ShowDemoWindow();
-
-            // Rendering
-            int display_w, display_h;
-            glfwGetFramebufferSize(window, &display_w, &display_h);
-            glViewport(0, 0, display_w, display_h);
-            glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-            glClear(GL_COLOR_BUFFER_BIT);
-            ImGui::Render();
-            ImGui_ImplGlfwGL2_RenderDrawData(ImGui::GetDrawData());
-            glfwSwapBuffers(window);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
+        return 1;
     }
 
-    while (!instruments.empty())
-    {
-        auto item = instruments.back();
-        if (item->_plugin != nullptr)
-        {
-            delete item->_plugin;
-        }
-        instruments.pop_back();
-        delete item;
-    }
+    window = glfwCreateWindow(1280, 720, L"VstHost", nullptr, nullptr);
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1); // Enable vsync
+
+    // Setup ImGui binding
+    ImGui::CreateContext();
+
+    ImGui_ImplGlfwGL2_Init(window, true);
+
+    // Setup style
+    ImGui::StyleColorsDark();
+    ImGui::GetStyle().WindowRounding = 0;
+    ImGui::GetStyle().ChildRounding = 0;
+
+    SetupFonts();
+
+    _tracks.activeTrack = _tracks.addVstTrack(L"BBC Symphony Orchestra (64 Bit).dll");
+
+    _tracksEditor.SetState(&state);
+    _tracksEditor.SetTracksManager(&_tracks);
+
+    MainLoop();
+
+    _tracks.CleanupInstruments();
 
     // Cleanup
     ImGui_ImplGlfwGL2_Shutdown();

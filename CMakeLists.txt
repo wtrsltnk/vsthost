@@ -36,7 +36,24 @@ add_executable(imgui-vsthost
     imgui/imgui_draw.cpp
     imgui_impl_win32_gl2.cpp
     imgui_impl_win32_gl2.h
+    imguiutils.cpp
+    imguiutils.h
+    instrument.cpp
+    instrument.h
     main.cpp
+    midicontrollers.h
+    midievent.cpp
+    midievent.h
+    region.cpp
+    region.h
+    state.cpp
+    state.h
+    track.cpp
+    track.h
+    trackseditor.cpp
+    trackseditor.h
+    tracksmanager.cpp
+    tracksmanager.h
     vstplugin.cpp
     vstplugin.h
     wasapi.cpp
