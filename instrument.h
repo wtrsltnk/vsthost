@@ -8,8 +8,9 @@ class Instrument
 {
 public:
     Instrument();
+
     std::string _name;
-    int _midiChannel;
+    int _midiChannel = 0;
     VstPlugin *_plugin = nullptr;
 };
 

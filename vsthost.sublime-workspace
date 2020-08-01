@@ -1,0 +1,954 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"custom",
+				"custom_renderer"
+			],
+			[
+				"m",
+				"main\tmain()"
+			],
+			[
+				"seas",
+				"seasonId"
+			],
+			[
+				"show",
+				"showId"
+			],
+			[
+				"has",
+				"hasEpisodeFiles"
+			],
+			[
+				"ins",
+				"intructions"
+			],
+			[
+				"in",
+				"intructions"
+			],
+			[
+				"sorte",
+				"sortedParts"
+			],
+			[
+				"be",
+				"begin"
+			],
+			[
+				"pa",
+				"passphrasesIsValid"
+			],
+			[
+				"ad",
+				"adjacentSquaresSum"
+			],
+			[
+				"sq",
+				"squares"
+			],
+			[
+				"square",
+				"squareValue"
+			],
+			[
+				"squa",
+				"squareValue"
+			],
+			[
+				"value",
+				"valueLocation"
+			],
+			[
+				"creat",
+				"createAllFolders"
+			],
+			[
+				"targeT",
+				"targetToUse"
+			],
+			[
+				"border-ra",
+				"border-top-left-radius"
+			],
+			[
+				"back",
+				"background-color"
+			],
+			[
+				"serili",
+				"serializeArray"
+			],
+			[
+				"date",
+				"datepicker"
+			],
+			[
+				"padd",
+				"padding-top"
+			],
+			[
+				"pad",
+				"padding-top"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "vsthost.sublime-project",
+			"settings":
+			{
+				"buffer_size": 591,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "main.cpp",
+			"settings":
+			{
+				"buffer_size": 31613,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "CMakeLists.txt",
+			"settings":
+			{
+				"buffer_size": 1933,
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "cmake build",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"cmake build",
+					""
+				],
+				[
+					"cmake build",
+					"clean"
+				]
+			],
+			[
+				"cmake build",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 170.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"LSP: Enable Language Server Globally",
+				"LSP: Enable Language Server Globally"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"cmakebuil",
+				"CMakeBuilder: Diagnose (What Should I Do?)"
+			],
+			[
+				"build",
+				"Build: New Build System"
+			],
+			[
+				"cmake",
+				"CMakeBuilder: Configure"
+			],
+			[
+				"json",
+				"Indent JSON"
+			],
+			[
+				"cmake build",
+				"CMakeBuilder: New Project"
+			],
+			[
+				"cmake bui",
+				"CMakeBuilder: Diagnose (What Should I Do?)"
+			],
+			[
+				"c++",
+				"Set Syntax: C++"
+			],
+			[
+				"sin",
+				"Build With: C++ Single File"
+			],
+			[
+				"comp",
+				"Compare with..."
+			],
+			[
+				"com",
+				"Compare with..."
+			],
+			[
+				"compa",
+				"Compare with..."
+			],
+			[
+				"diff",
+				"Diff View: Run custom diff..."
+			],
+			[
+				"xml",
+				"Indent XML"
+			],
+			[
+				"http",
+				"RESTer: HTTP Request"
+			],
+			[
+				"mark",
+				"Set Syntax: Markdown"
+			],
+			[
+				"sort",
+				"Sort Lines"
+			],
+			[
+				"CSV",
+				"CSV Record View"
+			],
+			[
+				"INSTA",
+				"Package Control: Install Package"
+			],
+			[
+				"hex",
+				"HexViewer: Toggle Hex View"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"singl",
+				"Build With: C++ Single File - Run"
+			],
+			[
+				"run",
+				"Run the current Single File Example"
+			],
+			[
+				"buil",
+				"Build the current Single File Example"
+			],
+			[
+				"single",
+				"Build a Single File Example"
+			],
+			[
+				"Package Control: ",
+				"Package Control: List Packages"
+			],
+			[
+				"jac",
+				"Set Syntax: JavaScript"
+			],
+			[
+				"ja",
+				"Set Syntax: JavaScript"
+			],
+			[
+				"html",
+				"HTMLBeautify"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"ardui",
+				"Set Syntax: Arduino"
+			],
+			[
+				"instl",
+				"Package Control: Install Package"
+			],
+			[
+				"markdown",
+				"Markdown Preview: Preview in Browser"
+			],
+			[
+				"markdo",
+				"Set Syntax: Markdown"
+			],
+			[
+				"csv",
+				"CSV: Justify columns"
+			],
+			[
+				"adva",
+				"Set Syntax: Advanced CSV"
+			],
+			[
+				"advanc",
+				"Set Syntax: Advanced CSV"
+			],
+			[
+				"rest",
+				"RESTer: HTTP Request"
+			],
+			[
+				"Html",
+				"HTMLBeautify"
+			],
+			[
+				"Inst",
+				"Package Control: Install Package"
+			],
+			[
+				"package",
+				"Package Control: Install Package"
+			],
+			[
+				"markdow",
+				"MarkdownLivePreview: Edit Custom CSS File"
+			],
+			[
+				"php",
+				"Set Syntax: PHP"
+			],
+			[
+				"cmke",
+				"CMakeBuilder: Configure"
+			]
+		],
+		"width": 444.0
+	},
+	"console":
+	{
+		"height": 238.0,
+		"history":
+		[
+			"view.run_command(\"single_file_example_build\")",
+			"view.run_command(\"single_file_example\")",
+			"view.run_command(\"example\")",
+			"view.run_command(\"singlefileexample\")",
+			"view.run_command(\"example\")",
+			"dir",
+			"go build"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/C/Code/synthdev/vsthost"
+	],
+	"file_history":
+	[
+		"/C/Users/woute/AppData/Roaming/Sublime Text 3/Packages/User/cmake-build.sublime-build",
+		"/C/Code/synthdev/vsthost/vsthost.sublime-project",
+		"/C/Code/leaphy/paulleaphy-blockly/demos/code/index.html",
+		"/C/Code/leaphy/paulleaphy-blockly/demos/custom-fields/turtle/field_turtle.js",
+		"/C/Code/leaphy/paulleaphy-blockly/demos/code/code.js",
+		"/C/Code/leaphy/paulleaphy-blockly/demos/plane/index.html",
+		"/C/Code/leaphy/blockly-master/core/renderers/custom_renderer/info.js",
+		"/C/Code/leaphy/blockly-master/core/renderers/custom_renderer/drawer.js",
+		"/C/Code/leaphy/blockly-master/tests/playground.html",
+		"/C/Code/leaphy/wtrsltnk-blockly/demos/code/index.html",
+		"/C/Code/leaphy/blockly-master/core/renderers/custom_renderer/renderer.js",
+		"/C/Code/leaphy/blockly-master/core/renderers/custom_renderer/constants.js",
+		"/C/Code/leaphy/blockly-master/demos/code/index.html",
+		"/C/Code/leaphy/wtrsltnk-blockly/blockly_uncompressed.js",
+		"/C/Code/leaphy/blockly-master/demos/code/code.js",
+		"/C/Code/leaphy/blockly-master/blockly_uncompressed.js",
+		"/C/Code/leaphy/blockly-master/core/renderers/custom/info.js",
+		"/C/Code/leaphy/blockly-master/core/renderers/custom/drawer.js",
+		"/C/Code/leaphy/blockly-master/core/renderers/custom/constants.js",
+		"/C/Code/leaphy/blockly-master/core/renderers/custom/renderer.js",
+		"/C/Code/leaphy/blockly-master/demos/code/custom_renderer.js",
+		"/C/Code/leaphy/blockly-master/demos/storage/index.html",
+		"/C/temp/game/index.html",
+		"/C/Code/synthdev/zynaddsubfx244/src/globals.h",
+		"/C/Code/synthdev/zynlab/zyn.common/globals.h",
+		"/C/Code/synthdev/zynlab/zyn.nio/MidiInputManager.cpp",
+		"/C/Code/synthdev/zynaddsubfx244/src/Nio/InMgr.cpp",
+		"/C/Code/synthdev/VST_SDK/copy_vst2_to_vst3_sdk.bat",
+		"/C/Code/synthdev/VST_SDK/my_plugins/helloworld/source/plugfactory.cpp",
+		"/C/Code/synthdev/VST_SDK/my_plugins/helloworld/source/plugcontroller.cpp",
+		"/C/Code/synthdev/VST_SDK/my_plugins/helloworld/source/plugprocessor.cpp",
+		"/C/Code/synthdev/zynaddsubfx-deps/README.md",
+		"/C/Code/gamedev/beachballs/AnimatedValue.cpp",
+		"/C/Code/synthdev/zynaddsubfx244/AUTHORS.txt",
+		"/C/Code/synthdev/zynlab/app/ui/common.h",
+		"/C/Code/synthdev/zynlab/app/ui/LFOUI.fl",
+		"/C/Code/synthdev/zynlab/.clang-format",
+		"/C/Code/gamedev/globe/.clang-format",
+		"/C/Code/synthdev/zynlab/app/ui/ConfigUI.fl",
+		"/C/Code/synthdev/zynlab/app/ui/EffUI.fl",
+		"/C/Code/synthdev/zynlab/app/ui/EnvelopeUI.fl",
+		"/C/Code/synthdev/zynlab/app/ui/FilterUI.fl",
+		"/C/Code/external/blender/source/blender/draw/intern/draw_manager.c",
+		"/C/Code/external/blender/source/blender/gpu/intern/gpu_immediate.c",
+		"/C/Code/external/blender/source/blender/gpu/intern/gpu_draw.c",
+		"/C/Code/external/blender/source/blender/blenkernel/intern/sequencer.c",
+		"/C/Code/external/blender/source/blender/blenkernel/intern/node.c",
+		"/C/Code/external/blender/source/blender/blenfont/intern/blf_font.c",
+		"/C/Code/gamedev/project_may29a/.clang-format",
+		"/C/Code/small-apps/video-stream/index.html",
+		"/C/Code/small-apps/genmap/batchrenderer.h",
+		"/C/Code/12games/01-snowy-january/.clang-format",
+		"/C/Code/external/hl2_src/src_main/worldcraft/mapdoc.h",
+		"/C/Code/external/hl2_src/src_main/worldcraft/mapview2d.cpp",
+		"/C/Code/external/hl2_src/src_main/worldcraft/camera.cpp",
+		"/C/Code/external/hl2_src/src_main/worldcraft/ToolCamera.cpp",
+		"/C/Code/svn.saaltink.net/GuiProject/.clang-format",
+		"/C/Users/woute/.ssh/id_rsa.pub",
+		"/C/Code/svn.saaltink.net/Milkshake3D/ms/MainForm.ui",
+		"/C/Code/svn.saaltink.net/GuiProject/libs/nanovg/src/nanovg_gl.h",
+		"/C/Users/woute/AppData/Roaming/Sublime Merge/Packages/User/Preferences.sublime-settings",
+		"/C/Code/svn.saaltink.net/angry-cubes/GameObject.h",
+		"/C/Code/gamedev/life/README.md",
+		"/C/Code/gamedev/cs-tribute/README.txt",
+		"/C/Code/gamedev/life/CMakeLists.txt.user",
+		"/C/Code/gamedev/life/ContentManager.h",
+		"/C/Code/gamedev/cs-tribute/CMakeLists.txt",
+		"/C/Code/svn.saaltink.net/cpp.saaltink.net/.svn/entries",
+		"/C/Code/svn.saaltink.net/cpp.saaltink.net/Context/Bullet/linux_checkout_from_svn",
+		"/C/Code/small-apps/single-file-examples/opengl3.3/include/glbuffer.h",
+		"/C/Code/small-apps/single-file-examples/opengl3.3/shader-and-buffer-example.cpp",
+		"/C/Code/small-apps/single-file-examples/opengl3.3/include/application.h",
+		"/C/Code/svn.saaltink.net/FileSystem/File.cpp",
+		"/C/Code/go-workspace/src/hello/hello.go",
+		"/C/Code/synthdev/zynaddsubfx-2.4.4/src/Nio/OssEngine.cpp",
+		"/C/Code/small-apps/single-file-examples/opengl3.3/colored-window-example.md",
+		"/C/Code/synthdev/zynaddsubfx-2.4.4/src/Effects/CMakeLists.txt",
+		"/C/Code/synthdev/zynaddsubfx-2.4.4/src/DSP/CMakeLists.txt",
+		"/C/Code/synthdev/zynaddsubfx-2.4.4/build/src/Headless/CMakeFiles/zynaddsubfx_headless.dir/build.make",
+		"/C/Code/synthdev/zynaddsubfx-2.4.4/zynaddsubfx-jack.desktop",
+		"/C/Code/synthdev/zynaddsubfx-2.4.4/build/src/Misc/Makefile",
+		"/C/Code/small-apps/video-stream/httprequest.cpp",
+		"/C/Code/small-apps/c-horse/__build__.cpp",
+		"/C/Code/small-apps/notepad2/src/Styles.c",
+		"/C/Users/woute/Downloads/metapath_4.0.13_src/src/Dlapi.c",
+		"/C/Code/small-apps/notepad2/src/Dlapi.c",
+		"/C/Code/small-apps/Notepad2/src/resource-metapath.h",
+		"/C/Users/woute/Downloads/metapath_4.0.13_src/src/metapath.c",
+		"/C/Code/small-apps/Notepad2/src/DialogsMetapath.c",
+		"/C/Users/woute/Downloads/metapath_4.0.13_src/src/Helpers.c",
+		"/C/Code/small-apps/Notepad2/src/Dlapi.h",
+		"/C/Users/woute/Downloads/metapath_4.0.13_src/metapath.vcproj",
+		"/C/Code/small-apps/notepad2/metapath/Helpers.h",
+		"/C/Code/small-apps/notepad2/src/Helpers.h",
+		"/C/Code/small-apps/notepad2/src/Dialogs.c",
+		"/C/Code/small-apps/notepad2/metapath/Dialogs.c",
+		"/C/Code/small-apps/notepad2/src/Dlapi - kopie.c",
+		"/C/Code/small-apps/notepad2/src/Dialogs - kopie.c",
+		"/C/Code/gamedev/hatchet/CMakeLists.txt",
+		"/C/Code/gamedev/hlfix/makewad.cpp",
+		"/C/Code/gamedev/glfw3/CMakeLists.txt",
+		"/C/Code/gamedev/gl.utilities/README.md",
+		"/C/Code/gamedev/gl.utilities/.gitignore",
+		"/C/Code/gamedev/fieldhockey97-2d/README.md",
+		"/C/Code/gamedev/goldsrc-textures/CMakeLists.txt",
+		"/C/Code/gamedev/goldsrc-maps/README.md",
+		"/C/Code/gamedev/hlviewer/basefile.cpp",
+		"/C/Code/gamedev/hlviewer/CMakeLists.txt.user",
+		"/C/Code/dotnet/TeamCaptain2/TeamCaptain.sln",
+		"/C/Code/dotnet/quickstart/Web/Views/Shared/_Layout.cshtml",
+		"/C/Code/dotnet/quickstart/Web/Views/Events/CreateFormScripts.cshtml",
+		"/C/Code/dotnet/quickstart/Web/Views/Events/Create.cshtml",
+		"/C/Code/dotnet/quickstart/Web/Views/Team/Members.cshtml",
+		"/C/Code/dotnet/quickstart/Web/Views/Events/CreateForm.cshtml",
+		"/C/Code/dotnet/quickstart/Web/Views/Events/Index.cshtml",
+		"/C/Code/dotnet/quickstart/Web/wwwroot/css/site.css",
+		"/C/Android/Code/fftw3-android-master/build.sh",
+		"/C/Code/synthdev/build-sound-recorder-test-Desktop_x86_windows_msys_pe_32bit-Debug/recorded.raw",
+		"/C/Code/synthdev/zynlab/libs/mxml-release-2.4/vcnet/mxml1.vcproj",
+		"/C/Code/synthdev/zynaddsubfx-instruments-xml/banks/Arpeggios/0069-Glass Arpeggio2",
+		"/C/Code/synthdev/zynaddsubfx-instruments-xml/banks/the_mysterious_bank_4/0037-old_organ",
+		"/C/Code/synthdev/zynaddsubfx-instruments-xml/banks/the_mysterious_bank_4/0039-jazz_guitar",
+		"/C/Code/synthdev/zynaddsubfx-instruments-xml/banks/olivers-other/.bankdir",
+		"/C/Code/synthdev/zynaddsubfx-instruments-xml/banks/Choir and Voice/Slow Morph.Choir",
+		"/C/Code/synthdev/zynaddsubfx-instruments-xml/banks/net-wisdom/0141-Batman 2",
+		"/C/Code/small-apps/notepad2/src/version.h",
+		"/C/Code/dotnet/quickstart/AllInOne/AllInOne.csproj",
+		"/C/Users/woute/Downloads/laatste-24-uren.csv"
+	],
+	"find":
+	{
+		"height": 39.0
+	},
+	"find_in_files":
+	{
+		"height": 117.0,
+		"where_history":
+		[
+			"C:\\Code\\leaphy\\paulleaphy-blockly\\demos\\",
+			"C:\\Code\\leaphy\\blockly-master",
+			"C:\\Code\\synthdev\\zynlab",
+			"C:\\Code\\synthdev\\zynaddsubfx244",
+			"C:\\Code\\external\\blender\\source\\",
+			"C:\\Code\\external\\hl2_src\\src_main\\worldcraft",
+			"C:\\Code\\svn.saaltink.net\\CppApplication_3",
+			"C:\\Code\\svn.saaltink.net\\GuiProject",
+			"C:\\Code\\gamedev\\cs-tribute\\",
+			"C:\\Code\\synthdev\\zynlab",
+			"C:\\Code\\synthdev\\zynaddsubfx-2.4.4",
+			"C:\\Code\\small-apps\\Notepad2, C:\\Users\\woute\\Downloads\\metapath_4.0.13_src\\",
+			"C:\\Code\\small-apps\\Notepad2;C:\\Users\\woute\\Downloads\\metapath_4.0.13_src\\",
+			"C:\\Code\\small-apps\\Notepad2",
+			"C:\\Code\\small-apps\\",
+			"C:\\Code\\smallapps\\",
+			"C:\\Code\\smllallapps\\",
+			"C:\\Code\\dotnet\\quickstart\\",
+			"C:\\Code\\dotnet\\quickstart\\Identity",
+			"C:\\Code\\synthdev\\zynlab",
+			"C:\\Code\\synthdev\\VST_SDK",
+			"C:\\Code\\synthdev\\SOURCES 2.494",
+			"C:\\Code\\synthdev\\VST_SDK",
+			"C:\\Code\\android-apps\\MWEngine-master",
+			"C:\\Code\\web\\rest-service\\",
+			"C:\\Code\\",
+			"C:\\Code\\external\\libharu",
+			"C:\\Code\\gamedev",
+			"C:\\Users\\woute\\Downloads\\sledge-feature-simplification-project",
+			"C:\\Code\\12games\\01-snowy-january",
+			"C:\\Code\\",
+			"C:\\Code\\gamedev\\shover",
+			"C:\\Code\\external\\hl2_src\\src_main\\worldcraft",
+			"C:\\Code\\gamedev\\latje-tik\\libs\\glm",
+			"C:\\Code\\gamedev\\latje-tik\\libs\\glm,*.hpp",
+			"C:\\Code\\gamedev\\latje-tik\\libs\\glm",
+			"C:\\Code\\gamedev\\latje-tik\\src\\",
+			"C:\\Users\\woute\\Downloads\\bootstrap-4.0.0-beta\\",
+			"C:\\Users\\woute\\Downloads\\bootstrap-4.0.0-beta\\scss",
+			"C:\\Code\\synthdev\\zynlab\\app.threedee\\nuklear",
+			"C:\\Code\\gamedev\\latje-tik",
+			"c:\\windows",
+			"\\\\NEOFELIS\\Backups\\2005-12-31\\VisualC++\\projects",
+			"\\\\NEOFELIS\\Backups\\2005-12-31\\VisualC++",
+			"C:\\Code\\gamedev\\latje-tik",
+			"C:\\Code\\gamedev\\qb-arcade\\android",
+			"C:\\Code\\external\\dhewm3\\build-neo-Qt_5_8_0_mingw53_32-Default\\base\\def",
+			"C:\\Code\\external\\DOOM-3",
+			"C:\\Code\\external\\hl2_src\\src_main\\worldcraft",
+			"C:\\Code\\gamedev\\qb-arcade\\libs\\sdl2-mirror",
+			"C:\\Code\\gamedev\\qb-arcade\\libs\\sdl2",
+			"C:\\Code\\gamedev\\qb-arcade\\libs\\sdl2-mirror",
+			"C:\\Code\\gamedev\\qb-arcade\\libs\\sdl2",
+			"C:\\Code\\gamedev\\qb-arcade",
+			"C:\\Code\\synthdev\\zynlab",
+			"C:\\Code\\external\\d3base",
+			"C:\\Code\\external\\d3base\\materials",
+			"C:\\Code\\external\\d3base"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"render",
+			"goog",
+			"require",
+			"requrie",
+			"minimalist",
+			"minimal",
+			"\\..\\",
+			"storage.js",
+			"MidiEvent::MidiEvent",
+			"C_pitchwheel",
+			"[211]",
+			"\"([A-G][\\-\\#][0-9])\\/[a-gA-G0-9]+\";",
+			"PutEvent",
+			"INT32_MAX",
+			"fftwrapper",
+			"---",
+			"glVertex",
+			"glVertex3f",
+			"glVertex2f",
+			"glVertex",
+			"glViewport",
+			"seq_render_scene_strip",
+			"ui",
+			"CalcViewExtents",
+			"SetZoom",
+			"ZoomOut",
+			"wheel",
+			"MapView2D",
+			"camera",
+			"camera2d",
+			"Physics.h",
+			"Physics",
+			"linearmath",
+			"convex",
+			" convex fill",
+			"after convex fill",
+			"IsCommandLineApplication",
+			"_resize",
+			"Resize",
+			"Searching",
+			"midiProcess",
+			"zynaddsubfx_effects",
+			"\\n\\n",
+			"Shobjidl",
+			"DL_ALLOBJECTS",
+			"DS_NAME",
+			"SetWindowPathTitle",
+			"ErrorMessage",
+			"ID_FILEINFO",
+			"dwFillMas",
+			"dwSort",
+			"DL_FILTER_BUFSIZE",
+			"IDS_ERR_CD",
+			"ChangeDirectory",
+			"DriveBox_Fill",
+			"DriveBox_Init",
+			"IDT_HISTORY_FORWARD",
+			"HISTORY",
+			"VERSION_LEGALCOPYRIGHT_SHORT",
+			"/ZynAddSubFX-data/INSTRUMENT/INSTRUMENT_KIT/INSTRUMENT_KIT_ITEM[1]/ADD_SYNTH_PARAMETERS/AMPLITUDE_PARAMETERS/AMPLITUDE_ENVELOPES_val",
+			"© Florian Balmer 2004-2011",
+			"account",
+			"pri",
+			"} ",
+			"netcoreapp2.1",
+			"bootstrap",
+			"\"",
+			"::Serialize(",
+			"Serialize",
+			"ZynAddSubFX-data",
+			"FILTER_PARAMETERS",
+			"ZynAddSubFX-data",
+			"bandwidth",
+			"ZynAddSubFX-data",
+			"HARMONICS",
+			"maxdbl",
+			"lx",
+			"AEffEditor",
+			"getSampleRate",
+			"processReplacing",
+			"//",
+			"outlock",
+			"Meul",
+			"start",
+			"round_officially_ended",
+			"AppKernel",
+			"cpppm",
+			"cppppm",
+			"HPDF_Boolean",
+			"gl-color-normal-position-vertex",
+			"rec",
+			"GetRenderBoxColour",
+			"toString()",
+			"cpppm",
+			"href",
+			"usemtl",
+			"o",
+			"o ",
+			"wheel",
+			"whee",
+			"_tuning",
+			"_initialOrientation",
+			"ScreenToClient",
+			"GetCursorPos",
+			"ZoomOut",
+			"SetZoom",
+			"CalcViewExtents",
+			"SetZoom",
+			"ZoomIn",
+			"zoom",
+			"perspective",
+			"radians",
+			"\n            ",
+			"CameraEntity::",
+			"Camera::",
+			"Cameara::",
+			"Render(",
+			"Render",
+			"proj = ",
+			"view = ",
+			"view= ",
+			"view",
+			"glBuf",
+			"proj",
+			"projection",
+			"u_tex",
+			"loadShader",
+			"day3"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"custom_renderer",
+			"/../",
+			"\"$1\";",
+			" ",
+			"std::cout <<  \"",
+			"\\\"",
+			"day4",
+			"",
+			"r",
+			"day3",
+			"buildRoot()",
+			"_folder",
+			"echo",
+			"<< \"\\n\";",
+			"",
+			"\\n\"",
+			"\\n\";",
+			"$eventId ",
+			"\\n\";",
+			"$eventId ",
+			"icon-pencil",
+			"icon-cancel",
+			"times"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": true,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 1,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "vsthost.sublime-project",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 591,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								298,
+								298
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "main.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 31613,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": "<",
+									"selector": "text.html"
+								},
+								{
+									"characters": ".>:",
+									"selector": "source.c++"
+								}
+							],
+							"lsp_active": true,
+							"lsp_language":
+							{
+								"clangd": "cpp"
+							},
+							"show_definitions": false,
+							"syntax": "Packages/C++/C++.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "CMakeLists.txt",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1933,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/CMakeEditor/CMakeEditor.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 36.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 24.0
+	},
+	"input":
+	{
+		"height": 38.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.diagnostics":
+	{
+		"height": 108.0
+	},
+	"output.exec":
+	{
+		"height": 385.0
+	},
+	"output.files_to_be_deleted":
+	{
+		"height": 108.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.stino_build_panel":
+	{
+		"height": 0.0
+	},
+	"output.stino_panel":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "cmake build",
+	"project": "vsthost.sublime-project",
+	"replace":
+	{
+		"height": 70.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 272.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

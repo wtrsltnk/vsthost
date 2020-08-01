@@ -3,6 +3,8 @@
 #include <imgui.h>
 #include <sstream>
 
+static int trackColorIndex = 0;
+
 TracksManager::TracksManager()
 {
 }
@@ -20,7 +22,11 @@ Track *TracksManager::addVstTrack(
     if (plugin != nullptr)
     {
         newi->_plugin = new VstPlugin();
-        newi->_plugin->init(plugin);
+        if (!newi->_plugin->init(plugin))
+        {
+            delete newi->_plugin;
+            newi->_plugin = nullptr;
+        }
     }
 
     instruments.push_back(newi);
@@ -28,33 +34,21 @@ Track *TracksManager::addVstTrack(
     std::stringstream trackName;
     trackName << "Track " << (tracks.size() + 1);
 
-    auto newt = new Track();
-    newt->_instrument = newi;
-    newt->_name = trackName.str();
+    auto newTrack = new Track();
+    newTrack->_instrument = newi;
+    newTrack->_name = trackName.str();
 
-    auto c = ImColor::HSV(tracks.size() * 0.05f, 0.6f, 0.6f);
-    newt->_color[0] = c.Value.x;
-    newt->_color[1] = c.Value.y;
-    newt->_color[2] = c.Value.z;
-    newt->_color[3] = c.Value.w;
-    tracks.push_back(newt);
+    auto c = ImColor::HSV(trackColorIndex++ * 0.05f, 0.6f, 0.6f);
+    newTrack->_color[0] = c.Value.x;
+    newTrack->_color[1] = c.Value.y;
+    newTrack->_color[2] = c.Value.z;
+    newTrack->_color[3] = c.Value.w;
 
-    return newt;
+    tracks.push_back(newTrack);
+
+    return newTrack;
 }
 
-void TracksManager::CleanupInstruments()
-{
-    while (!instruments.empty())
-    {
-        auto item = instruments.back();
-        if (item->_plugin != nullptr)
-        {
-            delete item->_plugin;
-        }
-        instruments.pop_back();
-        delete item;
-    }
-}
 void TracksManager::removeTrack(Track *track)
 {
     if (track == nullptr)
@@ -75,5 +69,19 @@ void TracksManager::removeTrack(Track *track)
             delete track;
             break;
         }
+    }
+}
+
+void TracksManager::CleanupInstruments()
+{
+    while (!instruments.empty())
+    {
+        auto item = instruments.back();
+        if (item->_plugin != nullptr)
+        {
+            delete item->_plugin;
+        }
+        instruments.pop_back();
+        delete item;
     }
 }

@@ -1,0 +1,30 @@
+{
+    "settings":
+    {
+        "cmake":
+        {
+           "build_folder": "$folder/build",
+           "generator": "MinGW Makefiles"
+        },
+    },
+	"build_systems":
+    [
+    	{
+    		"name": "cmake build",
+    		"shell_cmd": "cmake ${project_path} -Bbuild -DCMAKE_EXPORT_COMPILE_COMMANDS=1 && cmake --build ${project_path}/build",
+    		"file_regex": "/([^/:]+):(\\d+):(\\d+): ",
+    		"variants": [
+    			{
+    				"name": "clean",
+    				"shell_cmd": "cmake --build ${project_path}/build --target clean"
+    			}
+    		]
+    	}
+    ],
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	]
+}

@@ -16,7 +16,7 @@ void State::Update()
     UpdateByDiff(diff);
 }
 
-long State::MsToTeps(
+long State::MsToSteps(
     std::chrono::milliseconds::rep time)
 {
     // 1 beat = 1000 in timesteps
@@ -29,7 +29,7 @@ void State::UpdateByDiff(
     if (IsPlaying())
     {
         _lastTime = _cursor;
-        _cursor += MsToTeps(diff);
+        _cursor += MsToSteps(diff);
     }
 }
 

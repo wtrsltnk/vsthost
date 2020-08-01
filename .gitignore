@@ -1,3 +1,4 @@
 VST3 SDK/*
 *.user
 *.dll
+build/*

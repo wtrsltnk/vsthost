@@ -6,27 +6,17 @@
 #include <iostream>
 #include <sstream>
 
-TracksEditor::TracksEditor()
-{
-}
+const int trackHeaderWidth = 200;
+const int trackToolsHeight = 30;
+const int timelineHeight = 30;
+const int regionRounding = 5.0f;
+const int regionResizeHandleWidth = 20.0f;
 
-//std::chrono::milliseconds::rep TracksEditor::PixelsToTime(
-//    float pixels)
-//{
-//    auto stepsPerSecond = (_state->_bpm * 4.0) / 60.0;
-//    auto msPerStep = 1000.0 / stepsPerSecond;
+const ImColor color = ImColor(55, 55, 55, 55);
+const ImColor accentColor = ImColor(55, 55, 55, 155);
+const ImColor timelineTextColor = ImColor(155, 155, 155, 255);
 
-//    return (pixels / _pixelsPerStep) * msPerStep;
-//}
-
-//float TracksEditor::TimeToPixels(
-//    std::chrono::milliseconds::rep time)
-//{
-//    auto stepsPerSecond = (_state->_bpm * 4.0) / 60.0;
-//    auto msPerStep = 1000.0 / stepsPerSecond;
-
-//    return (time / msPerStep) * _pixelsPerStep;
-//}
+TracksEditor::TracksEditor() = default;
 
 long TracksEditor::PixelsToSteps(
     float pixels)
@@ -42,23 +32,16 @@ float TracksEditor::StepsToPixels(
 
 int TracksEditor::MaxTracksWidth()
 {
-    int max = 0;
-
     for (auto &track : _tracks->tracks)
     {
         for (auto &region : track->_regions)
         {
-            auto end = region.first + region.second._length;
-            if (end > max) max = end;
+            auto end = region.first + region.second._length + 8000;
+            if (end > _maxTrackLength) _maxTrackLength = end;
         }
     }
 
-    if (max < 1000)
-    {
-        return 1000;
-    }
-
-    return max;
+    return _maxTrackLength;
 }
 
 int TracksEditor::EditTrackName() const
@@ -75,10 +58,6 @@ void TracksEditor::SetTracksManager(TracksManager *tracks)
     _tracks = tracks;
 }
 
-const int trackHeaderWidth = 200;
-const int trackToolsHeight = 30;
-const int timelineHeight = 30;
-
 void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
 {
     if (_pixelsPerStep <= 0) _pixelsPerStep = 1;
@@ -91,22 +70,16 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
         ImGui::SetWindowPos(pos);
         ImGui::SetWindowSize(size);
 
-        auto trackWidth = MaxTracksWidth();
+        auto trackWidth = StepsToPixels(MaxTracksWidth());
         int fullHeight = _tracks->tracks.size() * (_trackHeight + ImGui::GetStyle().ItemSpacing.y);
 
         ImGui::BeginChild(
             "track_tools",
-            ImVec2(size.y, trackToolsHeight));
+            ImVec2(0, trackToolsHeight));
         {
-            ImGui::Button(ICON_FK_PLUS);
-            if (ImGui::BeginPopupContextItem("item context menu", 0))
+            if (ImGui::Button(ICON_FK_PLUS))
             {
-                if (ImGui::MenuItem("VST"))
-                {
-                    _tracks->activeTrack = _tracks->addVstTrack();
-                }
-
-                ImGui::EndPopup();
+                _tracks->activeTrack = _tracks->addVstTrack();
             }
 
             ImGui::SameLine();
@@ -116,24 +89,41 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
             ImGui::SameLine();
             ImGui::SliderInt("zoom", &(_pixelsPerStep), 8, 200);
             ImGui::PopItemWidth();
+            ImGui::SameLine();
+
+            static int e = _snapToPixels == 4000 ? 0 : 1;
+            if (ImGui::RadioButton("Snap to bar", &e, 0))
+            {
+                _snapToPixels = 4000;
+            }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Snap to step", &e, 1))
+            {
+                _snapToPixels = 1000;
+            }
+            ImGui::SameLine();
         }
         ImGui::EndChild();
 
-        float _tracksScrolly = 0;
+        float _tracksScrollx = 0, _tracksScrolly = 0;
 
         auto contentTop = ImGui::GetCursorPosY();
+
         ImGui::MoveCursorPos(ImVec2(trackHeaderWidth, 0));
+
+        auto trackScreenOrigin = ImGui::GetCursorScreenPos();
+
+        ImGui::MoveCursorPos(ImVec2(0, timelineHeight));
+
         ImGui::BeginChild(
             "tracksContainer",
-            ImVec2(size.x - trackHeaderWidth - ImGui::GetStyle().ItemSpacing.x, -10),
+            ImVec2(size.x - trackHeaderWidth - ImGui::GetStyle().ItemSpacing.x, 0),
             false,
             ImGuiWindowFlags_HorizontalScrollbar);
         {
             const ImVec2 p = ImGui::GetCursorScreenPos();
 
             RenderGrid(p, trackWidth);
-
-            RenderTimeline(p, trackWidth);
 
             ImGui::BeginGroup();
             {
@@ -148,16 +138,22 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
             }
             ImGui::EndGroup();
 
-            RenderCursor(p);
-
+            _tracksScrollx = ImGui::GetScrollX();
             _tracksScrolly = ImGui::GetScrollY();
         }
         ImGui::EndChild();
 
-        ImGui::SetCursorPosY(contentTop + 30);
+        RenderTimeline(
+            ImVec2(trackScreenOrigin.x, trackScreenOrigin.y),
+            trackWidth,
+            _tracksScrollx);
+
+        RenderCursor(trackScreenOrigin, size);
+
+        ImGui::SetCursorPosY(contentTop + timelineHeight);
         ImGui::BeginChild(
             "headersContainer",
-            ImVec2(trackHeaderWidth, -(10)),
+            ImVec2(trackHeaderWidth, 0),
             false,
             ImGuiWindowFlags_NoScrollbar);
         {
@@ -174,8 +170,7 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
                 {
                     RenderTrackHeader(
                         track,
-                        trackIndex++,
-                        trackWidth);
+                        trackIndex++);
                 }
             }
             ImGui::EndChild();
@@ -186,63 +181,224 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
 }
 
 void TracksEditor::RenderCursor(
-    ImVec2 const &p)
+    ImVec2 const &p,
+    ImVec2 const &size)
 {
     auto cursor = ImVec2(p.x + StepsToPixels(_state->_cursor), p.y);
     ImGui::GetWindowDrawList()->AddLine(
         cursor,
-        ImVec2(cursor.x, cursor.y + timelineHeight + (_trackHeight + ImGui::GetStyle().ItemSpacing.y) * _tracks->tracks.size() - ImGui::GetStyle().ItemSpacing.y),
+        ImVec2(cursor.x, cursor.y + size.y - trackToolsHeight),
         ImGui::GetColorU32(ImGui::GetStyle().Colors[ImGuiCol_PlotHistogramHovered]),
         3.0f);
 }
 
-const ImColor color = ImColor(55, 55, 55, 55);
-const ImColor accentColor = ImColor(55, 55, 55, 155);
-const ImColor timelineTextColor = ImColor(155, 155, 155, 255);
-
 void TracksEditor::RenderTimeline(
     ImVec2 const &p,
-    int trackWidth)
+    int windowWidth,
+    int scrollX)
 {
     int step = 1;
-    for (int g = 0; g < trackWidth; g += (_pixelsPerStep * 4))
+    for (int g = 0; g < windowWidth; g += (_pixelsPerStep * 4))
     {
         std::stringstream ss;
         ss << (step++);
-        auto cursor = ImVec2(p.x + g + 5, p.y);
-        ImGui::GetWindowDrawList()->AddText(cursor, timelineTextColor, ss.str().c_str());
-    }
+        auto cursor = ImVec2(p.x - scrollX + g, p.y);
+        if (cursor.x >= p.x)
+        {
+            ImGui::GetWindowDrawList()->AddLine(
+                ImVec2(cursor.x, cursor.y),
+                ImVec2(cursor.x, cursor.y + timelineHeight),
+                accentColor);
 
-    ImGui::MoveCursorPos(ImVec2(0, timelineHeight));
+            ImGui::GetWindowDrawList()->AddText(
+                ImVec2(cursor.x + 5, cursor.y),
+                timelineTextColor,
+                ss.str().c_str());
+        }
+    }
 }
 
 void TracksEditor::RenderGrid(
     ImVec2 const &p,
-    int trackWidth)
+    int windowWidth)
 {
     int step = 0;
     int gg = 0;
-    while (gg < trackWidth)
+    while (gg < std::max(windowWidth, int(ImGui::GetContentRegionAvailWidth())))
     {
         auto cursor = ImVec2(p.x + StepsToPixels(step), p.y);
+
         ImGui::GetWindowDrawList()->AddLine(
             cursor,
-            ImVec2(cursor.x, cursor.y + timelineHeight + (_trackHeight + ImGui::GetStyle().ItemSpacing.y) * _tracks->tracks.size() - ImGui::GetStyle().ItemSpacing.y),
+            ImVec2(cursor.x, cursor.y + (_trackHeight + ImGui::GetStyle().ItemSpacing.y) * _tracks->tracks.size() - ImGui::GetStyle().ItemSpacing.y),
             gg % (_pixelsPerStep * 4) == 0 ? accentColor : color,
             1.0f);
+
         step += 1000;
         gg += _pixelsPerStep;
     }
+}
 
-    //    for (int g = 0; g < trackWidth; g += _pixelsPerStep)
-    //    {
-    //        auto cursor = ImVec2(p.x + g, p.y);
-    //        ImGui::GetWindowDrawList()->AddLine(
-    //            cursor,
-    //            ImVec2(cursor.x, cursor.y + timelineHeight + (_trackHeight + ImGui::GetStyle().ItemSpacing.y) * _tracks->tracks.size() - ImGui::GetStyle().ItemSpacing.y),
-    //            g % (_pixelsPerStep * 4) == 0 ? accentColor : color,
-    //            1.0f);
-    //    }
+void TracksEditor::RenderRegion(
+    Track *track,
+    std::pair<const long, Region> &region,
+    ImVec2 const &trackOrigin,
+    ImVec2 const &trackScreenOrigin)
+{
+    auto drawlist = ImGui::GetWindowDrawList();
+
+    auto noteRange = region.second.GetMaxNote() - region.second.GetMinNote();
+
+    auto regionOrigin = ImVec2(trackOrigin.x + StepsToPixels(region.first), trackOrigin.y + 4);
+    auto regionScreenOrigin = ImVec2(trackScreenOrigin.x + StepsToPixels(region.first), trackScreenOrigin.y + 4);
+    auto regionWidth = StepsToPixels(region.second._length);
+
+    ImGui::PushID(region.first);
+
+    auto resizeHandlePosition = ImVec2(regionOrigin.x + regionWidth - regionResizeHandleWidth, regionOrigin.y);
+
+    ImGui::SetCursorPos(resizeHandlePosition);
+    ImGui::Button(ICON_FK_ARROWS_H, ImVec2(regionResizeHandleWidth, _trackHeight - 8));
+
+    if (ImGui::IsItemClicked(0))
+    {
+        _mouseDragStart = ImGui::GetMousePos();
+    }
+
+    if (ImGui::IsItemActive())
+    {
+        auto diff = ImVec2(ImGui::GetMousePos().x - _mouseDragStart.x, ImGui::GetMousePos().y - _mouseDragStart.y);
+        auto snappedDiffX = PixelsToSteps(diff.x) - (int(PixelsToSteps(diff.x)) % _snapToPixels);
+        auto newLength = region.second._length + snappedDiffX;
+        newLength = newLength - (int(newLength) % _snapToPixels);
+        if (newLength > 0 && snappedDiffX != 0)
+        {
+            region.second._length = newLength;
+            _mouseDragStart = ImGui::GetMousePos();
+        }
+    }
+
+    ImGui::SetCursorPos(regionOrigin);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, regionRounding);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+    ImGui::Button("##test", ImVec2(regionWidth, _trackHeight - 8));
+
+    if (ImGui::IsItemClicked(0))
+    {
+        _mouseDragStart = ImGui::GetMousePos();
+        _mouseDragTrack = track;
+        _mouseDragFrom = region.first;
+    }
+
+    if (_mouseDragTrack == track)
+    {
+        if (_mouseDragFrom == region.first)
+        {
+            auto diff = ImVec2(ImGui::GetMousePos().x - _mouseDragStart.x, ImGui::GetMousePos().y - _mouseDragStart.y);
+            auto newX = region.first + PixelsToSteps(diff.x) - (int(PixelsToSteps(diff.x)) % _snapToPixels);
+
+            if (newX < 0) newX = 0;
+
+            if (!ImGui::IsMouseDown(0) && newX != region.first)
+            {
+                doMove = true;
+                moveTo = newX;
+                _mouseDragStart = ImGui::GetMousePos();
+            }
+            else
+            {
+                auto overlayOrigin = ImVec2(trackScreenOrigin.x + StepsToPixels(newX), trackScreenOrigin.y + 4);
+
+                auto min = ImVec2(
+                    std::max(overlayOrigin.x, trackScreenOrigin.x + ImGui::GetScrollX()),
+                    std::max(overlayOrigin.y, trackScreenOrigin.y + ImGui::GetScrollY()));
+
+                auto max = ImVec2(
+                    overlayOrigin.x + regionWidth,
+                    overlayOrigin.y + _trackHeight - 8);
+
+                ImGui::GetOverlayDrawList()->AddRectFilled(
+                    min,
+                    max,
+                    ImColor(255, 255, 255, 100));
+            }
+        }
+    }
+
+    ImGui::PopStyleVar(2);
+
+    struct ActiveNote
+    {
+        std::chrono::milliseconds::rep time;
+        unsigned int velocity;
+    };
+
+    std::map<unsigned int, ActiveNote> activeNotes;
+    for (auto event : region.second._events)
+    {
+        const int noteHeight = 5;
+        auto h = (_trackHeight - ((regionRounding + noteHeight) * 3));
+
+        if (event.first > region.second._length)
+        {
+            break;
+        }
+
+        for (auto me : event.second)
+        {
+            auto found = activeNotes.find(me.num);
+            auto y = h - (h * float(me.num - region.second.GetMinNote()) / float(noteRange));
+            auto top = regionScreenOrigin.y + y + regionRounding + noteHeight;
+
+            if (me.type == MidiEventTypes::M_NOTE)
+            {
+                drawlist->AddRectFilled(
+                    ImVec2(regionScreenOrigin.x + StepsToPixels(event.first) - 1, top),
+                    ImVec2(regionScreenOrigin.x + StepsToPixels(event.first) + 1, top + noteHeight),
+                    ImColor(255, 0, 0, 255));
+
+                if (me.value != 0 && found == activeNotes.end())
+                {
+                    activeNotes.insert(std::make_pair(me.num, ActiveNote{event.first, me.value}));
+                    continue;
+                }
+                else if (me.value == 0 && found != activeNotes.end())
+                {
+                    auto start = StepsToPixels(found->second.time);
+                    auto end = StepsToPixels(event.first);
+                    drawlist->AddRectFilled(
+                        ImVec2(regionScreenOrigin.x + start, top),
+                        ImVec2(regionScreenOrigin.x + end, top + noteHeight),
+                        ImColor(255, 255, 255, 255));
+
+                    auto vel = (end - start) * (found->second.velocity / 128.0f);
+
+                    drawlist->AddLine(
+                        ImVec2(regionScreenOrigin.x + start, top + 2),
+                        ImVec2(regionScreenOrigin.x + start + vel, top + 2),
+                        ImColor(155, 155, 155, 255));
+
+                    activeNotes.erase(found);
+                }
+            }
+
+            else if (me.type == MidiEventTypes::M_PRESSURE)
+            {
+                drawlist->AddRectFilled(
+                    ImVec2(regionScreenOrigin.x + StepsToPixels(event.first) - 1, top),
+                    ImVec2(regionScreenOrigin.x + StepsToPixels(event.first) + 1, top + noteHeight),
+                    ImColor(255, 0, 255, 255));
+            }
+            else
+            {
+                drawlist->AddRectFilled(
+                    ImVec2(regionScreenOrigin.x + StepsToPixels(event.first) - 1, top),
+                    ImVec2(regionScreenOrigin.x + StepsToPixels(event.first) + 1, top + noteHeight),
+                    ImColor(255, 255, 0, 255));
+            }
+        }
+    }
+    ImGui::PopID();
 }
 
 void TracksEditor::RenderTrack(
@@ -252,145 +408,87 @@ void TracksEditor::RenderTrack(
 {
     auto drawList = ImGui::GetWindowDrawList();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(track->_color[0], track->_color[1], track->_color[2], track->_color[3]));
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(track->_color[0], track->_color[1], track->_color[2], track->_color[3] * 0.5f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(track->_color[0], track->_color[1], track->_color[2], track->_color[3] * 0.7f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(track->_color[0], track->_color[1], track->_color[2], track->_color[3]));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(track->_color[0] * 1.2f, track->_color[1] * 1.2f, track->_color[2] * 1.2f, track->_color[3]));
+
     auto pp = ImGui::GetCursorScreenPos();
     if (track == _tracks->activeTrack)
     {
-        drawList->AddRectFilled(pp, ImVec2(pp.x + trackWidth, pp.y + _trackHeight), _trackactivebgcol);
+        drawList->AddRectFilled(pp, ImVec2(pp.x + ImGui::GetContentRegionAvailWidth(), pp.y + _trackHeight), _trackactivebgcol);
     }
     else if (t % 2 == 0)
     {
-        drawList->AddRectFilled(pp, ImVec2(pp.x + trackWidth, pp.y + _trackHeight), _trackbgcol);
+        drawList->AddRectFilled(pp, ImVec2(pp.x + ImGui::GetContentRegionAvailWidth(), pp.y + _trackHeight), _trackbgcol);
     }
     else
     {
-        drawList->AddRectFilled(pp, ImVec2(pp.x + trackWidth, pp.y + _trackHeight), _trackaltbgcol);
+        drawList->AddRectFilled(pp, ImVec2(pp.x + ImGui::GetContentRegionAvailWidth(), pp.y + _trackHeight), _trackaltbgcol);
     }
 
     ImGui::PushID(t);
 
     auto trackOrigin = ImGui::GetCursorPos();
-    if (ImGui::InvisibleButton(track->_name.c_str(), ImVec2(trackWidth, _trackHeight)))
+    auto trackScreenOrigin = ImGui::GetCursorScreenPos();
+
+    for (auto &region : track->_regions)
+    {
+        RenderRegion(track, region, trackOrigin, trackScreenOrigin);
+    }
+
+    if (doMove && _mouseDragTrack == track)
+    {
+        auto r = track->_regions[_mouseDragFrom];
+        if (!ImGui::GetIO().KeyShift)
+        {
+            track->_regions.erase(_mouseDragFrom);
+        }
+        track->_regions.insert(std::make_pair(moveTo, r));
+        _mouseDragFrom = moveTo = -1;
+        doMove = false;
+    }
+
+    ImGui::SetCursorPos(trackOrigin);
+    auto btnSize = ImVec2(std::max(trackWidth, int(ImGui::GetContentRegionAvailWidth())), _trackHeight);
+    if (ImGui::InvisibleButton(track->_name.c_str(), btnSize))
     {
         auto regionStart = PixelsToSteps(ImGui::GetMousePos().x - pp.x);
 
-        regionStart = regionStart - (regionStart % 4000);
-
-        Region region;
-        region._length = 4000;
-
-        track->_regions.insert(std::make_pair(regionStart, region));
+        if (track->StartNewRegion(regionStart))
+        {
+            std::cout << "added a region" << std::endl;
+        }
 
         _tracks->activeTrack = track;
     }
 
-    for (auto region : track->_regions)
-    {
-        auto noteRange = region.second.GetMaxNote() - region.second.GetMinNote();
-
-        auto regionOrigin = ImVec2(trackOrigin.x + StepsToPixels(region.first), trackOrigin.y + 4);
-        ImGui::PushID(region.first);
-        ImGui::SetCursorPos(regionOrigin);
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10.0f);
-        ImGui::Button("##test", ImVec2(StepsToPixels(region.second._length), _trackHeight - 8));
-        ImGui::PopStyleVar();
-
-        struct ActiveNote
-        {
-            std::chrono::milliseconds::rep time;
-            unsigned int velocity;
-        };
-
-        std::map<unsigned int, ActiveNote> activeNotes;
-        for (auto event : region.second._events)
-        {
-            const int noteHeight = 5;
-            auto h = (_trackHeight - (noteHeight * 3));
-
-            for (auto me : event.second)
-            {
-                auto found = activeNotes.find(me.num);
-                auto y = h - (h * float(me.num - region.second.GetMinNote()) / float(noteRange));
-                auto top = pp.y + y + noteHeight;
-
-                if (me.type == MidiEventTypes::M_NOTE)
-                {
-                    ImGui::GetWindowDrawList()->AddRectFilled(
-                        ImVec2(pp.x + StepsToPixels(region.first) + StepsToPixels(event.first) - 1, top),
-                        ImVec2(pp.x + StepsToPixels(region.first) + StepsToPixels(event.first) + 1, top + noteHeight),
-                        ImColor(255, 0, 0, 255));
-
-                    if (me.value != 0 && found == activeNotes.end())
-                    {
-                        activeNotes.insert(std::make_pair(me.num, ActiveNote{event.first, me.value}));
-                        continue;
-                    }
-                    else if (me.value == 0 && found != activeNotes.end())
-                    {
-                        auto start = StepsToPixels(found->second.time);
-                        auto end = StepsToPixels(event.first);
-                        ImGui::GetWindowDrawList()->AddRectFilled(
-                            ImVec2(pp.x + StepsToPixels(region.first) + start, top),
-                            ImVec2(pp.x + StepsToPixels(region.first) + end, top + noteHeight),
-                            ImColor(255, 255, 255, 255));
-
-                        auto vel = (end - start) * (found->second.velocity / 128.0f);
-
-                        ImGui::GetWindowDrawList()->AddLine(
-                            ImVec2(pp.x + StepsToPixels(region.first) + start, top + 2),
-                            ImVec2(pp.x + StepsToPixels(region.first) + start + vel, top + 2),
-                            ImColor(155, 155, 155, 255));
-
-                        activeNotes.erase(found);
-                    }
-                }
-
-                else if (me.type == MidiEventTypes::M_PRESSURE)
-                {
-                    ImGui::GetWindowDrawList()->AddRectFilled(
-                        ImVec2(pp.x + StepsToPixels(region.first) + StepsToPixels(event.first) - 1, top),
-                        ImVec2(pp.x + StepsToPixels(region.first) + StepsToPixels(event.first) + 1, top + noteHeight),
-                        ImColor(255, 0, 255, 255));
-                }
-                else
-                {
-                    ImGui::GetWindowDrawList()->AddRectFilled(
-                        ImVec2(pp.x + StepsToPixels(region.first) + StepsToPixels(event.first) - 1, top),
-                        ImVec2(pp.x + StepsToPixels(region.first) + StepsToPixels(event.first) + 1, top + noteHeight),
-                        ImColor(255, 255, 0, 255));
-                }
-            }
-        }
-        ImGui::PopID();
-    }
-
     ImGui::PopID();
-    ImGui::PopStyleColor();
+    ImGui::PopStyleColor(4);
 }
 
 void TracksEditor::RenderTrackHeader(
     Track *track,
-    int t,
-    int trackWidth)
+    int t)
 {
     auto drawList = ImGui::GetWindowDrawList();
-    auto pp = ImGui::GetCursorScreenPos();
+    auto cursorScreenPos = ImGui::GetCursorScreenPos();
     if (track == _tracks->activeTrack)
     {
-        drawList->AddRectFilled(pp, ImVec2(pp.x + trackWidth, pp.y + _trackHeight), _trackactivebgcol);
+        drawList->AddRectFilled(cursorScreenPos, ImVec2(cursorScreenPos.x + trackHeaderWidth, cursorScreenPos.y + _trackHeight), _trackactivebgcol);
     }
     else if (t % 2 == 0)
     {
-        drawList->AddRectFilled(pp, ImVec2(pp.x + trackWidth, pp.y + _trackHeight), _trackbgcol);
+        drawList->AddRectFilled(cursorScreenPos, ImVec2(cursorScreenPos.x + trackHeaderWidth, cursorScreenPos.y + _trackHeight), _trackbgcol);
     }
     else
     {
-        drawList->AddRectFilled(pp, ImVec2(pp.x + trackWidth, pp.y + _trackHeight), _trackaltbgcol);
+        drawList->AddRectFilled(cursorScreenPos, ImVec2(cursorScreenPos.x + trackHeaderWidth, cursorScreenPos.y + _trackHeight), _trackaltbgcol);
     }
 
     ImGui::PushID(t);
 
-    auto p = ImGui::GetCursorPos();
+    auto cursorPos = ImGui::GetCursorPos();
 
     std::stringstream ss;
     ss << (t + 1);
@@ -499,6 +597,6 @@ void TracksEditor::RenderTrackHeader(
         ImGui::EndPopup();
     }
 
-    ImGui::SetCursorPos(ImVec2(p.x, p.y + _trackHeight + ImGui::GetStyle().ItemSpacing.y));
+    ImGui::SetCursorPos(ImVec2(cursorPos.x, cursorPos.y + _trackHeight + ImGui::GetStyle().ItemSpacing.y));
     ImGui::PopID();
 }

@@ -126,8 +126,8 @@ bool refillCallback(
 
             for (auto event : region.second._events)
             {
-                if (event.first > end) continue;
-                if (event.first < start) continue;
+                if ((event.first + region.first) > end) continue;
+                if ((event.first + region.first) < start) continue;
                 for (auto m : event.second)
                 {
                     track->_instrument->_plugin->sendMidiNote(
@@ -170,6 +170,11 @@ bool refillCallback(
             size_t outputFrameCount = 0;
             float **vstOutput = vstPlugin->processAudio(tmpsampleCount, outputFrameCount);
 
+            if (vstOutput == nullptr)
+            {
+                break;
+            }
+
             // VST vstOutput[][] format :
             //  vstOutput[a][b]
             //      channel = a % vstPlugin.getChannelCount()
@@ -189,7 +194,7 @@ bool refillCallback(
                     const unsigned int vstOutputPage = (iFrame / vstSamplesPerBlock) * sChannel + sChannel;
                     const unsigned int vstOutputIndex = (iFrame % vstSamplesPerBlock);
                     const unsigned int wasapiWriteIndex = iFrame * nDstChannels + iChannel;
-                    if (!track->_muted && (_tracks.soloTrack == track || _tracks.soloTrack == nullptr))
+                    if (!track->_muted && (_tracks.soloTrack == track || _tracks.soloTrack == nullptr) && data != 0)
                     {
                         *(data + ofs + wasapiWriteIndex) += vstOutput[vstOutputPage][vstOutputIndex];
                     }
@@ -538,9 +543,14 @@ void ToolbarWindow(
 
         ImGui::PushStyleColor(ImGuiCol_Button, state._recording ? ImVec4(1, 0, 0, 1) : ImGui::GetStyle().Colors[ImGuiCol_Button]);
 
-        if (ImGui::Button(ICON_FAD_RECORD))
+        if (ImGui::Button(ICON_FAD_RECORD) && !state.IsRecording())
         {
-            state.ToggleRecording();
+            for (auto track : _tracks.tracks)
+            {
+                track->StartRecording();
+            }
+
+            state.StartRecording();
         }
 
         ImGui::PopStyleColor();

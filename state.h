@@ -23,7 +23,7 @@ public:
     void StopRecording();
     bool IsRecording() const;
 
-    long MsToTeps(std::chrono::milliseconds::rep diff);
+    long MsToSteps(std::chrono::milliseconds::rep diff);
 
     int _width;
     int _height;

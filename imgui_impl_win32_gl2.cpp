@@ -1,4 +1,4 @@
-#include "imgui.h"
+#include <imgui.h>
 #include "imgui_impl_win32_gl2.h"
 
 #include <glad/glad.h>
@@ -131,10 +131,10 @@ void ImGui_ImplGlfw_KeyCallback(GLFWwindow*, int key, int, int action, int mods)
         io.KeysDown[key] = false;
 
     (void)mods; // Modifiers are not reliable across systems
-    io.KeyCtrl = io.KeysDown[VK_LCONTROL] || io.KeysDown[VK_RCONTROL];
-    io.KeyShift = io.KeysDown[VK_LSHIFT] || io.KeysDown[VK_RSHIFT];
-    io.KeyAlt = io.KeysDown[VK_LMENU] || io.KeysDown[VK_RMENU];
-    io.KeySuper = io.KeysDown[VK_LWIN] || io.KeysDown[VK_RWIN];
+    io.KeyCtrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
+    io.KeyShift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
+    io.KeyAlt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
+    io.KeySuper = false;
 }
 
 void ImGui_ImplGlfw_CharCallback(GLFWwindow*, unsigned int c)
