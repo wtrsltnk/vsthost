@@ -271,7 +271,7 @@ void TracksEditor::RenderRegion(
         auto snappedDiffX = PixelsToSteps(diff.x) - (int(PixelsToSteps(diff.x)) % _snapToPixels);
         auto newLength = region.second._length + snappedDiffX;
         newLength = newLength - (int(newLength) % _snapToPixels);
-        if (newLength > 0 && snappedDiffX != 0)
+        if (newLength > 0 && newLength != region.second._length)
         {
             region.second._length = newLength;
             _mouseDragStart = ImGui::GetMousePos();
