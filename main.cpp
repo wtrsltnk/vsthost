@@ -692,6 +692,13 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
                             }
                         }
                     }
+
+                    //                    ImGui::ShowDemoWindow();
+                    ImGui::ColorEdit4(
+                        "MyColor##3",
+                        (float *)&(_tracks.activeTrack->_color),
+                        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+
                     ImGui::Separator();
                 }
             }
