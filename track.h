@@ -14,14 +14,14 @@ class Track
 public:
     Instrument *_instrument = nullptr;
     std::map<long, Region> _regions; // the int key of the map is the absolute start (in timestep=1000 per 1 bar) of the region from the beginning of the song
-    std::string _name;
+    std::string _name = "track";
     bool _muted = false;
     bool _readyForRecord = false;
     float _color[4];
 
     void StartRecording();
 
-    bool StartNewRegion(
+    long StartNewRegion(
         long start);
 
     void RecordMidiEvent(

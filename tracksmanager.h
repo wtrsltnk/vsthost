@@ -12,6 +12,7 @@ public:
     std::vector<Track *> tracks;
     Track *activeTrack = nullptr;
     Track *soloTrack = nullptr;
+    std::tuple<Track *, long> activeRegion{nullptr, -1  };
 
     TracksManager();
 

@@ -85,7 +85,7 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
             ImGui::SameLine();
 
             ImGui::PushItemWidth(100);
-            ImGui::SliderInt("track height", &_trackHeight, 60, 300);
+            ImGui::SliderInt("track height", &_trackHeight, 24, 300);
             ImGui::SameLine();
             ImGui::SliderInt("zoom", &(_pixelsPerStep), 8, 200);
             ImGui::PopItemWidth();
@@ -239,6 +239,48 @@ void TracksEditor::RenderGrid(
     }
 }
 
+void TracksEditor::FinishDragRegion(
+    long newX)
+{
+    doMove = true;
+    moveTo = newX;
+    _mouseDragStart = ImGui::GetMousePos();
+}
+
+long TracksEditor::GetNewRegionStart(
+    std::pair<long, Region> region)
+{
+    auto diff = ImVec2(ImGui::GetMousePos().x - _mouseDragStart.x, ImGui::GetMousePos().y - _mouseDragStart.y);
+    auto newStart = region.first + PixelsToSteps(diff.x) - (int(PixelsToSteps(diff.x)) % _snapToPixels);
+
+    newStart = newStart - (int(newStart) % _snapToPixels);
+
+    if (newStart < 0) newStart = 0;
+
+    return newStart;
+}
+
+long TracksEditor::GetNewRegionLength(
+    std::pair<long, Region> region)
+{
+    auto diff = ImVec2(ImGui::GetMousePos().x - _mouseDragStart.x, ImGui::GetMousePos().y - _mouseDragStart.y);
+    auto snappedDiffX = PixelsToSteps(diff.x) - (int(PixelsToSteps(diff.x)) % _snapToPixels);
+    auto newLength = region.second._length + snappedDiffX;
+
+    newLength = newLength - (int(newLength) % _snapToPixels);
+
+    return newLength;
+}
+
+void TracksEditor::StartDragRegion(
+    Track *track,
+    std::pair<long, Region> region)
+{
+    _tracks->activeTrack = track;
+    _mouseDragStart = ImGui::GetMousePos();
+    _tracks->activeRegion = std::tuple<Track *, long>(track, region.first);
+}
+
 void TracksEditor::RenderRegion(
     Track *track,
     std::pair<const long, Region> &region,
@@ -256,21 +298,19 @@ void TracksEditor::RenderRegion(
     ImGui::PushID(region.first);
 
     auto resizeHandlePosition = ImVec2(regionOrigin.x + regionWidth - regionResizeHandleWidth, regionOrigin.y);
-
     ImGui::SetCursorPos(resizeHandlePosition);
+
     ImGui::Button(ICON_FK_ARROWS_H, ImVec2(regionResizeHandleWidth, _trackHeight - 8));
 
     if (ImGui::IsItemClicked(0))
     {
-        _mouseDragStart = ImGui::GetMousePos();
+        StartDragRegion(track, region);
     }
 
     if (ImGui::IsItemActive())
     {
-        auto diff = ImVec2(ImGui::GetMousePos().x - _mouseDragStart.x, ImGui::GetMousePos().y - _mouseDragStart.y);
-        auto snappedDiffX = PixelsToSteps(diff.x) - (int(PixelsToSteps(diff.x)) % _snapToPixels);
-        auto newLength = region.second._length + snappedDiffX;
-        newLength = newLength - (int(newLength) % _snapToPixels);
+        auto newLength = GetNewRegionLength(region);
+
         if (newLength > 0 && newLength != region.second._length)
         {
             region.second._length = newLength;
@@ -279,31 +319,38 @@ void TracksEditor::RenderRegion(
     }
 
     ImGui::SetCursorPos(regionOrigin);
+
+    auto isActiveRegion = _tracks->activeTrack == track && std::get<long>(_tracks->activeRegion) == region.first;
+
+    if (isActiveRegion)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(track->_color[0] * 2.0f, track->_color[1] * 2.0f, track->_color[2] * 2.0f, track->_color[3] * 0.5f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(track->_color[0] * 2.0f, track->_color[1] * 2.0f, track->_color[2] * 2.0f, track->_color[3] * 0.7f));
+    }
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, regionRounding);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
     ImGui::Button("##test", ImVec2(regionWidth, _trackHeight - 8));
+    if (isActiveRegion) ImGui::PopStyleColor(2);
 
     if (ImGui::IsItemClicked(0))
     {
         _mouseDragStart = ImGui::GetMousePos();
         _mouseDragTrack = track;
         _mouseDragFrom = region.first;
+
+        _tracks->activeTrack = track;
+        _tracks->activeRegion = std::tuple<Track *, long>(track, region.first);
     }
 
     if (_mouseDragTrack == track)
     {
         if (_mouseDragFrom == region.first)
         {
-            auto diff = ImVec2(ImGui::GetMousePos().x - _mouseDragStart.x, ImGui::GetMousePos().y - _mouseDragStart.y);
-            auto newX = region.first + PixelsToSteps(diff.x) - (int(PixelsToSteps(diff.x)) % _snapToPixels);
+            auto newX = GetNewRegionStart(region);
 
-            if (newX < 0) newX = 0;
-
-            if (!ImGui::IsMouseDown(0) && newX != region.first)
+            if (ImGui::IsMouseReleased(0) || (!ImGui::IsMouseDown(0) && newX != region.first))
             {
-                doMove = true;
-                moveTo = newX;
-                _mouseDragStart = ImGui::GetMousePos();
+                FinishDragRegion(newX);
             }
             else
             {
@@ -445,6 +492,7 @@ void TracksEditor::RenderTrack(
             track->_regions.erase(_mouseDragFrom);
         }
         track->_regions.insert(std::make_pair(moveTo, r));
+        _tracks->activeRegion = std::tuple<Track *, long>(track, moveTo);
         _mouseDragFrom = moveTo = -1;
         doMove = false;
     }
@@ -453,14 +501,14 @@ void TracksEditor::RenderTrack(
     auto btnSize = ImVec2(std::max(trackWidth, int(ImGui::GetContentRegionAvailWidth())), _trackHeight);
     if (ImGui::InvisibleButton(track->_name.c_str(), btnSize))
     {
-        auto regionStart = PixelsToSteps(ImGui::GetMousePos().x - pp.x);
-
-        if (track->StartNewRegion(regionStart))
-        {
-            std::cout << "added a region" << std::endl;
-        }
-
         _tracks->activeTrack = track;
+
+        auto regionStart = PixelsToSteps(ImGui::GetMousePos().x - pp.x);
+        regionStart = track->StartNewRegion(regionStart);
+        if (regionStart >= 0)
+        {
+            _tracks->activeRegion = std::tuple<Track *, long>(track, regionStart);
+        }
     }
 
     ImGui::PopID();
@@ -564,6 +612,11 @@ void TracksEditor::RenderTrackHeader(
             ImGui::PopStyleColor();
         }
         ImGui::PopStyleVar();
+
+        if (_trackHeight < 60)
+        {
+            ImGui::SameLine();
+        }
 
         if (_editTrackName == t)
         {

@@ -5,12 +5,12 @@ void Track::StartRecording()
     _activeRegion = _regions.end();
 }
 
-bool Track::StartNewRegion(
+long Track::StartNewRegion(
     long start)
 {
     if (GetActiveRegionAt(_regions, start, 0) != _regions.end())
     {
-        return false;
+        return -1;
     }
 
     start = start - (start % 4000);
@@ -20,7 +20,7 @@ bool Track::StartNewRegion(
 
     _regions.insert(std::make_pair(start, region));
 
-    return true;
+    return start;
 }
 
 void Track::RecordMidiEvent(

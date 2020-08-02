@@ -29,6 +29,19 @@ class TracksEditor
     long _mouseDragFrom = -1, moveTo = -1;
     bool doMove = false;
 
+    void FinishDragRegion(
+        long newX);
+
+    void StartDragRegion(
+        Track *track,
+        std::pair<long, Region> region);
+
+    long GetNewRegionStart(
+        std::pair<long, Region> region);
+
+    long GetNewRegionLength(
+        std::pair<long, Region> region);
+
     float StepsToPixels(
         long steps);
 
