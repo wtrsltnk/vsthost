@@ -79,7 +79,7 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
         {
             if (ImGui::Button(ICON_FK_PLUS))
             {
-                _tracks->activeTrack = _tracks->addVstTrack();
+                _tracks->activeTrack = _tracks->AddVstTrack();
             }
 
             ImGui::SameLine();
@@ -178,6 +178,16 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
         ImGui::EndChild();
     }
     ImGui::End();
+
+    HandleTracksEditorShortCuts();
+}
+
+void TracksEditor::HandleTracksEditorShortCuts()
+{
+    if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete), false))
+    {
+        _tracks->RemoveActiveRegion();
+    }
 }
 
 void TracksEditor::RenderCursor(
@@ -461,17 +471,27 @@ void TracksEditor::RenderTrack(
     ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(track->_color[0] * 1.2f, track->_color[1] * 1.2f, track->_color[2] * 1.2f, track->_color[3]));
 
     auto pp = ImGui::GetCursorScreenPos();
+    auto ppNotSCrolled = ImVec2(pp.x + ImGui::GetScrollX(), pp.y);
     if (track == _tracks->activeTrack)
     {
-        drawList->AddRectFilled(pp, ImVec2(pp.x + ImGui::GetContentRegionAvailWidth(), pp.y + _trackHeight), _trackactivebgcol);
+        drawList->AddRectFilled(
+            ppNotSCrolled,
+            ImVec2(ppNotSCrolled.x + ImGui::GetContentRegionAvailWidth(), ppNotSCrolled.y + _trackHeight),
+            _trackactivebgcol);
     }
     else if (t % 2 == 0)
     {
-        drawList->AddRectFilled(pp, ImVec2(pp.x + ImGui::GetContentRegionAvailWidth(), pp.y + _trackHeight), _trackbgcol);
+        drawList->AddRectFilled(
+            ppNotSCrolled,
+            ImVec2(ppNotSCrolled.x + ImGui::GetContentRegionAvailWidth(), ppNotSCrolled.y + _trackHeight),
+            _trackbgcol);
     }
     else
     {
-        drawList->AddRectFilled(pp, ImVec2(pp.x + ImGui::GetContentRegionAvailWidth(), pp.y + _trackHeight), _trackaltbgcol);
+        drawList->AddRectFilled(
+            ppNotSCrolled,
+            ImVec2(ppNotSCrolled.x + ImGui::GetContentRegionAvailWidth(), ppNotSCrolled.y + _trackHeight),
+            _trackaltbgcol);
     }
 
     ImGui::PushID(t);
@@ -553,7 +573,7 @@ void TracksEditor::RenderTrackHeader(
     {
         if (ImGui::Button(ICON_FAD_POWERSWITCH))
         {
-            _tracks->removeTrack(track);
+            _tracks->RemoveTrack(track);
         }
 
         ImGui::SameLine();
@@ -644,7 +664,7 @@ void TracksEditor::RenderTrackHeader(
     {
         if (ImGui::MenuItem("Remove track"))
         {
-            _tracks->removeTrack(track);
+            _tracks->RemoveTrack(track);
         }
 
         ImGui::EndPopup();

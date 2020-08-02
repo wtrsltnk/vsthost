@@ -29,6 +29,8 @@ class TracksEditor
     long _mouseDragFrom = -1, moveTo = -1;
     bool doMove = false;
 
+    void HandleTracksEditorShortCuts();
+
     void FinishDragRegion(
         long newX);
 

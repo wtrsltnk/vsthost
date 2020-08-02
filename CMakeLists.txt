@@ -14,6 +14,16 @@ add_library(RtMidi
 target_include_directories(RtMidi
     PUBLIC thirdparty/RtMidi/include)
 
+target_compile_definitions(RtMidi
+    PRIVATE -DUNICODE
+    PRIVATE -D_WIN32_WINNT=0x602
+    PRIVATE -D__WINDOWS_MM__
+    )
+
+target_link_libraries(RtMidi
+    winmm
+    )
+
 add_library(glad
     thirdparty/glad/glad.c)
 

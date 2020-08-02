@@ -16,10 +16,12 @@ public:
 
     TracksManager();
 
-    Track *addVstTrack(
+    Track *AddVstTrack(
         wchar_t const *plugin = nullptr);
 
-    void removeTrack(Track *track);
+    void RemoveTrack(Track *track);
+
+    void RemoveActiveRegion();
 
     void CleanupInstruments();
 };

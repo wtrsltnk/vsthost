@@ -863,7 +863,7 @@ int main(int, char **)
 
     SetupFonts();
 
-    _tracks.activeTrack = _tracks.addVstTrack(L"BBC Symphony Orchestra (64 Bit).dll");
+    _tracks.activeTrack = _tracks.AddVstTrack(L"BBC Symphony Orchestra (64 Bit).dll");
 
     _tracksEditor.SetState(&state);
     _tracksEditor.SetTracksManager(&_tracks);

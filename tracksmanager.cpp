@@ -9,7 +9,7 @@ TracksManager::TracksManager()
 {
 }
 
-Track *TracksManager::addVstTrack(
+Track *TracksManager::AddVstTrack(
     wchar_t const *plugin)
 {
     std::stringstream instrumentName;
@@ -49,7 +49,7 @@ Track *TracksManager::addVstTrack(
     return newTrack;
 }
 
-void TracksManager::removeTrack(Track *track)
+void TracksManager::RemoveTrack(Track *track)
 {
     if (track == nullptr)
     {
@@ -70,6 +70,20 @@ void TracksManager::removeTrack(Track *track)
             break;
         }
     }
+}
+
+void TracksManager::RemoveActiveRegion()
+{
+    auto track = std::get<Track *>(activeRegion);
+
+    if (track == nullptr)
+    {
+        return;
+    }
+
+    auto regionStart = std::get<long>(activeRegion);
+
+    track->_regions.erase(regionStart);
 }
 
 void TracksManager::CleanupInstruments()
