@@ -864,6 +864,10 @@ void SetupFonts()
 
 int main(int, char **)
 {
+#ifdef TEST_YOUR_CODE
+    State::Tests();
+#endif
+
     if (!glfwInit())
     {
         return 1;

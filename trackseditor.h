@@ -59,7 +59,8 @@ class TracksEditor
 
     void RenderCursor(
         ImVec2 const &p,
-        ImVec2 const &size);
+        ImVec2 const &size,
+        int scrollX);
 
     void RenderGrid(
         ImVec2 const &p,

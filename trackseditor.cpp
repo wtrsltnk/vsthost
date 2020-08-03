@@ -148,7 +148,7 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
             trackWidth,
             _tracksScrollx);
 
-        RenderCursor(trackScreenOrigin, size);
+        RenderCursor(trackScreenOrigin, size, _tracksScrollx);
 
         ImGui::SetCursorPosY(contentTop + timelineHeight);
         ImGui::BeginChild(
@@ -192,9 +192,10 @@ void TracksEditor::HandleTracksEditorShortCuts()
 
 void TracksEditor::RenderCursor(
     ImVec2 const &p,
-    ImVec2 const &size)
+    ImVec2 const &size,
+    int scrollX)
 {
-    auto cursor = ImVec2(p.x + StepsToPixels(_state->_cursor), p.y);
+    auto cursor = ImVec2(p.x + StepsToPixels(_state->_cursor) - scrollX, p.y);
     ImGui::GetWindowDrawList()->AddLine(
         cursor,
         ImVec2(cursor.x, cursor.y + size.y - trackToolsHeight),
@@ -203,17 +204,25 @@ void TracksEditor::RenderCursor(
 }
 
 void TracksEditor::RenderTimeline(
-    ImVec2 const &p,
+    ImVec2 const &screenOrigin,
     int windowWidth,
     int scrollX)
 {
+    ImGui::SetCursorScreenPos(screenOrigin);
+
+    if (ImGui::InvisibleButton("##timeline", ImVec2(windowWidth, timelineHeight)))
+    {
+        int step = float((ImGui::GetMousePos().x - screenOrigin.x + scrollX) / _pixelsPerStep) + 0.5f;
+        _state->SetCursorAtStep(step);
+    }
+
     int step = 1;
     for (int g = 0; g < windowWidth; g += (_pixelsPerStep * 4))
     {
         std::stringstream ss;
         ss << (step++);
-        auto cursor = ImVec2(p.x - scrollX + g, p.y);
-        if (cursor.x >= p.x)
+        auto cursor = ImVec2(screenOrigin.x - scrollX + g, screenOrigin.y);
+        if (cursor.x >= screenOrigin.x)
         {
             ImGui::GetWindowDrawList()->AddLine(
                 ImVec2(cursor.x, cursor.y),

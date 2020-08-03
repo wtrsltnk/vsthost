@@ -103,6 +103,7 @@ target_compile_definitions(imgui-vsthost
     PRIVATE -DUNICODE
     PRIVATE -D_WIN32_WINNT=0x602
     PRIVATE -D__WINDOWS_MM__
+    PRIVATE -DTEST_YOUR_CODE
     )
 
 target_include_directories(imgui-vsthost

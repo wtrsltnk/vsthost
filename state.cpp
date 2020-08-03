@@ -19,8 +19,17 @@ void State::Update()
 long State::MsToSteps(
     std::chrono::milliseconds::rep time)
 {
-    // 1 beat = 1000 in timesteps
-    return ((time / 1000.0f) / (60.0f / _bpm)) * 4000;
+    auto bps = 60.0f / _bpm;
+
+    return ((time / 1000.0f) / bps) * 4000;
+}
+
+std::chrono::milliseconds::rep State::StepsToMs(
+    long time)
+{
+    float bps = 60.0f / _bpm;
+
+    return ((time / 4000.0f) * bps) * 1000;
 }
 
 void State::UpdateByDiff(
@@ -31,6 +40,12 @@ void State::UpdateByDiff(
         _lastTime = _cursor;
         _cursor += MsToSteps(diff);
     }
+}
+
+void State::SetCursorAtStep(
+    int step)
+{
+    _cursor = step * 1000;
 }
 
 void State::StartPlaying()
@@ -102,3 +117,22 @@ bool State::IsRecording() const
 {
     return _recording;
 }
+
+#ifdef TEST_YOUR_CODE
+
+#include <cassert>
+#include <iostream>
+
+void State::Tests()
+{
+    auto sut = State();
+    auto startMs = 12345;
+    auto tmp = sut.MsToSteps(startMs);
+    auto endSteps = sut.StepsToMs(tmp);
+
+    if (endSteps != startMs)
+    {
+        std::cout << endSteps << "!=" << startMs << std::endl;
+    }
+}
+#endif
