@@ -52,6 +52,11 @@ class TracksEditor
 
     int MaxTracksWidth();
 
+    void UpdateRegionLength(
+        Track *track,
+        long regionAt,
+        long length);
+
     void RenderCursor(
         ImVec2 const &p,
         ImVec2 const &size);
@@ -76,7 +81,7 @@ class TracksEditor
 
     void RenderRegion(
         Track *track,
-        std::pair<const long, Region> &region,
+        std::pair<const long, Region> const &region,
         ImVec2 const &trackOrigin,
         ImVec2 const &trackScreenOrigin);
 

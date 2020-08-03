@@ -119,7 +119,7 @@ bool refillCallback(
 
     for (auto track : tracks)
     {
-        for (auto region : track->_regions)
+        for (auto region : track->Regions())
         {
             if (region.first > end) continue;
             if (region.first + region.second._length < start) continue;
@@ -642,6 +642,11 @@ void InspectorWindow(
             {
                 if (ImGui::CollapsingHeader((std::string("Track: ") + _tracks.activeTrack->_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
                 {
+                    ImGui::ColorEdit4(
+                        "MyColor##track",
+                        (float *)&(_tracks.activeTrack->_color),
+                        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+
                     if (_tracks.activeTrack->_instrument != nullptr)
                     {
                         auto vstPlugin = _tracks.activeTrack->_instrument->_plugin;
@@ -694,12 +699,22 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
                     }
 
                     //                    ImGui::ShowDemoWindow();
-                    ImGui::ColorEdit4(
-                        "MyColor##3",
-                        (float *)&(_tracks.activeTrack->_color),
-                        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-
                     ImGui::Separator();
+                }
+            }
+
+            auto track = std::get<Track *>(_tracks.activeRegion);
+            if (track == _tracks.activeTrack)
+            {
+                auto regionStart = std::get<long>(_tracks.activeRegion);
+                if (track->Regions().find(regionStart) != track->Regions().end())
+                {
+                    auto &region = track->GetRegion(regionStart);
+
+                    if (ImGui::CollapsingHeader((std::string("Region: ") + _tracks.activeTrack->_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                    {
+                        ImGui::Text("# of midi events: %llu", region._events.size());
+                    }
                 }
             }
 

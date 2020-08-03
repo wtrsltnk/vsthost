@@ -83,7 +83,7 @@ void TracksManager::RemoveActiveRegion()
 
     auto regionStart = std::get<long>(activeRegion);
 
-    track->_regions.erase(regionStart);
+    track->RemoveRegion(regionStart);
 }
 
 void TracksManager::CleanupInstruments()

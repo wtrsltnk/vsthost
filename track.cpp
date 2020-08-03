@@ -18,7 +18,7 @@ long Track::StartNewRegion(
     Region region;
     region._length = 4000;
 
-    _regions.insert(std::make_pair(start, region));
+    AddRegion(start, region);
 
     return start;
 }
@@ -39,12 +39,36 @@ void Track::RecordMidiEvent(
         Region region;
         region._length = 4000;
 
-        _regions.insert(std::make_pair(time - (time % 4000), region));
+        AddRegion(time - (time % 4000), region);
 
         _activeRegion = GetActiveRegionAt(_regions, time);
     }
 
     _activeRegion->second.AddEvent(time - _activeRegion->first, noteNumber, onOff, velocity);
+}
+
+std::map<long, Region> const &Track::Regions() const
+{
+    return _regions;
+}
+
+Region &Track::GetRegion(
+    long at)
+{
+    return _regions[at];
+}
+
+void Track::AddRegion(
+    long startAt,
+    Region const &region)
+{
+    _regions.insert(std::make_pair(startAt, region));
+}
+
+void Track::RemoveRegion(
+    long startAt)
+{
+    _regions.erase(startAt);
 }
 
 std::map<long, Region>::iterator Track::GetActiveRegionAt(

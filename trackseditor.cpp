@@ -34,7 +34,7 @@ int TracksEditor::MaxTracksWidth()
 {
     for (auto &track : _tracks->tracks)
     {
-        for (auto &region : track->_regions)
+        for (auto &region : track->Regions())
         {
             auto end = region.first + region.second._length + 8000;
             if (end > _maxTrackLength) _maxTrackLength = end;
@@ -291,9 +291,18 @@ void TracksEditor::StartDragRegion(
     _tracks->activeRegion = std::tuple<Track *, long>(track, region.first);
 }
 
+void TracksEditor::UpdateRegionLength(
+    Track *track,
+    long regionAt,
+    long length)
+{
+    track->GetRegion(regionAt)
+        ._length = length;
+}
+
 void TracksEditor::RenderRegion(
     Track *track,
-    std::pair<const long, Region> &region,
+    std::pair<const long, Region> const &region,
     ImVec2 const &trackOrigin,
     ImVec2 const &trackScreenOrigin)
 {
@@ -323,7 +332,7 @@ void TracksEditor::RenderRegion(
 
         if (newLength > 0 && newLength != region.second._length)
         {
-            region.second._length = newLength;
+            UpdateRegionLength(track, region.first, newLength);
             _mouseDragStart = ImGui::GetMousePos();
         }
     }
@@ -499,19 +508,19 @@ void TracksEditor::RenderTrack(
     auto trackOrigin = ImGui::GetCursorPos();
     auto trackScreenOrigin = ImGui::GetCursorScreenPos();
 
-    for (auto &region : track->_regions)
+    for (auto &region : track->Regions())
     {
         RenderRegion(track, region, trackOrigin, trackScreenOrigin);
     }
 
     if (doMove && _mouseDragTrack == track)
     {
-        auto r = track->_regions[_mouseDragFrom];
+        auto r = track->GetRegion(_mouseDragFrom);
         if (!ImGui::GetIO().KeyShift)
         {
-            track->_regions.erase(_mouseDragFrom);
+            track->RemoveRegion(_mouseDragFrom);
         }
-        track->_regions.insert(std::make_pair(moveTo, r));
+        track->AddRegion(moveTo, r);
         _tracks->activeRegion = std::tuple<Track *, long>(track, moveTo);
         _mouseDragFrom = moveTo = -1;
         doMove = false;
