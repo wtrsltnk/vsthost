@@ -347,24 +347,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         ImGui_ImplGlfw_CharCallback(window, char(wParam));
         break;
     }
+    case WM_LBUTTONDBLCLK:
     case WM_LBUTTONDOWN:
     case WM_LBUTTONUP:
     {
-        ImGui_ImplGlfw_MouseButtonCallback(window, 0, message == WM_LBUTTONDOWN ? GLFW_PRESS : GLFW_RELEASE, 0);
+        ImGui_ImplGlfw_MouseButtonCallback(window, 0, message != WM_LBUTTONUP ? GLFW_PRESS : GLFW_RELEASE, 0);
         g_Window->mouseButtonStates[0] = (message == WM_LBUTTONDOWN);
         break;
     }
+    case WM_MBUTTONDBLCLK:
     case WM_MBUTTONDOWN:
     case WM_MBUTTONUP:
     {
-        ImGui_ImplGlfw_MouseButtonCallback(window, 2, message == WM_MBUTTONDOWN ? GLFW_PRESS : GLFW_RELEASE, 0);
+        ImGui_ImplGlfw_MouseButtonCallback(window, 2, message != WM_MBUTTONUP ? GLFW_PRESS : GLFW_RELEASE, 0);
         g_Window->mouseButtonStates[2] = (message == WM_MBUTTONDOWN);
         break;
     }
+    case WM_RBUTTONDBLCLK:
     case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
     {
-        ImGui_ImplGlfw_MouseButtonCallback(window, 1, message == WM_RBUTTONDOWN ? GLFW_PRESS : GLFW_RELEASE, 0);
+        ImGui_ImplGlfw_MouseButtonCallback(window, 1, message != WM_RBUTTONUP ? GLFW_PRESS : GLFW_RELEASE, 0);
         g_Window->mouseButtonStates[1] = (message == WM_RBUTTONDOWN);
         break;
     }

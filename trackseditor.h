@@ -27,7 +27,16 @@ class TracksEditor
     Track *_mouseDragTrack = nullptr;
 
     long _mouseDragFrom = -1, moveTo = -1;
-    bool doMove = false;
+    bool _doMove = false;
+    bool _zoomInOnActiveRegion = false;
+    int _pixelsPerStepBeforeZoom = 20;
+    int _scrollXOnNextFrame = -1;
+
+    long ZoomIn(
+        Track *track,
+        std::pair<const long, Region> const &region);
+
+    void ZoomOut();
 
     void HandleTracksEditorShortCuts();
 
@@ -64,7 +73,8 @@ class TracksEditor
 
     void RenderGrid(
         ImVec2 const &p,
-        int trackWidth);
+        int trackWidth,
+        int fullTracksHeight);
 
     void RenderTimeline(
         ImVec2 const &p,
@@ -84,7 +94,13 @@ class TracksEditor
         Track *track,
         std::pair<const long, Region> const &region,
         ImVec2 const &trackOrigin,
-        ImVec2 const &trackScreenOrigin);
+        ImVec2 const &trackScreenOrigin,
+        int finalTrackHeight);
+
+    void RenderNotes(
+        std::pair<const long, Region> const &region,
+        ImVec2 const &trackScreenOrigin,
+        int finalTrackHeight);
 
 public:
     TracksEditor();
