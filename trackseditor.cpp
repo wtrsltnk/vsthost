@@ -318,6 +318,11 @@ void TracksEditor::StartDragRegion(
     ITrack *track,
     std::pair<long, Region> region)
 {
+    if (_zoomInOnActiveRegion)
+    {
+        return;
+    }
+
     _tracks->SetActiveTrack(track);
     _mouseDragStart = ImGui::GetMousePos();
     _tracks->SetActiveRegion(track, region.first);
@@ -343,6 +348,7 @@ long TracksEditor::ZoomIn(
 
     _zoomInOnActiveRegion = true;
     _tracks->SetActiveTrack(track);
+
     _tracks->SetActiveRegion(track, region.first);
     _pixelsPerStepBeforeZoom = _pixelsPerStep;
     _pixelsPerStep = 100;
@@ -395,7 +401,6 @@ void TracksEditor::RenderRegion(
                 if (ImGui::InvisibleButton("key", ImVec2(regionWidth, midiEventHeight)))
                 {
                     auto midiNoteStart = PixelsToSteps(ImGui::GetMousePos().x - regionOrigin.x - trackScreenOrigin.x);
-                    std::cout << i << " : " << midiNoteStart << std::endl;
                     auto &regionToChange = track->GetRegion(region.first);
                     regionToChange.AddEvent(midiNoteStart, i, true, 100);
                     regionToChange.AddEvent(midiNoteStart + 1000, i, false, 0);
@@ -444,7 +449,7 @@ void TracksEditor::RenderRegion(
         ImGui::Button("##test", ImVec2(regionWidth, finalTrackHeight - 8));
         if (isActiveRegion) ImGui::PopStyleColor(2);
 
-        if (ImGui::IsMouseDoubleClicked(0))
+        if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0) && !_zoomInOnActiveRegion && _tracks->GetActiveTrack() == track)
         {
             auto steps = ZoomIn(track, region);
             _scrollXOnNextFrame = _pixelsPerStep * (steps / 4000);
@@ -636,6 +641,7 @@ void TracksEditor::RenderTrack(
             track->RemoveRegion(_mouseDragFrom);
         }
         track->AddRegion(moveTo, r);
+
         _tracks->SetActiveRegion(track, moveTo);
         _mouseDragFrom = moveTo = -1;
         _doMove = false;
@@ -663,6 +669,11 @@ void TracksEditor::RenderTrackHeader(
     ITrack *track,
     int t)
 {
+    if (track == nullptr)
+    {
+        return;
+    }
+
     auto finalTrackHeight = _zoomInOnActiveRegion && track == _tracks->GetActiveTrack() ? zoomedInTrackHeight : _trackHeight;
 
     auto drawList = ImGui::GetWindowDrawList();

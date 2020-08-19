@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <imgui.h>
+#include <iostream>
 #include <sstream>
 #include <tuple>
 
@@ -41,6 +42,8 @@ void TracksManager::SetActiveRegion(
     {
         return;
     }
+
+    std::cout << "Setting active region: " << track->GetName() << " @ " << start << std::endl;
 
     activeRegion = std::tuple<ITrack *, long>(track, start);
 }
