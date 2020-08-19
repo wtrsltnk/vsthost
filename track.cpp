@@ -23,6 +23,8 @@ long Track::StartNewRegion(
     return start;
 }
 
+#include <iostream>
+
 void Track::RecordMidiEvent(
     long time,
     int noteNumber,

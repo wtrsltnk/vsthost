@@ -31,7 +31,14 @@ void Region::AddEvent(
     event.value = onOff ? velocity : 0;
     event.channel = 0;
 
-    _events.insert(std::make_pair(time, std::vector<MidiEvent>{event}));
+    if (_events.find(time) == _events.end())
+    {
+        _events.insert(std::make_pair(time, std::vector<MidiEvent>{event}));
+    }
+    else
+    {
+        _events[time].push_back(event);
+    }
 
     auto requiredLength = time + 4000 - (time % 4000);
     if (_length < requiredLength)
