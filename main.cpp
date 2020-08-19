@@ -149,14 +149,21 @@ bool refillCallback(
 
     for (auto track : tracks)
     {
-        auto tmpsampleCount = sampleCount;
-        auto vstPlugin = track->GetInstrument()->_plugin;
+        auto instrument = track->GetInstrument();
+        if (instrument == nullptr)
+        {
+            continue;
+        }
+
+        auto vstPlugin = instrument->_plugin;
         if (vstPlugin == nullptr)
         {
             continue;
         }
+
         vstPlugin->processEvents();
 
+        auto tmpsampleCount = sampleCount;
         const auto nSrcChannels = vstPlugin->getChannelCount();
         const auto vstSamplesPerBlock = vstPlugin->getBlockSize();
 
@@ -230,6 +237,11 @@ void HandleIncomingMidiEvent(
 
     for (auto &instrument : _tracks.GetInstruments())
     {
+        if (instrument->_plugin == nullptr)
+        {
+            continue;
+        }
+
         instrument->_plugin->sendMidiNote(
             midiChannel,
             noteNumber,
@@ -422,7 +434,7 @@ void ToolbarWindow(
     ImGui::PopStyleColor(1);
 }
 
-const int toolbarHeight = 62;
+static int toolbarHeight = 62;
 const int pianoHeight = 180;
 const int inspectorWidth = 350;
 
@@ -499,21 +511,27 @@ void MainLoop()
 
         MainMenu();
 
+        auto &style = ImGui::GetStyle();
+        toolbarHeight = (style.FramePadding.y * 2) + style.WindowPadding.y + ImGui::GetFont()->FontSize;
+
+        auto currentPos = ImGui::GetCursorPos();
         ToolbarWindow(
-            ImVec2(0, ImGui::GetTextLineHeightWithSpacing()),
-            ImVec2(state._width, toolbarHeight - ImGui::GetTextLineHeightWithSpacing()));
+            ImVec2(0, currentPos.y - style.WindowPadding.y),
+            ImVec2(state._width, toolbarHeight + style.WindowPadding.y));
 
         _inspectorWindow.Render(
-            ImVec2(0, toolbarHeight),
+            ImVec2(0, currentPos.y + toolbarHeight),
             ImVec2(currentInspectorWidth, state._height - toolbarHeight));
 
         _tracksEditor.Render(
-            ImVec2(currentInspectorWidth, toolbarHeight),
-            ImVec2(state._width - currentInspectorWidth, state._height - toolbarHeight - pianoHeight));
+            ImVec2(currentInspectorWidth, currentPos.y + toolbarHeight),
+            ImVec2(state._width - currentInspectorWidth, state._height - currentPos.y - toolbarHeight - pianoHeight));
 
         _pianoWindow.Render(
             ImVec2(currentInspectorWidth, state._height - pianoHeight),
             ImVec2(state._width - currentInspectorWidth, pianoHeight));
+
+        ImGui::ShowDemoWindow();
 
         // Rendering
         int display_w, display_h;
@@ -586,8 +604,15 @@ int main(
 
     // Setup style
     ImGui::StyleColorsDark();
-    ImGui::GetStyle().WindowRounding = 0;
-    ImGui::GetStyle().ChildRounding = 0;
+    auto &style = ImGui::GetStyle();
+
+    style.WindowRounding = 0;
+    style.WindowPadding = ImVec2(10, 10);
+    style.FramePadding = ImVec2(12, 6);
+    style.ItemInnerSpacing = ImVec2(20, 20);
+    style.ItemSpacing = ImVec2(10, 15);
+    style.ChildRounding = 0;
+    style.ScrollbarRounding = 0;
 
     SetupFonts();
 

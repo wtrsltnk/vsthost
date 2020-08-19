@@ -33,6 +33,8 @@ void PianoWindow::Render(
         const int keyWidth = 32;
         const int keyHeight = 64;
 
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 2));
         ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(50, 50, 50));
 
         auto drawPos = ImGui::GetCursorScreenPos();
@@ -138,6 +140,7 @@ void PianoWindow::Render(
         }
 
         ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar(2);
     }
     ImGui::End();
 }

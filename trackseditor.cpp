@@ -419,7 +419,9 @@ void TracksEditor::RenderRegion(
                 regionOrigin.x + regionWidth - regionResizeHandleWidth,
                 regionOrigin.y));
 
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         ImGui::Button(ICON_FK_ARROWS_H, ImVec2(regionResizeHandleWidth, finalTrackHeight - 8));
+        ImGui::PopStyleVar();
 
         if (!_zoomInOnActiveRegion && ImGui::IsItemClicked(0))
         {
@@ -697,12 +699,14 @@ void TracksEditor::RenderTrackHeader(
 
     std::stringstream ss;
     ss << (t + 1);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
     ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[(_tracks->GetActiveTrack() == track ? ImGuiCol_ButtonActive : ImGuiCol_Button)]);
     if (ImGui::Button(ss.str().c_str(), ImVec2(20, finalTrackHeight)))
     {
         _tracks->SetActiveTrack(track);
     }
     ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
 
     ImGui::SameLine();
 
