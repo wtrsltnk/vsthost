@@ -12,6 +12,7 @@ const int timelineHeight = 30;
 const int regionRounding = 5.0f;
 const int regionResizeHandleWidth = 20.0f;
 const int zoomedInTrackHeight = 600;
+const int midiEventHeight = 10;
 
 const ImColor color = ImColor(55, 55, 55, 55);
 const ImColor accentColor = ImColor(55, 55, 55, 155);
@@ -33,7 +34,7 @@ float TracksEditor::StepsToPixels(
 
 int TracksEditor::MaxTracksWidth()
 {
-    for (auto &track : _tracks->tracks)
+    for (auto &track : _tracks->GetTracks())
     {
         for (auto &region : track->Regions())
         {
@@ -54,12 +55,15 @@ void TracksEditor::SetState(State *state)
 {
     _state = state;
 }
-void TracksEditor::SetTracksManager(TracksManager *tracks)
+void TracksEditor::SetTracksManager(
+    ITracksManager *tracks)
 {
     _tracks = tracks;
 }
 
-void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
+void TracksEditor::Render(
+    const ImVec2 &pos,
+    const ImVec2 &size)
 {
     if (_pixelsPerStep <= 0) _pixelsPerStep = 1;
 
@@ -72,7 +76,7 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
         ImGui::SetWindowSize(size);
 
         auto trackWidth = StepsToPixels(MaxTracksWidth());
-        int fullHeight = _tracks->tracks.size() * (_trackHeight + ImGui::GetStyle().ItemSpacing.y);
+        int fullHeight = _tracks->GetTracks().size() * (_trackHeight + ImGui::GetStyle().ItemSpacing.y);
 
         if (_zoomInOnActiveRegion)
         {
@@ -84,13 +88,6 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
             "track_tools",
             ImVec2(0, trackToolsHeight));
         {
-            if (ImGui::Button(ICON_FK_PLUS))
-            {
-                _tracks->activeTrack = _tracks->AddVstTrack();
-            }
-
-            ImGui::SameLine();
-
             ImGui::PushItemWidth(100);
             ImGui::SliderInt("track height", &_trackHeight, 24, 300);
             ImGui::SameLine();
@@ -130,7 +127,6 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
         {
             if (_scrollXOnNextFrame > -1)
             {
-                std::cout << "scrolling " << _scrollXOnNextFrame << std::endl;
                 ImGui::SetScrollX(_scrollXOnNextFrame);
                 _scrollXOnNextFrame = -1;
             }
@@ -142,7 +138,7 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
             ImGui::BeginGroup();
             {
                 int trackIndex = 0;
-                for (auto track : _tracks->tracks)
+                for (auto track : _tracks->GetTracks())
                 {
                     RenderTrack(
                         track,
@@ -154,7 +150,6 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
 
             _tracksScrollx = ImGui::GetScrollX();
             _tracksScrolly = ImGui::GetScrollY();
-            std::cout << _tracksScrollx << std::endl;
         }
         ImGui::EndChild();
 
@@ -181,7 +176,7 @@ void TracksEditor::Render(const ImVec2 &pos, const ImVec2 &size)
                 ImGuiWindowFlags_NoScrollbar);
             {
                 int trackIndex = 0;
-                for (auto track : _tracks->tracks)
+                for (auto track : _tracks->GetTracks())
                 {
                     RenderTrackHeader(
                         track,
@@ -320,16 +315,16 @@ long TracksEditor::GetNewRegionLength(
 }
 
 void TracksEditor::StartDragRegion(
-    Track *track,
+    ITrack *track,
     std::pair<long, Region> region)
 {
-    _tracks->activeTrack = track;
+    _tracks->SetActiveTrack(track);
     _mouseDragStart = ImGui::GetMousePos();
-    _tracks->activeRegion = std::tuple<Track *, long>(track, region.first);
+    _tracks->SetActiveRegion(track, region.first);
 }
 
 void TracksEditor::UpdateRegionLength(
-    Track *track,
+    ITrack *track,
     long regionAt,
     long length)
 {
@@ -338,7 +333,7 @@ void TracksEditor::UpdateRegionLength(
 }
 
 long TracksEditor::ZoomIn(
-    Track *track,
+    ITrack *track,
     std::pair<const long, Region> const &region)
 {
     if (_zoomInOnActiveRegion)
@@ -347,8 +342,8 @@ long TracksEditor::ZoomIn(
     }
 
     _zoomInOnActiveRegion = true;
-    _tracks->activeTrack = track;
-    _tracks->activeRegion = std::tuple<Track *, long>(track, region.first);
+    _tracks->SetActiveTrack(track);
+    _tracks->SetActiveRegion(track, region.first);
     _pixelsPerStepBeforeZoom = _pixelsPerStep;
     _pixelsPerStep = 100;
     _state->SetCursorAtStep(region.first / 1000);
@@ -363,13 +358,13 @@ void TracksEditor::ZoomOut()
 }
 
 void TracksEditor::RenderRegion(
-    Track *track,
+    ITrack *track,
     std::pair<const long, Region> const &region,
     ImVec2 const &trackOrigin,
     ImVec2 const &trackScreenOrigin,
     int finalTrackHeight)
 {
-    auto isActiveRegion = std::get<Track *>(_tracks->activeRegion) == track && std::get<long>(_tracks->activeRegion) == region.first;
+    auto isActiveRegion = std::get<ITrack *>(_tracks->GetActiveRegion()) == track && std::get<long>(_tracks->GetActiveRegion()) == region.first;
 
     auto regionOrigin = ImVec2(trackOrigin.x + StepsToPixels(region.first), trackOrigin.y + 4);
     auto regionWidth = StepsToPixels(region.second._length);
@@ -392,7 +387,23 @@ void TracksEditor::RenderRegion(
 
         ImGui::BeginChild("zoomineditor", ImVec2(regionWidth, zoomedInTrackHeight - (4 * regionRounding)));
         {
-            ImGui::Text("test");
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 1));
+            ImGui::BeginGroup();
+            for (int i = 127; i >= 0; i--)
+            {
+                ImGui::PushID(i);
+                if (ImGui::InvisibleButton("key", ImVec2(regionWidth, midiEventHeight)))
+                {
+                    auto midiNoteStart = PixelsToSteps(ImGui::GetMousePos().x - regionOrigin.x - trackScreenOrigin.x);
+                    std::cout << i << " : " << midiNoteStart << std::endl;
+                    auto &regionToChange = track->GetRegion(region.first);
+                    regionToChange.AddEvent(midiNoteStart, i, true, 100);
+                    regionToChange.AddEvent(midiNoteStart + 1000, i, false, 0);
+                }
+                ImGui::PopID();
+            }
+            ImGui::EndGroup();
+            ImGui::PopStyleVar(1);
         }
         ImGui::EndChild();
     }
@@ -425,8 +436,8 @@ void TracksEditor::RenderRegion(
 
         if (isActiveRegion)
         {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(track->_color[0] * 2.0f, track->_color[1] * 2.0f, track->_color[2] * 2.0f, track->_color[3] * 0.5f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(track->_color[0] * 2.0f, track->_color[1] * 2.0f, track->_color[2] * 2.0f, track->_color[3] * 0.7f));
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(track->GetColor()[0] * 2.0f, track->GetColor()[1] * 2.0f, track->GetColor()[2] * 2.0f, track->GetColor()[3] * 0.5f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(track->GetColor()[0] * 2.0f, track->GetColor()[1] * 2.0f, track->GetColor()[2] * 2.0f, track->GetColor()[3] * 0.7f));
         }
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, regionRounding);
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
@@ -444,8 +455,8 @@ void TracksEditor::RenderRegion(
             _mouseDragTrack = track;
             _mouseDragFrom = region.first;
 
-            _tracks->activeTrack = track;
-            _tracks->activeRegion = std::tuple<Track *, long>(track, region.first);
+            _tracks->SetActiveTrack(track);
+            _tracks->SetActiveRegion(track, region.first);
         }
 
         if (_mouseDragTrack == track)
@@ -479,9 +490,9 @@ void TracksEditor::RenderRegion(
             }
         }
 
-        ImGui::PopStyleVar(2);
-
         RenderNotes(region, trackScreenOrigin, finalTrackHeight);
+
+        ImGui::PopStyleVar(2);
     }
 
     ImGui::PopID();
@@ -570,22 +581,22 @@ void TracksEditor::RenderNotes(
 }
 
 void TracksEditor::RenderTrack(
-    Track *track,
+    ITrack *track,
     int t,
     int trackWidth)
 {
-    auto finalTrackHeight = _zoomInOnActiveRegion && track == _tracks->activeTrack ? zoomedInTrackHeight : _trackHeight;
+    auto finalTrackHeight = _zoomInOnActiveRegion && track == _tracks->GetActiveTrack() ? zoomedInTrackHeight : _trackHeight;
 
     auto drawList = ImGui::GetWindowDrawList();
 
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(track->_color[0], track->_color[1], track->_color[2], track->_color[3] * 0.5f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(track->_color[0], track->_color[1], track->_color[2], track->_color[3] * 0.7f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(track->_color[0], track->_color[1], track->_color[2], track->_color[3]));
-    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(track->_color[0] * 1.2f, track->_color[1] * 1.2f, track->_color[2] * 1.2f, track->_color[3]));
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(track->GetColor()[0], track->GetColor()[1], track->GetColor()[2], track->GetColor()[3] * 0.5f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(track->GetColor()[0], track->GetColor()[1], track->GetColor()[2], track->GetColor()[3] * 0.7f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(track->GetColor()[0], track->GetColor()[1], track->GetColor()[2], track->GetColor()[3]));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(track->GetColor()[0] * 1.2f, track->GetColor()[1] * 1.2f, track->GetColor()[2] * 1.2f, track->GetColor()[3]));
 
     auto pp = ImGui::GetCursorScreenPos();
     auto ppNotScrolled = ImVec2(pp.x + ImGui::GetScrollX(), pp.y);
-    if (track == _tracks->activeTrack)
+    if (track == _tracks->GetActiveTrack())
     {
         drawList->AddRectFilled(
             ppNotScrolled,
@@ -625,22 +636,22 @@ void TracksEditor::RenderTrack(
             track->RemoveRegion(_mouseDragFrom);
         }
         track->AddRegion(moveTo, r);
-        _tracks->activeRegion = std::tuple<Track *, long>(track, moveTo);
+        _tracks->SetActiveRegion(track, moveTo);
         _mouseDragFrom = moveTo = -1;
         _doMove = false;
     }
 
     ImGui::SetCursorPos(trackOrigin);
     auto btnSize = ImVec2(std::max(trackWidth, int(ImGui::GetContentRegionAvailWidth())), finalTrackHeight);
-    if (ImGui::InvisibleButton(track->_name.c_str(), btnSize) && !_zoomInOnActiveRegion)
+    if (ImGui::InvisibleButton(track->GetName().c_str(), btnSize) && !_zoomInOnActiveRegion)
     {
-        _tracks->activeTrack = track;
+        _tracks->SetActiveTrack(track);
 
         auto regionStart = PixelsToSteps(ImGui::GetMousePos().x - pp.x);
         regionStart = track->StartNewRegion(regionStart);
         if (regionStart >= 0)
         {
-            _tracks->activeRegion = std::tuple<Track *, long>(track, regionStart);
+            _tracks->SetActiveRegion(track, regionStart);
         }
     }
 
@@ -649,14 +660,14 @@ void TracksEditor::RenderTrack(
 }
 
 void TracksEditor::RenderTrackHeader(
-    Track *track,
+    ITrack *track,
     int t)
 {
-    auto finalTrackHeight = _zoomInOnActiveRegion && track == _tracks->activeTrack ? zoomedInTrackHeight : _trackHeight;
+    auto finalTrackHeight = _zoomInOnActiveRegion && track == _tracks->GetActiveTrack() ? zoomedInTrackHeight : _trackHeight;
 
     auto drawList = ImGui::GetWindowDrawList();
     auto cursorScreenPos = ImGui::GetCursorScreenPos();
-    if (track == _tracks->activeTrack)
+    if (track == _tracks->GetActiveTrack())
     {
         drawList->AddRectFilled(cursorScreenPos, ImVec2(cursorScreenPos.x + trackHeaderWidth, cursorScreenPos.y + finalTrackHeight), _trackactivebgcol);
     }
@@ -675,10 +686,10 @@ void TracksEditor::RenderTrackHeader(
 
     std::stringstream ss;
     ss << (t + 1);
-    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[(_tracks->activeTrack == track ? ImGuiCol_ButtonActive : ImGuiCol_Button)]);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[(_tracks->GetActiveTrack() == track ? ImGuiCol_ButtonActive : ImGuiCol_Button)]);
     if (ImGui::Button(ss.str().c_str(), ImVec2(20, finalTrackHeight)))
     {
-        _tracks->activeTrack = track;
+        _tracks->SetActiveTrack(track);
     }
     ImGui::PopStyleColor();
 
@@ -695,35 +706,35 @@ void TracksEditor::RenderTrackHeader(
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, ImGui::GetStyle().ItemSpacing.y));
         {
-            if (ImGui::ActiveButton(ICON_FAD_MUTE, track->_muted))
+            if (ImGui::ActiveButton(ICON_FAD_MUTE, track->IsMuted()))
             {
-                track->_muted = !track->_muted;
-                if (track->_muted && _tracks->soloTrack == track)
+                track->ToggleMuted();
+                if (track->IsMuted() && _tracks->GetSoloTrack() == track)
                 {
-                    _tracks->soloTrack = nullptr;
+                    _tracks->SetSoloTrack(nullptr);
                 }
-                _tracks->activeTrack = track;
+                _tracks->SetActiveTrack(track);
             }
 
             ImGui::SameLine();
 
-            if (ImGui::ActiveButton(ICON_FAD_SOLO, _tracks->soloTrack == track))
+            if (ImGui::ActiveButton(ICON_FAD_SOLO, _tracks->GetSoloTrack() == track))
             {
-                if (_tracks->soloTrack != track)
+                if (_tracks->GetSoloTrack() != track)
                 {
-                    _tracks->soloTrack = track;
-                    track->_muted = false;
+                    _tracks->SetSoloTrack(track);
+                    track->Unmute();
                 }
                 else
                 {
-                    _tracks->soloTrack = nullptr;
+                    _tracks->SetSoloTrack(nullptr);
                 }
-                _tracks->activeTrack = track;
+                _tracks->SetActiveTrack(track);
             }
 
             ImGui::SameLine();
 
-            if (track->_readyForRecord)
+            if (track->IsReadyForRecoding())
             {
                 if (_state->_recording)
                 {
@@ -741,7 +752,7 @@ void TracksEditor::RenderTrackHeader(
 
             if (ImGui::Button(ICON_FAD_RECORD))
             {
-                track->_readyForRecord = !track->_readyForRecord;
+                track->ToggleReadyForRecording();
             }
 
             ImGui::PopStyleColor();
@@ -758,18 +769,18 @@ void TracksEditor::RenderTrackHeader(
             ImGui::SetKeyboardFocusHere();
             if (ImGui::InputText("##editName", _editTrackBuffer, 128, ImGuiInputTextFlags_EnterReturnsTrue))
             {
-                track->_name = _editTrackBuffer;
+                track->SetName(_editTrackBuffer);
                 _editTrackName = -1;
             }
         }
         else
         {
-            ImGui::Text("%s", track->_name.c_str());
+            ImGui::Text("%s", track->GetName().c_str());
             if (ImGui::IsItemClicked())
             {
                 _editTrackName = t;
-                strcpy_s(_editTrackBuffer, 128, track->_name.c_str());
-                _tracks->activeTrack = track;
+                strcpy_s(_editTrackBuffer, 128, track->GetName().c_str());
+                _tracks->SetActiveTrack(track);
             }
         }
     }

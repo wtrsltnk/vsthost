@@ -2,28 +2,51 @@
 #define TRACKSMANAGER_H
 
 #include "track.h"
+#include "trackseditor.h"
 
 #include <vector>
 
-class TracksManager
+class TracksManager : public ITracksManager
 {
-public:
+    std::vector<ITrack *> tracks;
     std::vector<Instrument *> instruments;
-    std::vector<Track *> tracks;
-    Track *activeTrack = nullptr;
-    Track *soloTrack = nullptr;
-    std::tuple<Track *, long> activeRegion{nullptr, -1  };
+    ITrack *activeTrack = nullptr;
+    ITrack *soloTrack = nullptr;
+    std::tuple<ITrack *, long> activeRegion{nullptr, -1};
 
+public:
     TracksManager();
 
-    Track *AddVstTrack(
+    virtual std::vector<ITrack *> GetTracks() { return tracks; }
+    virtual std::vector<Instrument *> GetInstruments() { return instruments; }
+
+    virtual ITrack *GetActiveTrack() { return activeTrack; }
+    virtual void SetActiveTrack(
+        ITrack *track);
+
+    virtual ITrack *GetSoloTrack() { return soloTrack; }
+    virtual void SetSoloTrack(
+        ITrack *track);
+
+    virtual std::tuple<ITrack *, long> &GetActiveRegion() { return activeRegion; }
+    virtual void SetActiveRegion(
+        ITrack *track,
+        long start);
+
+    virtual ITrack *AddTrack(
+        const std::string &name,
+        Instrument *instrument = nullptr);
+
+    virtual void RemoveTrack(
+        ITrack *track);
+
+    virtual void RemoveActiveRegion();
+
+    virtual void CleanupInstruments();
+
+public:
+    ITrack *AddVstTrack(
         wchar_t const *plugin = nullptr);
-
-    void RemoveTrack(Track *track);
-
-    void RemoveActiveRegion();
-
-    void CleanupInstruments();
 };
 
 #endif // TRACKSMANAGER_H

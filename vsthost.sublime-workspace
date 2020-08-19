@@ -112,7 +112,7 @@
 			"file": "main.cpp",
 			"settings":
 			{
-				"buffer_size": 31613,
+				"buffer_size": 32400,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -121,7 +121,7 @@
 			"file": "CMakeLists.txt",
 			"settings":
 			{
-				"buffer_size": 1933,
+				"buffer_size": 2133,
 				"line_ending": "Windows"
 			}
 		}
@@ -775,7 +775,7 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 31613,
+						"buffer_size": 32400,
 						"regions":
 						{
 						},
@@ -822,7 +822,7 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1933,
+						"buffer_size": 2133,
 						"regions":
 						{
 						},

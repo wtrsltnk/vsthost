@@ -63,12 +63,16 @@ add_executable(imgui-vsthost
     imgui_impl_win32_gl2.h
     imguiutils.cpp
     imguiutils.h
+    inspectorwindow.cpp
+    inspectorwindow.h
     instrument.cpp
     instrument.h
     main.cpp
     midicontrollers.h
     midievent.cpp
     midievent.h
+    pianowindow.cpp
+    pianowindow.h
     region.cpp
     region.h
     state.cpp

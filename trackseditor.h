@@ -1,16 +1,21 @@
 #ifndef TRACKSEDITOR_H
 #define TRACKSEDITOR_H
 
+#include "itrack.h"
+#include "itracksmanager.h"
+#include "region.h"
 #include "state.h"
-#include "tracksmanager.h"
 
 #include <chrono>
 #include <imgui.h>
+#include <map>
+#include <string>
+#include <vector>
 
 class TracksEditor
 {
     State *_state = nullptr;
-    TracksManager *_tracks = nullptr;
+    ITracksManager *_tracks = nullptr;
     int _pixelsPerStep = 20;
     int _snapToPixels = 1000;
 
@@ -24,7 +29,7 @@ class TracksEditor
     ImColor _trackactivebgcol = ImColor(55, 88, 155, 55);
 
     ImVec2 _mouseDragStart;
-    Track *_mouseDragTrack = nullptr;
+    ITrack *_mouseDragTrack = nullptr;
 
     long _mouseDragFrom = -1, moveTo = -1;
     bool _doMove = false;
@@ -33,7 +38,7 @@ class TracksEditor
     int _scrollXOnNextFrame = -1;
 
     long ZoomIn(
-        Track *track,
+        ITrack *track,
         std::pair<const long, Region> const &region);
 
     void ZoomOut();
@@ -44,7 +49,7 @@ class TracksEditor
         long newX);
 
     void StartDragRegion(
-        Track *track,
+        ITrack *track,
         std::pair<long, Region> region);
 
     long GetNewRegionStart(
@@ -62,7 +67,7 @@ class TracksEditor
     int MaxTracksWidth();
 
     void UpdateRegionLength(
-        Track *track,
+        ITrack *track,
         long regionAt,
         long length);
 
@@ -82,16 +87,16 @@ class TracksEditor
         int scrollX);
 
     void RenderTrackHeader(
-        Track *track,
+        ITrack *track,
         int t);
 
     void RenderTrack(
-        Track *track,
+        ITrack *track,
         int t,
         int trackWidth);
 
     void RenderRegion(
-        Track *track,
+        ITrack *track,
         std::pair<const long, Region> const &region,
         ImVec2 const &trackOrigin,
         ImVec2 const &trackScreenOrigin,
@@ -106,8 +111,12 @@ public:
     TracksEditor();
 
     int EditTrackName() const;
-    void SetState(State *state);
-    void SetTracksManager(TracksManager *tracks);
+
+    void SetState(
+        State *state);
+
+    void SetTracksManager(
+        ITracksManager *tracks);
 
     void Render(
         ImVec2 const &pos,

@@ -1,7 +1,9 @@
 #include "tracksmanager.h"
 
+#include <algorithm>
 #include <imgui.h>
 #include <sstream>
+#include <tuple>
 
 static int trackColorIndex = 0;
 
@@ -9,7 +11,61 @@ TracksManager::TracksManager()
 {
 }
 
-Track *TracksManager::AddVstTrack(
+void TracksManager::SetActiveTrack(
+    ITrack *track)
+{
+    if (track != nullptr && std::find(tracks.begin(), tracks.end(), track) == tracks.end())
+    {
+        return;
+    }
+
+    activeTrack = track;
+}
+
+void TracksManager::SetSoloTrack(
+    ITrack *track)
+{
+    if (track != nullptr && std::find(tracks.begin(), tracks.end(), track) == tracks.end())
+    {
+        return;
+    }
+
+    soloTrack = track;
+}
+
+void TracksManager::SetActiveRegion(
+    ITrack *track,
+    long start)
+{
+    if (track != nullptr && std::find(tracks.begin(), tracks.end(), track) == tracks.end())
+    {
+        return;
+    }
+
+    activeRegion = std::tuple<ITrack *, long>(track, start);
+}
+
+ITrack *TracksManager::AddTrack(
+    const std::string &name,
+    Instrument *instrument)
+{
+    auto newTrack = new Track();
+    newTrack->SetInstrument(instrument);
+    newTrack->SetName(name);
+
+    auto c = ImColor::HSV(trackColorIndex++ * 0.05f, 0.6f, 0.6f);
+    newTrack->SetColor(
+        c.Value.x,
+        c.Value.y,
+        c.Value.z,
+        c.Value.w);
+
+    tracks.push_back(newTrack);
+
+    return newTrack;
+}
+
+ITrack *TracksManager::AddVstTrack(
     wchar_t const *plugin)
 {
     std::stringstream instrumentName;
@@ -34,22 +90,11 @@ Track *TracksManager::AddVstTrack(
     std::stringstream trackName;
     trackName << "Track " << (tracks.size() + 1);
 
-    auto newTrack = new Track();
-    newTrack->_instrument = newi;
-    newTrack->_name = trackName.str();
-
-    auto c = ImColor::HSV(trackColorIndex++ * 0.05f, 0.6f, 0.6f);
-    newTrack->_color[0] = c.Value.x;
-    newTrack->_color[1] = c.Value.y;
-    newTrack->_color[2] = c.Value.z;
-    newTrack->_color[3] = c.Value.w;
-
-    tracks.push_back(newTrack);
-
-    return newTrack;
+    return AddTrack(trackName.str(), newi);
 }
 
-void TracksManager::RemoveTrack(Track *track)
+void TracksManager::RemoveTrack(
+    ITrack *track)
 {
     if (track == nullptr)
     {
@@ -74,7 +119,7 @@ void TracksManager::RemoveTrack(Track *track)
 
 void TracksManager::RemoveActiveRegion()
 {
-    auto track = std::get<Track *>(activeRegion);
+    auto track = std::get<ITrack *>(activeRegion);
 
     if (track == nullptr)
     {

@@ -47,6 +47,65 @@ void Track::RecordMidiEvent(
     _activeRegion->second.AddEvent(time - _activeRegion->first, noteNumber, onOff, velocity);
 }
 
+void Track::SetName(
+    std::string const &name)
+{
+    _name = name;
+}
+
+void Track::SetInstrument(
+    Instrument *instrument)
+{
+    this->_instrument = instrument;
+}
+
+void Track::Mute()
+{
+    _muted = true;
+}
+
+void Track::Unmute()
+{
+    _muted = false;
+}
+
+void Track::ToggleMuted()
+{
+    _muted = !_muted;
+}
+
+void Track::SetReadyForRecording(
+    bool ready)
+{
+    _readyForRecord = ready;
+}
+
+void Track::ToggleReadyForRecording()
+{
+    _readyForRecord = !_readyForRecord;
+}
+
+void Track::SetColor(
+    float color[])
+{
+    _color[0] = color[0];
+    _color[1] = color[1];
+    _color[2] = color[2];
+    _color[3] = color[3];
+}
+
+void Track::SetColor(
+    float r,
+    float g,
+    float b,
+    float a)
+{
+    _color[0] = r;
+    _color[1] = g;
+    _color[2] = b;
+    _color[3] = a;
+}
+
 std::map<long, Region> const &Track::Regions() const
 {
     return _regions;

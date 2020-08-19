@@ -1,11 +1,3 @@
-// ImGui - standalone example application for GLFW + OpenGL2, using legacy fixed pipeline
-// If you are new to ImGui, see examples/README.txt and documentation at the top of imgui.cpp.
-// (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
-
-// **DO NOT USE THIS CODE IF YOUR CODE/ENGINE IS USING MODERN OPENGL (SHADERS, VBO, VAO, etc.)**
-// **Prefer using the code in the opengl3_example/ folder**
-// See imgui_impl_glfw.cpp for details.
-
 #include <glad/glad.h>
 
 #include <GL/wglext.h>
@@ -29,9 +21,11 @@
 #include "RtError.h"
 #include "RtMidi.h"
 #include "imguiutils.h"
+#include "inspectorwindow.h"
 #include "instrument.h"
 #include "midicontrollers.h"
 #include "midievent.h"
+#include "pianowindow.h"
 #include "region.h"
 #include "state.h"
 #include "track.h"
@@ -78,12 +72,14 @@ static RtMidiIn *midiIn = nullptr;
 static State state;
 static TracksManager _tracks;
 static GLFWwindow *window = nullptr;
-static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+static ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.00f);
 static TracksEditor _tracksEditor;
+static InspectorWindow _inspectorWindow;
+static PianoWindow _pianoWindow;
 
 void KillAllNotes()
 {
-    for (auto &instrument : _tracks.instruments)
+    for (auto &instrument : _tracks.GetInstruments())
     {
         for (int channel = 0; channel < 16; channel++)
         {
@@ -107,7 +103,7 @@ void HandleIncomingMidiEvent(
 
 // This function is called from Wasapi::threadFunc() which is running in audio thread.
 bool refillCallback(
-    std::vector<Track *> const &tracks,
+    std::vector<ITrack *> const &tracks,
     float *const data,
     uint32_t sampleCount,
     const WAVEFORMATEX *const mixFormat)
@@ -130,7 +126,7 @@ bool refillCallback(
                 if ((event.first + region.first) < start) continue;
                 for (auto m : event.second)
                 {
-                    track->_instrument->_plugin->sendMidiNote(
+                    track->GetInstrument()->_plugin->sendMidiNote(
                         m.channel,
                         m.num,
                         m.value != 0,
@@ -154,7 +150,7 @@ bool refillCallback(
     for (auto track : tracks)
     {
         auto tmpsampleCount = sampleCount;
-        auto vstPlugin = track->_instrument->_plugin;
+        auto vstPlugin = track->GetInstrument()->_plugin;
         if (vstPlugin == nullptr)
         {
             continue;
@@ -194,7 +190,7 @@ bool refillCallback(
                     const unsigned int vstOutputPage = (iFrame / vstSamplesPerBlock) * sChannel + sChannel;
                     const unsigned int vstOutputIndex = (iFrame % vstSamplesPerBlock);
                     const unsigned int wasapiWriteIndex = iFrame * nDstChannels + iChannel;
-                    if (!track->_muted && (_tracks.soloTrack == track || _tracks.soloTrack == nullptr) && data != 0)
+                    if (!track->IsMuted() && (_tracks.GetSoloTrack() == track || _tracks.GetSoloTrack() == nullptr) && data != 0)
                     {
                         *(data + ofs + wasapiWriteIndex) += vstOutput[vstOutputPage][vstOutputIndex];
                     }
@@ -209,26 +205,6 @@ bool refillCallback(
     return true;
 }
 
-VstPlugin *loadPlugin()
-{
-    wchar_t fn[MAX_PATH + 1];
-    OPENFILENAME ofn = {};
-    ofn.lStructSize = sizeof(ofn);
-    ofn.lpstrFilter = L"VSTi DLL(*.dll)\0*.dll\0All Files(*.*)\0*.*\0\0";
-    ofn.lpstrFile = fn;
-    ofn.nMaxFile = _countof(fn);
-    ofn.lpstrTitle = L"Select VST DLL";
-    ofn.Flags = OFN_FILEMUSTEXIST | OFN_ENABLESIZING;
-    if (GetOpenFileName(&ofn))
-    {
-        auto result = new VstPlugin();
-        result->init(fn);
-        return result;
-    }
-
-    return nullptr;
-}
-
 void HandleIncomingMidiEvent(
     int midiChannel,
     int noteNumber,
@@ -237,9 +213,9 @@ void HandleIncomingMidiEvent(
 {
     if (state.IsRecording())
     {
-        for (auto &track : _tracks.tracks)
+        for (auto &track : _tracks.GetTracks())
         {
-            if (!track->_readyForRecord)
+            if (!track->IsReadyForRecoding())
             {
                 continue;
             }
@@ -252,7 +228,7 @@ void HandleIncomingMidiEvent(
         }
     }
 
-    for (auto &instrument : _tracks.instruments)
+    for (auto &instrument : _tracks.GetInstruments())
     {
         instrument->_plugin->sendMidiNote(
             midiChannel,
@@ -295,146 +271,10 @@ void HandleKeyUpDown(
     }
 }
 
-const int Note_C_OffsetFromC = 0;
-const int Note_CSharp_OffsetFromC = 1;
-const int Note_D_OffsetFromC = 2;
-const int Note_DSharp_OffsetFromC = 3;
-const int Note_E_OffsetFromC = 4;
-const int Note_F_OffsetFromC = 5;
-const int Note_FSharp_OffsetFromC = 6;
-const int Note_G_OffsetFromC = 7;
-const int Note_GSharp_OffsetFromC = 8;
-const int Note_A_OffsetFromC = 9;
-const int Note_ASharp_OffsetFromC = 10;
-const int Note_B_OffsetFromC = 11;
-const int firstKeyNoteNumber = 24;
-
-char const *NoteToString(
-    unsigned int note);
-
-void PianoWindow(
-    ImVec2 const &pos,
-    ImVec2 const &size,
-    int octaves)
-{
-    ImGui::Begin("Piano", nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-    {
-        ImGui::SetWindowPos(pos);
-        ImGui::SetWindowSize(size);
-
-        const int keyWidth = 32;
-        const int keyHeight = 64;
-
-        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(50, 50, 50));
-
-        auto drawPos = ImGui::GetCursorScreenPos();
-        auto drawHeight = ImGui::GetContentRegionAvail().y;
-        int octaveWidth = (keyWidth + ImGui::GetStyle().ItemSpacing.x) * 7;
-        int n;
-        for (int i = 0; i < octaves; i++)
-        {
-            auto a = ImVec2(drawPos.x - (ImGui::GetStyle().ItemSpacing.x / 2) + octaveWidth * i, drawPos.y);
-            auto b = ImVec2(a.x + octaveWidth, a.y + drawHeight);
-            ImGui::GetWindowDrawList()->AddRectFilled(a, b, IM_COL32(66, 150, 249, i * 20));
-
-            ImGui::PushID(i);
-            if (i == 0)
-            {
-                ImGui::InvisibleButton("HalfSpace", ImVec2((keyWidth / 2) - (ImGui::GetStyle().ItemSpacing.x / 2), keyHeight));
-            }
-
-            ImGui::SameLine();
-
-            n = firstKeyNoteNumber + (i * 12) + Note_CSharp_OffsetFromC;
-            ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
-            HandleKeyUpDown(n);
-            ImGui::SameLine();
-
-            n = firstKeyNoteNumber + (i * 12) + Note_DSharp_OffsetFromC;
-            ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
-            HandleKeyUpDown(n);
-            ImGui::SameLine();
-
-            ImGui::InvisibleButton("SpaceE", ImVec2(keyWidth, keyHeight));
-            ImGui::SameLine();
-
-            n = firstKeyNoteNumber + (i * 12) + Note_FSharp_OffsetFromC;
-            ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
-            HandleKeyUpDown(n);
-            ImGui::SameLine();
-
-            n = firstKeyNoteNumber + (i * 12) + Note_GSharp_OffsetFromC;
-            ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
-            HandleKeyUpDown(n);
-            ImGui::SameLine();
-
-            n = firstKeyNoteNumber + (i * 12) + Note_ASharp_OffsetFromC;
-            ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
-            HandleKeyUpDown(n);
-            ImGui::SameLine();
-
-            ImGui::InvisibleButton("HalfSpace", ImVec2(keyWidth, keyHeight));
-
-            ImGui::PopID();
-        }
-
-        ImGui::PopStyleColor();
-
-        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
-        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)ImColor(20, 20, 20));
-
-        for (int i = 0; i < octaves; i++)
-        {
-            ImGui::PushID(i);
-
-            if (i > 0)
-            {
-                ImGui::SameLine();
-            }
-
-            n = firstKeyNoteNumber + (i * 12) + Note_C_OffsetFromC;
-            ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
-            HandleKeyUpDown(n);
-            ImGui::SameLine();
-
-            n = firstKeyNoteNumber + (i * 12) + Note_D_OffsetFromC;
-            ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
-            HandleKeyUpDown(n);
-            ImGui::SameLine();
-
-            n = firstKeyNoteNumber + (i * 12) + Note_E_OffsetFromC;
-            ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
-            HandleKeyUpDown(n);
-            ImGui::SameLine();
-
-            n = firstKeyNoteNumber + (i * 12) + Note_F_OffsetFromC;
-            ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
-            HandleKeyUpDown(n);
-            ImGui::SameLine();
-
-            n = firstKeyNoteNumber + (i * 12) + Note_G_OffsetFromC;
-            ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
-            HandleKeyUpDown(n);
-            ImGui::SameLine();
-
-            n = firstKeyNoteNumber + (i * 12) + Note_A_OffsetFromC;
-            ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
-            HandleKeyUpDown(n);
-            ImGui::SameLine();
-
-            n = firstKeyNoteNumber + (i * 12) + Note_B_OffsetFromC;
-            ImGui::Button(NoteToString(n), ImVec2(keyWidth, keyHeight));
-            HandleKeyUpDown(n);
-
-            ImGui::PopID();
-        }
-
-        ImGui::PopStyleColor(2);
-    }
-    ImGui::End();
-}
-
-void callback(double /*timeStamp*/, std::vector<unsigned char> *message, void * /*userData*/)
+void callback(
+    double /*timeStamp*/,
+    std::vector<unsigned char> *message,
+    void * /*userData*/)
 {
     MidiEvent ev;
     unsigned char chan = message->at(0) & 0x0f;
@@ -503,6 +343,7 @@ void ToolbarWindow(
     ImVec2 const &pos,
     ImVec2 const &size)
 {
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
     ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
     {
         ImGui::SetWindowPos(pos);
@@ -545,7 +386,7 @@ void ToolbarWindow(
 
         if (ImGui::Button(ICON_FAD_RECORD) && !state.IsRecording())
         {
-            for (auto track : _tracks.tracks)
+            for (auto track : _tracks.GetTracks())
             {
                 track->StartRecording();
             }
@@ -569,163 +410,21 @@ void ToolbarWindow(
         ImGui::PushItemWidth(100);
         ImGui::SliderInt("bpm", (int *)&(state._bpm), 10, 200);
         ImGui::PopItemWidth();
+
+        ImGui::SameLine();
+
+        if (ImGui::Button(ICON_FK_PLUS))
+        {
+            _tracks.SetActiveTrack(_tracks.AddVstTrack());
+        }
     }
     ImGui::End();
+    ImGui::PopStyleColor(1);
 }
 
-const int toolbarHeight = 80;
+const int toolbarHeight = 62;
 const int pianoHeight = 180;
 const int inspectorWidth = 350;
-
-void InspectorWindow(
-    int *currentInspectorWidth,
-    ImVec2 const &pos,
-    ImVec2 const &size)
-{
-
-    ImGui::Begin("Inspector", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-    {
-        ImGui::SetWindowPos(pos);
-        ImGui::SetWindowSize(size);
-
-        if (*currentInspectorWidth != inspectorWidth)
-        {
-            ImGui::Begin("Inspector", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-            {
-                ImGui::SetWindowPos(ImVec2(0, toolbarHeight));
-                ImGui::SetWindowSize(ImVec2(*currentInspectorWidth, state._height - toolbarHeight));
-
-                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-                if (ImGui::Button(ICON_FK_EYE))
-                {
-                    *currentInspectorWidth = inspectorWidth;
-                }
-                ImGui::PopStyleVar();
-            }
-            ImGui::End();
-        }
-        else
-        {
-            if (ImGui::Button(ICON_FK_EYE_SLASH))
-            {
-                *currentInspectorWidth = 36;
-            }
-
-            if (ImGui::CollapsingHeader("Midi", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                ImGui::Text("Midi ports");
-                int ports = midiIn->getPortCount();
-                std::string portName;
-                static int currentPort = -1;
-                ImGui::BeginGroup();
-                for (int i = 0; i < ports; i++)
-                {
-                    try
-                    {
-                        portName = midiIn->getPortName(i);
-                        if (ImGui::RadioButton(portName.c_str(), currentPort == i))
-                        {
-                            midiIn->closePort();
-                            midiIn->openPort(i);
-                            currentPort = i;
-                        }
-                    }
-                    catch (RtError &error)
-                    {
-                        error.printMessage();
-                    }
-                }
-                ImGui::EndGroup();
-            }
-
-            if (_tracks.activeTrack != nullptr)
-            {
-                if (ImGui::CollapsingHeader((std::string("Track: ") + _tracks.activeTrack->_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
-                {
-                    ImGui::ColorEdit4(
-                        "MyColor##track",
-                        (float *)&(_tracks.activeTrack->_color),
-                        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-
-                    if (_tracks.activeTrack->_instrument != nullptr)
-                    {
-                        auto vstPlugin = _tracks.activeTrack->_instrument->_plugin;
-
-                        if (vstPlugin == nullptr)
-                        {
-                            if (ImGui::Button("Add plugin"))
-                            {
-                                _tracks.activeTrack->_instrument->_plugin = loadPlugin();
-                                _tracks.activeTrack->_instrument->_plugin->title = _tracks.activeTrack->_instrument->_name.c_str();
-                            }
-                            ImGui::Separator();
-                        }
-                        else
-                        {
-                            ImGui::Text("%s by %s",
-                                        vstPlugin->getEffectName().c_str(),
-                                        vstPlugin->getVendorName().c_str());
-
-                            /* Save plugin data
-void *getLen;
-    int length = plugin->dispatcher(plugin,effGetChunk,0,0,&getLen,0.f);
-*/
-
-                            /* Load plugin data
-plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
-*/
-
-                            if (ImGui::Button("Change plugin"))
-                            {
-                                _tracks.activeTrack->_instrument->_plugin = loadPlugin();
-                                _tracks.activeTrack->_instrument->_plugin->title = _tracks.activeTrack->_instrument->_name.c_str();
-                            }
-                            ImGui::SameLine();
-                            if (!vstPlugin->isEditorOpen())
-                            {
-                                if (ImGui::Button("Open plugin"))
-                                {
-                                    vstPlugin->openEditor(window->hwnd);
-                                }
-                            }
-                            else
-                            {
-                                if (ImGui::Button("Close plugin"))
-                                {
-                                    vstPlugin->closeEditor();
-                                }
-                            }
-                        }
-                    }
-
-                    //                    ImGui::ShowDemoWindow();
-                    ImGui::Separator();
-                }
-            }
-
-            auto track = std::get<Track *>(_tracks.activeRegion);
-            if (track == _tracks.activeTrack)
-            {
-                auto regionStart = std::get<long>(_tracks.activeRegion);
-                if (track->Regions().find(regionStart) != track->Regions().end())
-                {
-                    auto &region = track->GetRegion(regionStart);
-
-                    if (ImGui::CollapsingHeader((std::string("Region: ") + _tracks.activeTrack->_name).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
-                    {
-                        ImGui::Text("# of midi events: %llu", region._events.size());
-                    }
-                }
-            }
-
-            if (ImGui::CollapsingHeader("Quick Help", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                ImGui::Text("Help!");
-            }
-        }
-    }
-    ImGui::End();
-}
 
 void MainMenu()
 {
@@ -761,7 +460,7 @@ void MainMenu()
 
 void HandleKeyboardToMidiEvents()
 {
-    if (_tracks.instruments.size() > 0 && _tracksEditor.EditTrackName() < 0)
+    if (_tracks.GetInstruments().size() > 0 && _tracksEditor.EditTrackName() < 0)
     {
         for (auto &e : _keyboardToNoteMap)
         {
@@ -778,12 +477,8 @@ void HandleKeyboardToMidiEvents()
 
 void MainLoop()
 {
-    RtMidiIn localMidiIn;
-    midiIn = &localMidiIn;
-    midiIn->setCallback(callback);
-
     Wasapi wasapi([&](float *const data, uint32_t availableFrameCount, const WAVEFORMATEX *const mixFormat) {
-        return refillCallback(_tracks.tracks, data, availableFrameCount, mixFormat);
+        return refillCallback(_tracks.GetTracks(), data, availableFrameCount, mixFormat);
     });
 
     // Main loop
@@ -808,8 +503,7 @@ void MainLoop()
             ImVec2(0, ImGui::GetTextLineHeightWithSpacing()),
             ImVec2(state._width, toolbarHeight - ImGui::GetTextLineHeightWithSpacing()));
 
-        InspectorWindow(
-            &currentInspectorWidth,
+        _inspectorWindow.Render(
             ImVec2(0, toolbarHeight),
             ImVec2(currentInspectorWidth, state._height - toolbarHeight));
 
@@ -817,10 +511,9 @@ void MainLoop()
             ImVec2(currentInspectorWidth, toolbarHeight),
             ImVec2(state._width - currentInspectorWidth, state._height - toolbarHeight - pianoHeight));
 
-        PianoWindow(
+        _pianoWindow.Render(
             ImVec2(currentInspectorWidth, state._height - pianoHeight),
-            ImVec2(state._width - currentInspectorWidth, pianoHeight),
-            8);
+            ImVec2(state._width - currentInspectorWidth, pianoHeight));
 
         // Rendering
         int display_w, display_h;
@@ -862,8 +555,13 @@ void SetupFonts()
     io.Fonts->Build();
 }
 
-int main(int, char **)
+int main(
+    int argc,
+    char **argv)
 {
+    (void)argc;
+    (void)argv;
+
 #ifdef TEST_YOUR_CODE
     State::Tests();
 #endif
@@ -872,6 +570,10 @@ int main(int, char **)
     {
         return 1;
     }
+
+    RtMidiIn localMidiIn;
+    midiIn = &localMidiIn;
+    midiIn->setCallback(callback);
 
     window = glfwCreateWindow(1280, 720, L"VstHost", nullptr, nullptr);
     glfwMakeContextCurrent(window);
@@ -889,10 +591,14 @@ int main(int, char **)
 
     SetupFonts();
 
-    _tracks.activeTrack = _tracks.AddVstTrack(L"BBC Symphony Orchestra (64 Bit).dll");
+    _tracks.SetActiveTrack(_tracks.AddVstTrack(L"BBC Symphony Orchestra (64 Bit).dll"));
 
     _tracksEditor.SetState(&state);
     _tracksEditor.SetTracksManager(&_tracks);
+
+    _inspectorWindow.SetState(&state);
+    _inspectorWindow.SetTracksManager(&_tracks);
+    _inspectorWindow.SetMidiIn(midiIn);
 
     MainLoop();
 
@@ -904,227 +610,4 @@ int main(int, char **)
     glfwTerminate();
 
     return 0;
-}
-
-char const *NoteToString(
-    unsigned int note)
-{
-    switch (note)
-    {
-        case 127:
-            return "G-9";
-        case 126:
-            return "F#9";
-        case 125:
-            return "F-9";
-        case 124:
-            return "E-9";
-        case 123:
-            return "D#9";
-        case 122:
-            return "D-9";
-        case 121:
-            return "C#9";
-        case 120:
-            return "C-9";
-        case 119:
-            return "B-8";
-        case 118:
-            return "A#8";
-        case 117:
-            return "A-8";
-        case 116:
-            return "G#8";
-        case 115:
-            return "G-8";
-        case 114:
-            return "F#8";
-        case 113:
-            return "F-8";
-        case 112:
-            return "E-8";
-        case 111:
-            return "D#8";
-        case 110:
-            return "D-8";
-        case 109:
-            return "C#8";
-        case 108:
-            return "C-8";
-        case 107:
-            return "B-7";
-        case 106:
-            return "A#7";
-        case 105:
-            return "A-7";
-        case 104:
-            return "G#7";
-        case 103:
-            return "G-7";
-        case 102:
-            return "F#7";
-        case 101:
-            return "F-7";
-        case 100:
-            return "E-7";
-        case 99:
-            return "D#7";
-        case 98:
-            return "D-7";
-        case 97:
-            return "C#7";
-        case 96:
-            return "C-7";
-        case 95:
-            return "B-6";
-        case 94:
-            return "A#6";
-        case 93:
-            return "A-6";
-        case 92:
-            return "G#6";
-        case 91:
-            return "G-6";
-        case 90:
-            return "F#6";
-        case 89:
-            return "F-6";
-        case 88:
-            return "E-6";
-        case 87:
-            return "D#6";
-        case 86:
-            return "D-6";
-        case 85:
-            return "C#6";
-        case 84:
-            return "C-6";
-        case 83:
-            return "B-5";
-        case 82:
-            return "A#5";
-        case 81:
-            return "A-5";
-        case 80:
-            return "G#5";
-        case 79:
-            return "G-5";
-        case 78:
-            return "F#5";
-        case 77:
-            return "F-5";
-        case 76:
-            return "E-5";
-        case 75:
-            return "D#5";
-        case 74:
-            return "D-5";
-        case 73:
-            return "C#5";
-        case 72:
-            return "C-5";
-        case 71:
-            return "B-4";
-        case 70:
-            return "A#4";
-        case 69:
-            return "A-4";
-        case 68:
-            return "G#4";
-        case 67:
-            return "G-4";
-        case 66:
-            return "F#4";
-        case 65:
-            return "F-4";
-        case 64:
-            return "E-4";
-        case 63:
-            return "D#4";
-        case 62:
-            return "D-4";
-        case 61:
-            return "C#4";
-        case 60:
-            return "C-4";
-        case 59:
-            return "B-3";
-        case 58:
-            return "A#3";
-        case 57:
-            return "A-3";
-        case 56:
-            return "G#3";
-        case 55:
-            return "G-3";
-        case 54:
-            return "F#3";
-        case 53:
-            return "F-3";
-        case 52:
-            return "E-3";
-        case 51:
-            return "D#3";
-        case 50:
-            return "D-3";
-        case 49:
-            return "C#3";
-        case 48:
-            return "C-3";
-        case 47:
-            return "B-2";
-        case 46:
-            return "A#2";
-        case 45:
-            return "A-2";
-        case 44:
-            return "G#2";
-        case 43:
-            return "G-2";
-        case 42:
-            return "F#2";
-        case 41:
-            return "F-2";
-        case 40:
-            return "E-2";
-        case 39:
-            return "D#2";
-        case 38:
-            return "D-2";
-        case 37:
-            return "C#2";
-        case 36:
-            return "C-2";
-        case 35:
-            return "B-1";
-        case 34:
-            return "A#1";
-        case 33:
-            return "A-1";
-        case 32:
-            return "G#1";
-        case 31:
-            return "G-1";
-        case 30:
-            return "F#1";
-        case 29:
-            return "F-1";
-        case 28:
-            return "E-1";
-        case 27:
-            return "D#1";
-        case 26:
-            return "D-1";
-        case 25:
-            return "C#1";
-        case 24:
-            return "C-1";
-        case 23:
-            return "B-0";
-        case 22:
-            return "A#0";
-        case 21:
-            return "A-0";
-    }
-    return "---";
 }
