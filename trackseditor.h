@@ -17,7 +17,8 @@ class TracksEditor
     State *_state = nullptr;
     ITracksManager *_tracks = nullptr;
     int _pixelsPerStep = 20;
-    int _snapToPixels = 1000;
+    int _snapRegionsToSteps = 1000;
+    int _snapNotesToSteps = 100;
 
     int _trackHeight = 200;
     int _editTrackName = -1;
@@ -63,6 +64,12 @@ class TracksEditor
 
     long PixelsToSteps(
         float pixels);
+
+    long SnapRegionsSteps(
+        long steps);
+
+    long SnapNotesSteps(
+        long steps);
 
     int MaxTracksWidth();
 

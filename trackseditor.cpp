@@ -3,6 +3,8 @@
 #include "IconsFontaudio.h"
 #include "IconsForkAwesome.h"
 #include "imguiutils.h"
+#include "midinote.h"
+
 #include <iostream>
 #include <sstream>
 
@@ -30,6 +32,18 @@ float TracksEditor::StepsToPixels(
     long steps)
 {
     return (steps / 1000.0f) * _pixelsPerStep;
+}
+
+long TracksEditor::SnapRegionsSteps(
+    long steps)
+{
+    return steps - (steps % _snapRegionsToSteps);
+}
+
+long TracksEditor::SnapNotesSteps(
+    long steps)
+{
+    return steps - (steps % _snapNotesToSteps);
 }
 
 int TracksEditor::MaxTracksWidth()
@@ -95,15 +109,15 @@ void TracksEditor::Render(
             ImGui::PopItemWidth();
             ImGui::SameLine();
 
-            static int e = _snapToPixels == 4000 ? 0 : 1;
+            static int e = _snapRegionsToSteps == 4000 ? 0 : 1;
             if (ImGui::RadioButton("Snap to bar", &e, 0))
             {
-                _snapToPixels = 4000;
+                _snapRegionsToSteps = 4000;
             }
             ImGui::SameLine();
             if (ImGui::RadioButton("Snap to step", &e, 1))
             {
-                _snapToPixels = 1000;
+                _snapRegionsToSteps = 1000;
             }
             ImGui::SameLine();
         }
@@ -293,9 +307,7 @@ long TracksEditor::GetNewRegionStart(
     std::pair<long, Region> region)
 {
     auto diff = ImVec2(ImGui::GetMousePos().x - _mouseDragStart.x, ImGui::GetMousePos().y - _mouseDragStart.y);
-    auto newStart = region.first + PixelsToSteps(diff.x) - (int(PixelsToSteps(diff.x)) % _snapToPixels);
-
-    newStart = newStart - (int(newStart) % _snapToPixels);
+    auto newStart = SnapRegionsSteps(region.first + SnapRegionsSteps(PixelsToSteps(diff.x)));
 
     if (newStart < 0) newStart = 0;
 
@@ -306,10 +318,8 @@ long TracksEditor::GetNewRegionLength(
     std::pair<long, Region> region)
 {
     auto diff = ImVec2(ImGui::GetMousePos().x - _mouseDragStart.x, ImGui::GetMousePos().y - _mouseDragStart.y);
-    auto snappedDiffX = PixelsToSteps(diff.x) - (int(PixelsToSteps(diff.x)) % _snapToPixels);
-    auto newLength = region.second._length + snappedDiffX;
-
-    newLength = newLength - (int(newLength) % _snapToPixels);
+    auto snappedDiffX = SnapRegionsSteps(PixelsToSteps(diff.x));
+    auto newLength = SnapRegionsSteps(region.second._length + snappedDiffX);
 
     return newLength;
 }
@@ -394,19 +404,84 @@ void TracksEditor::RenderRegion(
         ImGui::BeginChild("zoomineditor", ImVec2(regionWidth, zoomedInTrackHeight - (4 * regionRounding)));
         {
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 1));
+
+            MidiNote::CollectionInTimeByNote notes = MidiNote::ConvertMidiEventsToMidiNotes(region.second._events);
+
+            static int creatingNote = -1;
+            static long creatingStartTime = -1;
+
             ImGui::BeginGroup();
-            for (int i = 127; i >= 0; i--)
+            for (int noteNumber = 127; noteNumber >= 0; noteNumber--)
             {
-                ImGui::PushID(i);
+                auto originNotePos = ImGui::GetCursorPos();
+
+                ImGui::PushID(noteNumber);
                 if (ImGui::InvisibleButton("key", ImVec2(regionWidth, midiEventHeight)))
                 {
-                    auto midiNoteStart = PixelsToSteps(ImGui::GetMousePos().x - regionOrigin.x - trackScreenOrigin.x);
-                    auto &regionToChange = track->GetRegion(region.first);
-                    regionToChange.AddEvent(midiNoteStart, i, true, 100);
-                    regionToChange.AddEvent(midiNoteStart + 1000, i, false, 0);
                 }
+
+                if (ImGui::IsItemClicked())
+                {
+                    auto midiNoteStart = PixelsToSteps(ImGui::GetMousePos().x - regionOrigin.x - trackScreenOrigin.x);
+                    creatingNote = noteNumber;
+                    creatingStartTime = SnapNotesSteps(midiNoteStart);
+                }
+
+                if (ImGui::IsItemHovered() && creatingNote != -1)
+                {
+                    creatingNote = noteNumber;
+                }
+
+                for (auto notesInTime : notes[noteNumber])
+                {
+                    for (auto note : notesInTime.second)
+                    {
+                        ImGui::PushID(note.time);
+                        auto start = ImVec2(StepsToPixels(notesInTime.first), originNotePos.y);
+                        auto noteSize = ImVec2(StepsToPixels(note.time), midiEventHeight);
+
+                        ImGui::SetCursorPos(start);
+                        ImGui::Button("note", noteSize);
+                        ImGui::PopID();
+                    }
+                }
+
+                if (creatingNote == noteNumber)
+                {
+                    auto creatingCurrentTime = SnapNotesSteps(PixelsToSteps(ImGui::GetMousePos().x - regionOrigin.x - trackScreenOrigin.x));
+
+                    if (ImGui::IsMouseDown(0) && creatingStartTime >= 0 && creatingCurrentTime != creatingStartTime)
+                    {
+                        ImGui::SetCursorPos(
+                            ImVec2(creatingCurrentTime < creatingStartTime ? StepsToPixels(creatingCurrentTime) : StepsToPixels(creatingStartTime), originNotePos.y));
+                        ImGui::Button(
+                            "creating",
+                            ImVec2(creatingCurrentTime < creatingStartTime ? StepsToPixels(creatingStartTime - creatingCurrentTime) : StepsToPixels(creatingCurrentTime - creatingStartTime), midiEventHeight));
+                    }
+                    else if (ImGui::IsMouseReleased(0) && creatingStartTime >= 0 && creatingCurrentTime != creatingStartTime)
+                    {
+                        auto &regionToChange = track->GetRegion(region.first);
+
+                        regionToChange.AddEvent(
+                            creatingStartTime,
+                            noteNumber,
+                            creatingStartTime < creatingCurrentTime,
+                            creatingStartTime < creatingCurrentTime ? 100 : 0);
+
+                        regionToChange.AddEvent(
+                            creatingCurrentTime,
+                            noteNumber,
+                            creatingStartTime >= creatingCurrentTime,
+                            creatingStartTime >= creatingCurrentTime ? 100 : 0);
+
+                        creatingNote = -1;
+                        creatingStartTime = -1;
+                    }
+                }
+
                 ImGui::PopID();
             }
+
             ImGui::EndGroup();
             ImGui::PopStyleVar(1);
         }

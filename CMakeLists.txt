@@ -71,6 +71,8 @@ add_executable(imgui-vsthost
     midicontrollers.h
     midievent.cpp
     midievent.h
+    midinote.cpp
+    midinote.h
     pianowindow.cpp
     pianowindow.h
     region.cpp

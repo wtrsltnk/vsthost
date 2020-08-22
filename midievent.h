@@ -1,6 +1,9 @@
 #ifndef MIDIEVENT_H
 #define MIDIEVENT_H
 
+#include <map>
+#include <vector>
+
 struct MidiNoteState
 {
     explicit MidiNoteState(int midiNote);
@@ -23,6 +26,9 @@ struct MidiEvent
     MidiEventTypes type;  // type=1 for note, type=2 for controller
     unsigned int num;     // note, controller or program number
     unsigned int value;   // velocity or controller value
+
+    typedef std::vector<MidiEvent> Collection;
+    typedef std::map<long, Collection> CollectionInTime;
 };
 
 #endif // MIDIEVENT_H

@@ -1,5 +1,7 @@
 #include "region.h"
 
+#include <iostream>
+
 unsigned int Region::GetMinNote() const
 {
     return _minNote;
@@ -16,6 +18,11 @@ void Region::AddEvent(
     bool onOff,
     int velocity)
 {
+    std::cout << "time : " << time << std::endl
+              << "noteNumber : " << noteNumber << std::endl
+              << "onOff : " << onOff << std::endl
+              << "velocity : " << velocity << std::endl;
+
     if (noteNumber < _minNote)
     {
         _minNote = noteNumber;
