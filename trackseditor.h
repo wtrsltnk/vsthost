@@ -34,15 +34,6 @@ class TracksEditor
 
     long _mouseDragFrom = -1, moveTo = -1;
     bool _doMove = false;
-    bool _zoomInOnActiveRegion = false;
-    int _pixelsPerStepBeforeZoom = 20;
-    int _scrollXOnNextFrame = -1;
-
-    long ZoomIn(
-        ITrack *track,
-        std::pair<const long, Region> const &region);
-
-    void ZoomOut();
 
     void HandleTracksEditorShortCuts();
 
