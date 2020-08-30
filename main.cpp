@@ -25,6 +25,7 @@
 #include "instrument.h"
 #include "midicontrollers.h"
 #include "midievent.h"
+#include "noteseditor.h"
 #include "pianowindow.h"
 #include "region.h"
 #include "state.h"
@@ -74,6 +75,7 @@ static TracksManager _tracks;
 static GLFWwindow *window = nullptr;
 static ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.00f);
 static TracksEditor _tracksEditor;
+static NotesEditor _notesEditor;
 static InspectorWindow _inspectorWindow;
 static PianoWindow _pianoWindow;
 
@@ -418,11 +420,18 @@ void ToolbarWindow(
         ImGui::PopStyleVar();
 
         ImGui::SameLine();
+        ImGui::VerticalSeparator();
+        ImGui::SameLine();
+
+        ImGui::Text("bpm :");
+        ImGui::SameLine();
 
         ImGui::PushItemWidth(100);
-        ImGui::SliderInt("bpm", (int *)&(state._bpm), 10, 200);
+        ImGui::SliderInt("##bpm", (int *)&(state._bpm), 10, 200);
         ImGui::PopItemWidth();
 
+        ImGui::SameLine();
+        ImGui::VerticalSeparator();
         ImGui::SameLine();
 
         if (ImGui::Button(ICON_FK_PLUS))
@@ -505,7 +514,7 @@ void MainLoop()
 
         ImGui_ImplGlfwGL2_NewFrame();
 
-        glfwGetWindowSize(window, &(state._width), &(state._height));
+        glfwGetWindowSize(window, &(state.ui._width), &(state.ui._height));
 
         static int currentInspectorWidth = inspectorWidth;
 
@@ -517,19 +526,28 @@ void MainLoop()
         auto currentPos = ImGui::GetCursorPos();
         ToolbarWindow(
             ImVec2(0, currentPos.y - style.WindowPadding.y),
-            ImVec2(state._width, toolbarHeight + style.WindowPadding.y));
+            ImVec2(state.ui._width, toolbarHeight + style.WindowPadding.y));
 
         _inspectorWindow.Render(
             ImVec2(0, currentPos.y + toolbarHeight),
-            ImVec2(currentInspectorWidth, state._height - toolbarHeight));
+            ImVec2(currentInspectorWidth, state.ui._height - toolbarHeight));
 
-        _tracksEditor.Render(
-            ImVec2(currentInspectorWidth, currentPos.y + toolbarHeight),
-            ImVec2(state._width - currentInspectorWidth, state._height - currentPos.y - toolbarHeight - pianoHeight));
+        if (state.ui._activeCenterScreen == 0)
+        {
+            _tracksEditor.Render(
+                ImVec2(currentInspectorWidth, currentPos.y + toolbarHeight),
+                ImVec2(state.ui._width - currentInspectorWidth, state.ui._height - currentPos.y - toolbarHeight - pianoHeight));
+        }
+        else
+        {
+            _notesEditor.Render(
+                ImVec2(currentInspectorWidth, currentPos.y + toolbarHeight),
+                ImVec2(state.ui._width - currentInspectorWidth, state.ui._height - currentPos.y - toolbarHeight - pianoHeight));
+        }
 
         _pianoWindow.Render(
-            ImVec2(currentInspectorWidth, state._height - pianoHeight),
-            ImVec2(state._width - currentInspectorWidth, pianoHeight));
+            ImVec2(currentInspectorWidth, state.ui._height - pianoHeight),
+            ImVec2(state.ui._width - currentInspectorWidth, pianoHeight));
 
         ImGui::ShowDemoWindow();
 
@@ -620,6 +638,9 @@ int main(
 
     _tracksEditor.SetState(&state);
     _tracksEditor.SetTracksManager(&_tracks);
+
+    _notesEditor.SetState(&state);
+    _notesEditor.SetTracksManager(&_tracks);
 
     _inspectorWindow.SetState(&state);
     _inspectorWindow.SetTracksManager(&_tracks);

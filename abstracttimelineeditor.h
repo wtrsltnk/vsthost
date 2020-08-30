@@ -1,0 +1,62 @@
+#ifndef ABSTRACTTIMELINEEDITOR_H
+#define ABSTRACTTIMELINEEDITOR_H
+
+#include "itrack.h"
+#include "itracksmanager.h"
+#include "region.h"
+#include "state.h"
+
+#include <imgui.h>
+
+class AbstractTimelineEditor
+{
+public:
+    AbstractTimelineEditor();
+
+    void SetState(
+        State *state);
+
+    void SetTracksManager(
+        ITracksManager *tracks);
+
+protected:
+    State *_state = nullptr;
+    ITracksManager *_tracks = nullptr;
+    int _pixelsPerStep = 20;
+    int _snapRegionsToSteps = 1000;
+    int _snapNotesToSteps = 100;
+
+    const int trackHeaderWidth = 250;
+    const int trackToolsHeight = 30;
+    const int timelineHeight = 30;
+
+    float StepsToPixels(
+        long steps);
+
+    long PixelsToSteps(
+        float pixels);
+
+    long SnapRegionsSteps(
+        long steps);
+
+    long SnapNotesSteps(
+        long steps);
+
+    void RenderCursor(
+        ImVec2 const &p,
+        ImVec2 const &size,
+        int scrollX,
+        int horizontalOffset);
+
+    void RenderTimeline(
+        ImVec2 const &screenOrigin,
+        int windowWidth,
+        int scrollX);
+
+    void RenderGrid(
+        ImVec2 const &p,
+        int windowWidth,
+        int fullTracksHeight);
+};
+
+#endif // ABSTRACTTIMELINEEDITOR_H

@@ -27,8 +27,13 @@ public:
     long MsToSteps(std::chrono::milliseconds::rep diff);
     std::chrono::milliseconds::rep StepsToMs(long diff);
 
-    int _width;
-    int _height;
+    struct
+    {
+        int _width;
+        int _height;
+        int _activeCenterScreen = 0;
+    } ui;
+
     std::chrono::milliseconds::rep _lastTime;
     bool _recording = false;
     bool _loop;

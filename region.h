@@ -16,6 +16,7 @@ class Region
 public:
     long _length;
     std::map<long, std::vector<MidiEvent>> _events; // the int key of the map is the relaive start of the note from the beginning of the region
+    std::map<long, std::vector<MidiEvent>> _selection;
 
     unsigned int GetMinNote() const;
 

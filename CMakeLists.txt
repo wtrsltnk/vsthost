@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.14)
 
 find_package(OpenGL REQUIRED)
 
@@ -58,6 +58,8 @@ target_compile_definitions(minimal-vsthost
     )
 
 add_executable(imgui-vsthost
+    abstracttimelineeditor.cpp
+    abstracttimelineeditor.h
     common.h
     imgui_impl_win32_gl2.cpp
     imgui_impl_win32_gl2.h
@@ -73,6 +75,8 @@ add_executable(imgui-vsthost
     midievent.h
     midinote.cpp
     midinote.h
+    noteseditor.cpp
+    noteseditor.h
     pianowindow.cpp
     pianowindow.h
     region.cpp

@@ -5,44 +5,14 @@
 #include "imguiutils.h"
 #include "midinote.h"
 
+#include <imgui_internal.h>
 #include <iostream>
 #include <sstream>
 
-const int trackHeaderWidth = 200;
-const int trackToolsHeight = 30;
-const int timelineHeight = 30;
 const int regionRounding = 5.0f;
 const int regionResizeHandleWidth = 20.0f;
 
-const ImColor color = ImColor(55, 55, 55, 55);
-const ImColor accentColor = ImColor(55, 55, 55, 155);
-const ImColor timelineTextColor = ImColor(155, 155, 155, 255);
-
 TracksEditor::TracksEditor() = default;
-
-long TracksEditor::PixelsToSteps(
-    float pixels)
-{
-    return (pixels / _pixelsPerStep) * 1000.0f;
-}
-
-float TracksEditor::StepsToPixels(
-    long steps)
-{
-    return (steps / 1000.0f) * _pixelsPerStep;
-}
-
-long TracksEditor::SnapRegionsSteps(
-    long steps)
-{
-    return steps - (steps % _snapRegionsToSteps);
-}
-
-long TracksEditor::SnapNotesSteps(
-    long steps)
-{
-    return steps - (steps % _snapNotesToSteps);
-}
 
 int TracksEditor::MaxTracksWidth()
 {
@@ -63,16 +33,6 @@ int TracksEditor::EditTrackName() const
     return _editTrackName;
 }
 
-void TracksEditor::SetState(State *state)
-{
-    _state = state;
-}
-void TracksEditor::SetTracksManager(
-    ITracksManager *tracks)
-{
-    _tracks = tracks;
-}
-
 void TracksEditor::Render(
     const ImVec2 &pos,
     const ImVec2 &size)
@@ -91,14 +51,31 @@ void TracksEditor::Render(
         int fullHeight = _tracks->GetTracks().size() * (_trackHeight + ImGui::GetStyle().ItemSpacing.y);
 
         ImGui::BeginChild(
-            "track_tools",
+            "TracksTools",
             ImVec2(0, trackToolsHeight));
         {
-            ImGui::PushItemWidth(100);
-            ImGui::SliderInt("track height", &_trackHeight, 24, 300);
+            if (ImGui::Button(ICON_FAD_KEYBOARD))
+            {
+                _state->ui._activeCenterScreen = 1;
+            }
+
             ImGui::SameLine();
-            ImGui::SliderInt("zoom", &(_pixelsPerStep), 8, 200);
+            ImGui::VerticalSeparator();
+            ImGui::SameLine();
+            ImGui::PushItemWidth(100);
+            ImGui::Text("zoom V :");
+            ImGui::SameLine();
+            ImGui::SliderInt("##track height", &_trackHeight, 30, 300);
+            ImGui::SameLine();
+
+            ImGui::Text("zoom H :");
+            ImGui::SameLine();
+            ImGui::SliderInt("##zoom", &(_pixelsPerStep), 8, 200);
+
             ImGui::PopItemWidth();
+
+            ImGui::SameLine();
+            ImGui::VerticalSeparator();
             ImGui::SameLine();
 
             static int e = _snapRegionsToSteps == 4000 ? 0 : 1;
@@ -126,7 +103,7 @@ void TracksEditor::Render(
         ImGui::MoveCursorPos(ImVec2(0, timelineHeight));
 
         ImGui::BeginChild(
-            "tracksContainer",
+            "TracksContainer",
             ImVec2(size.x - trackHeaderWidth - ImGui::GetStyle().ItemSpacing.x, 0),
             false,
             ImGuiWindowFlags_HorizontalScrollbar);
@@ -153,16 +130,9 @@ void TracksEditor::Render(
         }
         ImGui::EndChild();
 
-        RenderTimeline(
-            ImVec2(trackScreenOrigin.x, trackScreenOrigin.y),
-            trackWidth,
-            _tracksScrollx);
-
-        RenderCursor(trackScreenOrigin, size, _tracksScrollx);
-
         ImGui::SetCursorPosY(contentTop + timelineHeight);
         ImGui::BeginChild(
-            "headersContainer",
+            "TracksHeadersContainer",
             ImVec2(trackHeaderWidth, 0),
             false,
             ImGuiWindowFlags_NoScrollbar);
@@ -186,6 +156,13 @@ void TracksEditor::Render(
             ImGui::EndChild();
         }
         ImGui::EndChild();
+
+        RenderTimeline(
+            ImVec2(trackScreenOrigin.x, trackScreenOrigin.y),
+            trackWidth,
+            _tracksScrollx);
+
+        RenderCursor(trackScreenOrigin, size, _tracksScrollx, trackHeaderWidth);
     }
     ImGui::End();
 
@@ -197,76 +174,6 @@ void TracksEditor::HandleTracksEditorShortCuts()
     if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete), false))
     {
         _tracks->RemoveActiveRegion();
-    }
-}
-
-void TracksEditor::RenderCursor(
-    ImVec2 const &p,
-    ImVec2 const &size,
-    int scrollX)
-{
-    auto cursor = ImVec2(p.x + StepsToPixels(_state->_cursor) - scrollX, p.y);
-    ImGui::GetWindowDrawList()->AddLine(
-        cursor,
-        ImVec2(cursor.x, cursor.y + size.y - trackToolsHeight),
-        ImGui::GetColorU32(ImGui::GetStyle().Colors[ImGuiCol_PlotHistogramHovered]),
-        3.0f);
-}
-
-void TracksEditor::RenderTimeline(
-    ImVec2 const &screenOrigin,
-    int windowWidth,
-    int scrollX)
-{
-    ImGui::SetCursorScreenPos(screenOrigin);
-
-    if (ImGui::InvisibleButton("##timeline", ImVec2(windowWidth, timelineHeight)))
-    {
-        int step = float((ImGui::GetMousePos().x - screenOrigin.x + scrollX) / _pixelsPerStep) + 0.5f;
-        _state->SetCursorAtStep(step);
-    }
-
-    int step = 1;
-    for (int g = 0; g < windowWidth; g += (_pixelsPerStep * 4))
-    {
-        std::stringstream ss;
-        ss << (step++);
-        auto cursor = ImVec2(screenOrigin.x - scrollX + g, screenOrigin.y);
-        if (cursor.x >= screenOrigin.x)
-        {
-            ImGui::GetWindowDrawList()->AddLine(
-                ImVec2(cursor.x, cursor.y),
-                ImVec2(cursor.x, cursor.y + timelineHeight),
-                accentColor);
-
-            ImGui::GetWindowDrawList()->AddText(
-                ImVec2(cursor.x + 5, cursor.y),
-                timelineTextColor,
-                ss.str().c_str());
-        }
-    }
-}
-
-void TracksEditor::RenderGrid(
-    ImVec2 const &p,
-    int windowWidth,
-    int fullTracksHeight)
-{
-    int step = 0;
-    int gg = 0;
-
-    while (gg < std::max(windowWidth, int(ImGui::GetContentRegionAvailWidth())))
-    {
-        auto cursor = ImVec2(p.x + StepsToPixels(step), p.y);
-
-        ImGui::GetWindowDrawList()->AddLine(
-            cursor,
-            ImVec2(cursor.x, cursor.y + fullTracksHeight - ImGui::GetStyle().ItemSpacing.y),
-            gg % (_pixelsPerStep * 4) == 0 ? accentColor : color,
-            1.0f);
-
-        step += 1000;
-        gg += _pixelsPerStep;
     }
 }
 
@@ -370,6 +277,7 @@ void TracksEditor::RenderRegion(
 
     if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0) && _tracks->GetActiveTrack() == track)
     {
+        _state->ui._activeCenterScreen = 1;
     }
     else if (ImGui::IsItemClicked(0))
     {

@@ -7,7 +7,7 @@ MidiNote::MidiNote()
 MidiNote::MidiNote(
     std::chrono::milliseconds::rep t,
     unsigned int v)
-    : time(t),
+    : length(t),
       velocity(v)
 {
 }

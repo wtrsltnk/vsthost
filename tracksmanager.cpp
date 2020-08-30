@@ -130,6 +130,8 @@ void TracksManager::RemoveActiveRegion()
     auto regionStart = std::get<long>(activeRegion);
 
     track->RemoveRegion(regionStart);
+
+    activeRegion = {nullptr, -1};
 }
 
 void TracksManager::CleanupInstruments()
