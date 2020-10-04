@@ -99,32 +99,6 @@
 	},
 	"buffers":
 	[
-		{
-			"file": "vsthost.sublime-project",
-			"settings":
-			{
-				"buffer_size": 591,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "main.cpp",
-			"settings":
-			{
-				"buffer_size": 32400,
-				"encoding": "UTF-8",
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "CMakeLists.txt",
-			"settings":
-			{
-				"buffer_size": 2133,
-				"line_ending": "Windows"
-			}
-		}
 	],
 	"build_system": "cmake build",
 	"build_system_choices":
@@ -365,8 +339,10 @@
 	],
 	"file_history":
 	[
-		"/C/Users/woute/AppData/Roaming/Sublime Text 3/Packages/User/cmake-build.sublime-build",
 		"/C/Code/synthdev/vsthost/vsthost.sublime-project",
+		"/C/Code/synthdev/vsthost/main.cpp",
+		"/C/Code/synthdev/vsthost/CMakeLists.txt",
+		"/C/Users/woute/AppData/Roaming/Sublime Text 3/Packages/User/cmake-build.sublime-build",
 		"/C/Code/leaphy/paulleaphy-blockly/demos/code/index.html",
 		"/C/Code/leaphy/paulleaphy-blockly/demos/custom-fields/turtle/field_turtle.js",
 		"/C/Code/leaphy/paulleaphy-blockly/demos/code/code.js",
@@ -490,9 +466,7 @@
 		"/C/Code/synthdev/zynaddsubfx-instruments-xml/banks/olivers-other/.bankdir",
 		"/C/Code/synthdev/zynaddsubfx-instruments-xml/banks/Choir and Voice/Slow Morph.Choir",
 		"/C/Code/synthdev/zynaddsubfx-instruments-xml/banks/net-wisdom/0141-Batman 2",
-		"/C/Code/small-apps/notepad2/src/version.h",
-		"/C/Code/dotnet/quickstart/AllInOne/AllInOne.csproj",
-		"/C/Users/woute/Downloads/laatste-24-uren.csv"
+		"/C/Code/small-apps/notepad2/src/version.h"
 	],
 	"find":
 	{
@@ -736,116 +710,8 @@
 	"groups":
 	[
 		{
-			"selected": 1,
 			"sheets":
 			[
-				{
-					"buffer": 0,
-					"file": "vsthost.sublime-project",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 591,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								298,
-								298
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "main.cpp",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 32400,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"auto_complete_triggers":
-							[
-								{
-									"characters": "<",
-									"selector": "text.html"
-								},
-								{
-									"characters": ".>:",
-									"selector": "source.c++"
-								}
-							],
-							"lsp_active": true,
-							"lsp_language":
-							{
-								"clangd": "cpp"
-							},
-							"show_definitions": false,
-							"syntax": "Packages/C++/C++.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "CMakeLists.txt",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 2133,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/CMakeEditor/CMakeEditor.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 36.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				}
 			]
 		}
 	],

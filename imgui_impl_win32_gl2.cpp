@@ -1,29 +1,32 @@
 #include <imgui.h>
+
 #include "imgui_impl_win32_gl2.h"
 
 #include <glad/glad.h>
+
 #include <GL/wglext.h>
+
 #include <iostream>
 
 // GLFW data
-static GLFWSystem   g_System;
-static GLFWwindow*  g_Window = NULL;
-static double       g_Time = 0.0f;
-static bool         g_MouseJustPressed[3] = { false, false, false };
+static GLFWSystem g_System;
+static GLFWwindow *g_Window = NULL;
+static double g_Time = 0.0f;
+static bool g_MouseJustPressed[3] = {false, false, false};
 //static GLFWcursor*  g_MouseCursors[ImGuiMouseCursor_COUNT] = { 0 };
 
 // OpenGL data
-static GLuint       g_FontTexture = 0;
+static GLuint g_FontTexture = 0;
 
 wchar_t const szAppName[] = L"ImGuiExample";
 
 // OpenGL2 Render function.
 // (this used to be set in io.RenderDrawListsFn and called by ImGui::Render(), but you can now call this directly from your main loop)
-// Note that this implementation is little overcomplicated because we are saving/setting up/restoring every OpenGL state explicitly, in order to be able to run within any OpenGL engine that doesn't do so. 
-void ImGui_ImplGlfwGL2_RenderDrawData(ImDrawData* draw_data)
+// Note that this implementation is little overcomplicated because we are saving/setting up/restoring every OpenGL state explicitly, in order to be able to run within any OpenGL engine that doesn't do so.
+void ImGui_ImplGlfwGL2_RenderDrawData(ImDrawData *draw_data)
 {
     // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     int fb_width = (int)(io.DisplaySize.x * io.DisplayFramebufferScale.x);
     int fb_height = (int)(io.DisplaySize.y * io.DisplayFramebufferScale.y);
     if (fb_width == 0 || fb_height == 0)
@@ -32,10 +35,14 @@ void ImGui_ImplGlfwGL2_RenderDrawData(ImDrawData* draw_data)
 
     // We are using the OpenGL fixed pipeline to make the example code simpler to read!
     // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, vertex/texcoord/color pointers, polygon fill.
-    GLint last_texture; glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-    GLint last_polygon_mode[2]; glGetIntegerv(GL_POLYGON_MODE, last_polygon_mode);
-    GLint last_viewport[4]; glGetIntegerv(GL_VIEWPORT, last_viewport);
-    GLint last_scissor_box[4]; glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box); 
+    GLint last_texture;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+    GLint last_polygon_mode[2];
+    glGetIntegerv(GL_POLYGON_MODE, last_polygon_mode);
+    GLint last_viewport[4];
+    glGetIntegerv(GL_VIEWPORT, last_viewport);
+    GLint last_scissor_box[4];
+    glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box);
     glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -62,16 +69,16 @@ void ImGui_ImplGlfwGL2_RenderDrawData(ImDrawData* draw_data)
     // Render command lists
     for (int n = 0; n < draw_data->CmdListsCount; n++)
     {
-        const ImDrawList* cmd_list = draw_data->CmdLists[n];
-        const ImDrawVert* vtx_buffer = cmd_list->VtxBuffer.Data;
-        const ImDrawIdx* idx_buffer = cmd_list->IdxBuffer.Data;
-        glVertexPointer(2, GL_FLOAT, sizeof(ImDrawVert), (const GLvoid*)((const char*)vtx_buffer + IM_OFFSETOF(ImDrawVert, pos)));
-        glTexCoordPointer(2, GL_FLOAT, sizeof(ImDrawVert), (const GLvoid*)((const char*)vtx_buffer + IM_OFFSETOF(ImDrawVert, uv)));
-        glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(ImDrawVert), (const GLvoid*)((const char*)vtx_buffer + IM_OFFSETOF(ImDrawVert, col)));
+        const ImDrawList *cmd_list = draw_data->CmdLists[n];
+        const ImDrawVert *vtx_buffer = cmd_list->VtxBuffer.Data;
+        const ImDrawIdx *idx_buffer = cmd_list->IdxBuffer.Data;
+        glVertexPointer(2, GL_FLOAT, sizeof(ImDrawVert), (const GLvoid *)((const char *)vtx_buffer + IM_OFFSETOF(ImDrawVert, pos)));
+        glTexCoordPointer(2, GL_FLOAT, sizeof(ImDrawVert), (const GLvoid *)((const char *)vtx_buffer + IM_OFFSETOF(ImDrawVert, uv)));
+        glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(ImDrawVert), (const GLvoid *)((const char *)vtx_buffer + IM_OFFSETOF(ImDrawVert, col)));
 
         for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
         {
-            const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
+            const ImDrawCmd *pcmd = &cmd_list->CmdBuffer[cmd_i];
             if (pcmd->UserCallback)
             {
                 pcmd->UserCallback(cmd_list, pcmd);
@@ -96,35 +103,36 @@ void ImGui_ImplGlfwGL2_RenderDrawData(ImDrawData* draw_data)
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glPopAttrib();
-    glPolygonMode(GL_FRONT, (GLenum)last_polygon_mode[0]); glPolygonMode(GL_BACK, (GLenum)last_polygon_mode[1]);
+    glPolygonMode(GL_FRONT, (GLenum)last_polygon_mode[0]);
+    glPolygonMode(GL_BACK, (GLenum)last_polygon_mode[1]);
     glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
     glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]);
 }
 
-static char const *ImGui_ImplGlfwGL2_GetClipboardText(void* user_data)
+static char const *ImGui_ImplGlfwGL2_GetClipboardText(void *user_data)
 {
     return "";
 }
 
-static void ImGui_ImplGlfwGL2_SetClipboardText(void* user_data, const char* text)
-{ }
+static void ImGui_ImplGlfwGL2_SetClipboardText(void *user_data, const char *text)
+{}
 
-void ImGui_ImplGlfw_MouseButtonCallback(GLFWwindow*, int button, int action, int /*mods*/)
+void ImGui_ImplGlfw_MouseButtonCallback(GLFWwindow *, int button, int action, int /*mods*/)
 {
     if (action == GLFW_PRESS && button >= 0 && button < 3)
         g_MouseJustPressed[button] = true;
 }
 
-void ImGui_ImplGlfw_ScrollCallback(GLFWwindow*, double xoffset, double yoffset)
+void ImGui_ImplGlfw_ScrollCallback(GLFWwindow *, double xoffset, double yoffset)
 {
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     io.MouseWheelH += (float)xoffset;
     io.MouseWheel += (float)yoffset;
 }
 
-void ImGui_ImplGlfw_KeyCallback(GLFWwindow*, int key, int, int action, int mods)
+void ImGui_ImplGlfw_KeyCallback(GLFWwindow *, int key, int, int action, int mods)
 {
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     if (action == GLFW_PRESS)
         io.KeysDown[key] = true;
     if (action == GLFW_RELEASE)
@@ -137,9 +145,9 @@ void ImGui_ImplGlfw_KeyCallback(GLFWwindow*, int key, int, int action, int mods)
     io.KeySuper = false;
 }
 
-void ImGui_ImplGlfw_CharCallback(GLFWwindow*, unsigned int c)
+void ImGui_ImplGlfw_CharCallback(GLFWwindow *, unsigned int c)
 {
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     if (c > 0 && c < 0x10000)
         io.AddInputCharacter((unsigned short)c);
 }
@@ -147,10 +155,10 @@ void ImGui_ImplGlfw_CharCallback(GLFWwindow*, unsigned int c)
 bool ImGui_ImplGlfwGL2_CreateDeviceObjects()
 {
     // Build texture atlas
-    ImGuiIO& io = ImGui::GetIO();
-    unsigned char* pixels;
+    ImGuiIO &io = ImGui::GetIO();
+    unsigned char *pixels;
     int width, height;
-    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
+    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height); // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
 
     // Upload texture to graphics system
     GLint last_texture;
@@ -171,7 +179,7 @@ bool ImGui_ImplGlfwGL2_CreateDeviceObjects()
     return true;
 }
 
-void    ImGui_ImplGlfwGL2_InvalidateDeviceObjects()
+void ImGui_ImplGlfwGL2_InvalidateDeviceObjects()
 {
     if (g_FontTexture)
     {
@@ -181,16 +189,16 @@ void    ImGui_ImplGlfwGL2_InvalidateDeviceObjects()
     }
 }
 
-static void ImGui_ImplGlfw_InstallCallbacks(GLFWwindow* window)
+static void ImGui_ImplGlfw_InstallCallbacks(GLFWwindow *window)
 {
 }
 
-bool    ImGui_ImplGlfwGL2_Init(GLFWwindow* window, bool install_callbacks)
+bool ImGui_ImplGlfwGL2_Init(GLFWwindow *window, bool install_callbacks)
 {
     g_Window = window;
 
-    ImGuiIO& io = ImGui::GetIO();
-    io.KeyMap[ImGuiKey_Tab] = VK_TAB;                     // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array.
+    ImGuiIO &io = ImGui::GetIO();
+    io.KeyMap[ImGuiKey_Tab] = VK_TAB; // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array.
     io.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
     io.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
     io.KeyMap[ImGuiKey_UpArrow] = VK_UP;
@@ -221,13 +229,13 @@ bool    ImGui_ImplGlfwGL2_Init(GLFWwindow* window, bool install_callbacks)
 
     // Load cursors
     // FIXME: GLFW doesn't expose suitable cursors for ResizeAll, ResizeNESW, ResizeNWSE. We revert to arrow cursor for those.
-//    g_MouseCursors[ImGuiMouseCursor_Arrow] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
-//    g_MouseCursors[ImGuiMouseCursor_TextInput] = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
-//    g_MouseCursors[ImGuiMouseCursor_ResizeAll] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
-//    g_MouseCursors[ImGuiMouseCursor_ResizeNS] = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
-//    g_MouseCursors[ImGuiMouseCursor_ResizeEW] = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
-//    g_MouseCursors[ImGuiMouseCursor_ResizeNESW] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
-//    g_MouseCursors[ImGuiMouseCursor_ResizeNWSE] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+    //    g_MouseCursors[ImGuiMouseCursor_Arrow] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+    //    g_MouseCursors[ImGuiMouseCursor_TextInput] = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
+    //    g_MouseCursors[ImGuiMouseCursor_ResizeAll] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+    //    g_MouseCursors[ImGuiMouseCursor_ResizeNS] = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
+    //    g_MouseCursors[ImGuiMouseCursor_ResizeEW] = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
+    //    g_MouseCursors[ImGuiMouseCursor_ResizeNESW] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+    //    g_MouseCursors[ImGuiMouseCursor_ResizeNWSE] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
 
     if (install_callbacks)
     {
@@ -239,12 +247,12 @@ bool    ImGui_ImplGlfwGL2_Init(GLFWwindow* window, bool install_callbacks)
 
 void ImGui_ImplGlfwGL2_Shutdown()
 {
-//    // Destroy GLFW mouse cursors
-//    for (ImGuiMouseCursor cursor_n = 0; cursor_n < ImGuiMouseCursor_COUNT; cursor_n++)
-//    {
-//        glfwDestroyCursor(g_MouseCursors[cursor_n]);
-//    }
-//    memset(g_MouseCursors, 0, sizeof(g_MouseCursors));
+    //    // Destroy GLFW mouse cursors
+    //    for (ImGuiMouseCursor cursor_n = 0; cursor_n < ImGuiMouseCursor_COUNT; cursor_n++)
+    //    {
+    //        glfwDestroyCursor(g_MouseCursors[cursor_n]);
+    //    }
+    //    memset(g_MouseCursors, 0, sizeof(g_MouseCursors));
 
     // Destroy OpenGL objects
     ImGui_ImplGlfwGL2_InvalidateDeviceObjects();
@@ -257,7 +265,7 @@ void ImGui_ImplGlfwGL2_NewFrame()
         ImGui_ImplGlfwGL2_CreateDeviceObjects();
     }
 
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
 
     // Setup display size (every frame to accommodate for window resizing)
     int w, h;
@@ -268,19 +276,19 @@ void ImGui_ImplGlfwGL2_NewFrame()
     io.DisplayFramebufferScale = ImVec2(w > 0 ? ((float)display_w / w) : 0, h > 0 ? ((float)display_h / h) : 0);
 
     // Setup time step
-    double current_time =  glfwGetTime();
-    io.DeltaTime = g_Time > 0.0 ? (float)(current_time - g_Time) : (float)(1.0f/60.0f);
+    double current_time = glfwGetTime();
+    io.DeltaTime = g_Time > 0.0 ? (float)(current_time - g_Time) : (float)(1.0f / 60.0f);
     g_Time = current_time;
 
     // Setup inputs
     // (we already got mouse wheel, keyboard keys & characters from glfw callbacks polled in glfwPollEvents())
     if (glfwGetWindowAttrib(g_Window, GLFW_FOCUSED))
     {
-//        if (io.WantCaptureMouse)
-//        {
-//            glfwSetCursorPos(g_Window, (double)io.MousePos.x, (double)io.MousePos.y);   // Set mouse position if requested by io.WantMoveMouse flag (used when io.NavMovesTrue is enabled by user and using directional navigation)
-//        }
-//        else
+        //        if (io.WantCaptureMouse)
+        //        {
+        //            glfwSetCursorPos(g_Window, (double)io.MousePos.x, (double)io.MousePos.y);   // Set mouse position if requested by io.WantMoveMouse flag (used when io.NavMovesTrue is enabled by user and using directional navigation)
+        //        }
+        //        else
         {
             double mouse_x, mouse_y;
             glfwGetCursorPos(g_Window, &mouse_x, &mouse_y);
@@ -289,7 +297,7 @@ void ImGui_ImplGlfwGL2_NewFrame()
     }
     else
     {
-        io.MousePos = ImVec2(-FLT_MAX,-FLT_MAX);
+        io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
     }
 
     for (int i = 0; i < 3; i++)
@@ -303,12 +311,12 @@ void ImGui_ImplGlfwGL2_NewFrame()
     ImGuiMouseCursor cursor = ImGui::GetMouseCursor();
     if (io.MouseDrawCursor || cursor == ImGuiMouseCursor_None)
     {
-//        glfwSetInputMode(g_Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        //        glfwSetInputMode(g_Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     }
     else
     {
-//        glfwSetCursor(g_Window, g_MouseCursors[cursor] ? g_MouseCursors[cursor] : g_MouseCursors[ImGuiMouseCursor_Arrow]);
-//        glfwSetInputMode(g_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        //        glfwSetCursor(g_Window, g_MouseCursors[cursor] ? g_MouseCursors[cursor] : g_MouseCursors[ImGuiMouseCursor_Arrow]);
+        //        glfwSetInputMode(g_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
     // Start the frame. This call will update the io.WantCaptureMouse, io.WantCaptureKeyboard flag that you can use to dispatch inputs (or not) to your application.
@@ -317,65 +325,65 @@ void ImGui_ImplGlfwGL2_NewFrame()
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    auto window = reinterpret_cast<GLFWwindow*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    auto window = reinterpret_cast<GLFWwindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
     switch (message)
     {
-    case WM_CREATE:
-    {
-        window = reinterpret_cast<GLFWwindow*>(((LPCREATESTRUCT)lParam)->lpCreateParams);
-        SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)((LPCREATESTRUCT)lParam)->lpCreateParams);
-        break;
-    }
-    case WM_CLOSE:
-    {
-        PostQuitMessage(0);
-        break;
-    }
-    case WM_KEYDOWN:
-    {
-        ImGui_ImplGlfw_KeyCallback(window, wParam, 0, GLFW_PRESS, 0);
-        break;
-    }
-    case WM_KEYUP:
-    {
-        ImGui_ImplGlfw_KeyCallback(window, wParam, 0, GLFW_RELEASE, 0);
-        break;
-    }
-    case WM_CHAR:
-    {
-        ImGui_ImplGlfw_CharCallback(window, char(wParam));
-        break;
-    }
-    case WM_LBUTTONDBLCLK:
-    case WM_LBUTTONDOWN:
-    case WM_LBUTTONUP:
-    {
-        ImGui_ImplGlfw_MouseButtonCallback(window, 0, message != WM_LBUTTONUP ? GLFW_PRESS : GLFW_RELEASE, 0);
-        g_Window->mouseButtonStates[0] = (message == WM_LBUTTONDOWN);
-        break;
-    }
-    case WM_MBUTTONDBLCLK:
-    case WM_MBUTTONDOWN:
-    case WM_MBUTTONUP:
-    {
-        ImGui_ImplGlfw_MouseButtonCallback(window, 2, message != WM_MBUTTONUP ? GLFW_PRESS : GLFW_RELEASE, 0);
-        g_Window->mouseButtonStates[2] = (message == WM_MBUTTONDOWN);
-        break;
-    }
-    case WM_RBUTTONDBLCLK:
-    case WM_RBUTTONDOWN:
-    case WM_RBUTTONUP:
-    {
-        ImGui_ImplGlfw_MouseButtonCallback(window, 1, message != WM_RBUTTONUP ? GLFW_PRESS : GLFW_RELEASE, 0);
-        g_Window->mouseButtonStates[1] = (message == WM_RBUTTONDOWN);
-        break;
-    }
-    case WM_MOUSEWHEEL:
-    {
-        ImGui_ImplGlfw_ScrollCallback(window, 0.0, (SHORT) HIWORD(wParam) / (double) WHEEL_DELTA);
-        break;
-    }
+        case WM_CREATE:
+        {
+            window = reinterpret_cast<GLFWwindow *>(((LPCREATESTRUCT)lParam)->lpCreateParams);
+            SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)((LPCREATESTRUCT)lParam)->lpCreateParams);
+            break;
+        }
+        case WM_CLOSE:
+        {
+            PostQuitMessage(0);
+            break;
+        }
+        case WM_KEYDOWN:
+        {
+            ImGui_ImplGlfw_KeyCallback(window, int(wParam), 0, GLFW_PRESS, 0);
+            break;
+        }
+        case WM_KEYUP:
+        {
+            ImGui_ImplGlfw_KeyCallback(window, int(wParam), 0, GLFW_RELEASE, 0);
+            break;
+        }
+        case WM_CHAR:
+        {
+            ImGui_ImplGlfw_CharCallback(window, char(wParam));
+            break;
+        }
+        case WM_LBUTTONDBLCLK:
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+        {
+            ImGui_ImplGlfw_MouseButtonCallback(window, 0, message != WM_LBUTTONUP ? GLFW_PRESS : GLFW_RELEASE, 0);
+            g_Window->mouseButtonStates[0] = (message == WM_LBUTTONDOWN);
+            break;
+        }
+        case WM_MBUTTONDBLCLK:
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONUP:
+        {
+            ImGui_ImplGlfw_MouseButtonCallback(window, 2, message != WM_MBUTTONUP ? GLFW_PRESS : GLFW_RELEASE, 0);
+            g_Window->mouseButtonStates[2] = (message == WM_MBUTTONDOWN);
+            break;
+        }
+        case WM_RBUTTONDBLCLK:
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONUP:
+        {
+            ImGui_ImplGlfw_MouseButtonCallback(window, 1, message != WM_RBUTTONUP ? GLFW_PRESS : GLFW_RELEASE, 0);
+            g_Window->mouseButtonStates[1] = (message == WM_RBUTTONDOWN);
+            break;
+        }
+        case WM_MOUSEWHEEL:
+        {
+            ImGui_ImplGlfw_ScrollCallback(window, 0.0, (SHORT)HIWORD(wParam) / (double)WHEEL_DELTA);
+            break;
+        }
     }
 
     return DefWindowProc(hwnd, message, wParam, lParam);
@@ -390,14 +398,14 @@ int glfwInit()
     }
 
     ZeroMemory(&wc, sizeof wc);
-    wc.hInstance     = GetModuleHandle(NULL);
+    wc.hInstance = GetModuleHandle(NULL);
     wc.lpszClassName = szAppName;
-    wc.lpfnWndProc   = (WNDPROC)WndProc;
-    wc.style         = CS_DBLCLKS | CS_VREDRAW | CS_HREDRAW | CS_OWNDC;
+    wc.lpfnWndProc = (WNDPROC)WndProc;
+    wc.style = CS_DBLCLKS | CS_VREDRAW | CS_HREDRAW | CS_OWNDC;
     wc.hbrBackground = NULL;
-    wc.lpszMenuName  = NULL;
-    wc.hIcon         = LoadIcon(NULL, IDI_WINLOGO);
-    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+    wc.lpszMenuName = NULL;
+    wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 
     if (FALSE == RegisterClass(&wc))
     {
@@ -418,9 +426,9 @@ void glfwTerminate()
 
 static void getFullWindowSize(DWORD style, DWORD exStyle,
                               int clientWidth, int clientHeight,
-                              int* fullWidth, int* fullHeight)
+                              int *fullWidth, int *fullHeight)
 {
-    RECT rect = { 0, 0, clientWidth, clientHeight };
+    RECT rect = {0, 0, clientWidth, clientHeight};
     AdjustWindowRectEx(&rect, style, FALSE, exStyle);
     *fullWidth = rect.right - rect.left;
     *fullHeight = rect.bottom - rect.top;
@@ -441,16 +449,16 @@ GLFWwindow *glfwCreateWindow(int w, int h, wchar_t const *title, GLFWmonitor *mo
 
     getFullWindowSize(style, styleEx, w, h, &fullWidth, &fullHeight);
     window->hwnd = CreateWindowEx(
-                styleEx,
-                szAppName,
-                title,
-                style,
-                CW_USEDEFAULT, CW_USEDEFAULT,
-                fullWidth, fullHeight,
-                0,
-                0,
-                GetModuleHandle(NULL),
-                reinterpret_cast<LPVOID>(window));
+        styleEx,
+        szAppName,
+        title,
+        style,
+        CW_USEDEFAULT, CW_USEDEFAULT,
+        fullWidth, fullHeight,
+        0,
+        0,
+        GetModuleHandle(NULL),
+        reinterpret_cast<LPVOID>(window));
 
     if (window->hwnd == NULL)
     {
@@ -523,14 +531,14 @@ void glfwMakeContextCurrent(GLFWwindow *window)
 }
 
 void glfwSwapInterval(int interval)
-{ }
+{}
 
 bool glfwWindowShouldClose(GLFWwindow *window)
 {
     return g_System.done;
 }
 
-void glfwPollEvents()
+bool glfwPollEvents()
 {
     MSG msg;
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -543,12 +551,14 @@ void glfwPollEvents()
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+
+    return g_System.done;
 }
 
 void glfwGetFramebufferSize(GLFWwindow *window, int *width, int *height)
 {
     RECT rect;
-    if(GetClientRect(window->hwnd, &rect))
+    if (GetClientRect(window->hwnd, &rect))
     {
         *width = int(rect.right - rect.left);
         *height = int(rect.bottom - rect.top);
@@ -558,7 +568,7 @@ void glfwGetFramebufferSize(GLFWwindow *window, int *width, int *height)
 void glfwGetWindowSize(GLFWwindow *window, int *width, int *height)
 {
     RECT rect;
-    if(GetClientRect(window->hwnd, &rect))
+    if (GetClientRect(window->hwnd, &rect))
     {
         *width = int(rect.right - rect.left);
         *height = int(rect.bottom - rect.top);
@@ -568,7 +578,8 @@ void glfwGetWindowSize(GLFWwindow *window, int *width, int *height)
 double glfwGetTime()
 {
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::high_resolution_clock::now() - g_System.startTime).count();
+                  std::chrono::high_resolution_clock::now() - g_System.startTime)
+                  .count();
 
     return double(ms / 1000.0);
 }
@@ -598,7 +609,7 @@ int glfwGetWindowAttrib(GLFWwindow *window, int attrib)
         return GetFocus() == window->hwnd ? 1 : 0;
     }
 
-    return 0 ;
+    return 0;
 }
 
 int glfwGetInputMode(GLFWwindow *window, int mode)
@@ -607,4 +618,4 @@ int glfwGetInputMode(GLFWwindow *window, int mode)
 }
 
 void glfwSetInputMode(GLFWwindow *window, int mode, int value)
-{ }
+{}

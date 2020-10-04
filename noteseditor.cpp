@@ -7,6 +7,7 @@
 #include "region.h"
 #include "track.h"
 
+#include <algorithm>
 #include <imgui_internal.h>
 #include <iostream>
 

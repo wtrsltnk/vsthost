@@ -99,6 +99,7 @@ target_compile_features(imgui-vsthost
     PRIVATE cxx_auto_type
     PRIVATE cxx_nullptr
     PRIVATE cxx_range_for
+    PRIVATE cxx_std_20
     )
 
 target_link_libraries(imgui-vsthost
@@ -114,9 +115,11 @@ target_compile_definitions(imgui-vsthost
     PRIVATE -D_WIN32_WINNT=0x602
     PRIVATE -D__WINDOWS_MM__
     PRIVATE -DTEST_YOUR_CODE
+    PRIVATE -DNOMINMAX
     )
 
 target_include_directories(imgui-vsthost
+    PRIVATE include
     PRIVATE "VST3 SDK"
     PRIVATE thirdparty/IconFontCppHeaders/include
     )

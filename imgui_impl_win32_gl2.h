@@ -50,7 +50,7 @@ void glfwSwapBuffers(GLFWwindow *window);
 void glfwMakeContextCurrent(GLFWwindow *window);
 void glfwSwapInterval(int interval);
 bool glfwWindowShouldClose(GLFWwindow *window);
-void glfwPollEvents();
+bool glfwPollEvents();
 void glfwGetFramebufferSize(GLFWwindow *window, int *width, int *height);
 void glfwGetWindowSize(GLFWwindow *window, int *width, int *height);
 double glfwGetTime();

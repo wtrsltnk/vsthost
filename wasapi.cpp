@@ -3,6 +3,7 @@
 #include <audioclient.h>
 #include <mmdeviceapi.h>
 #include <windows.h>
+#include <process.h>
 
 Wasapi::Wasapi(Wasapi::RefillFunc refillFunc, int hnsBufferDuration)
 {

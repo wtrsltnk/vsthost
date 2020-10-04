@@ -505,7 +505,10 @@ void MainLoop()
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
-        glfwPollEvents();
+        if (glfwPollEvents())
+        {
+            break;
+        }
 
         if (glfwGetWindowAttrib(window, GLFW_FOCUSED))
         {

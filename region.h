@@ -3,7 +3,9 @@
 
 #include "midievent.h"
 
+#include <algorithm>
 #include <chrono>
+#include <limits>
 #include <map>
 #include <numeric>
 #include <vector>
