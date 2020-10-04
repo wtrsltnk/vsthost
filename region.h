@@ -16,7 +16,7 @@ class Region
     unsigned int _maxNote = 0;
 
 public:
-    long _length;
+    long _length = 16000;
     std::map<long, std::vector<MidiEvent>> _events; // the int key of the map is the relaive start of the note from the beginning of the region
     std::map<long, std::vector<MidiEvent>> _selection;
 

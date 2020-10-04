@@ -637,7 +637,9 @@ int main(
 
     SetupFonts();
 
-    _tracks.SetActiveTrack(_tracks.AddVstTrack(L"BBC Symphony Orchestra (64 Bit).dll"));
+    auto bbcSynthTrack = _tracks.AddVstTrack(L"BBC Symphony Orchestra (64 Bit).dll");
+    bbcSynthTrack->AddRegion(0, Region{});
+    _tracks.SetActiveTrack(bbcSynthTrack);
 
     _tracksEditor.SetState(&state);
     _tracksEditor.SetTracksManager(&_tracks);
