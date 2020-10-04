@@ -29,6 +29,10 @@ public:
         unsigned int noteNumber,
         bool onOff,
         int velocity);
+
+    void RemoveEvent(
+        long time,
+        unsigned int noteNumber);
 };
 
 #endif // REGION_H

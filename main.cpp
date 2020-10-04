@@ -639,6 +639,7 @@ int main(
 
     auto bbcSynthTrack = _tracks.AddVstTrack(L"BBC Symphony Orchestra (64 Bit).dll");
     bbcSynthTrack->AddRegion(0, Region{});
+    bbcSynthTrack->SetReadyForRecording(true);
     _tracks.SetActiveTrack(bbcSynthTrack);
 
     _tracksEditor.SetState(&state);

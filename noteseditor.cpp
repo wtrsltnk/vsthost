@@ -165,9 +165,12 @@ void NotesEditor::RenderEditableNote(
     const ImVec2 &noteSize,
     const ImVec2 &origin)
 {
+    static ImGuiID movingNoteId;
+
     auto buttonPos = ImGui::GetCursorScreenPos();
-    if (ImGui::Button("note", noteSize))
+    if (ImGui::ButtonEx("note", noteSize, ImGuiButtonFlags_PressedOnClick))
     {
+        movingNoteId = ImGui::GetID("note");
         if (ImGui::GetIO().KeyShift)
         {
             // add/remove note to/from selection
@@ -178,35 +181,34 @@ void NotesEditor::RenderEditableNote(
         }
     }
 
-    if (ImGui::IsItemHovered() && ImGui::IsMouseDown(0) && !_editingNotes)
-    {
-        _editingNotes = true;
-        _noteDrawingAndEditingStart = ImGui::GetMousePos();
-    }
-    else if (_editingNotes && ImGui::IsMouseReleased(0))
-    {
-        _editingNotes = false;
-
-        auto diffy = (ImGui::GetMousePos().y - (midiEventHeight / 2)) - _noteDrawingAndEditingStart.y;
-        auto amountToShiftNote = std::floor(diffy / midiEventHeight);
-        std::cout << amountToShiftNote << " from " << noteNumber << std::endl;
-        region.AddEvent(start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x), noteNumber - amountToShiftNote, true, velocity);
-        region.AddEvent(start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x) + length, noteNumber - amountToShiftNote, false, 0);
-    }
+    auto diffy = ImGui::GetMousePos().y - _noteDrawingAndEditingStart.y;
+    diffy -= (int(std::floor(diffy)) % midiEventHeight);
 
     if (ImGui::IsItemActive() && _editingNotes)
     {
-        auto diffy = (ImGui::GetMousePos().y - (midiEventHeight / 2)) - _noteDrawingAndEditingStart.y;
-        diffy = (diffy + midiEventHeight) - (int(std::floor(diffy)) % midiEventHeight);
-
         auto noteStart = ImVec2(
-            buttonPos.x + (ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x),
+            buttonPos.x + ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x,
             buttonPos.y + diffy);
 
         ImGui::GetWindowDrawList()->AddRectFilled(
             noteStart,
             ImVec2(noteStart.x + noteSize.x, noteStart.y + noteSize.y),
-            ImColor(ImGui::GetStyle().Colors[ImGuiCol_Button]));
+            ImColor(ImGui::GetStyle().Colors[ImGuiCol_PlotHistogram]));
+    }
+
+    if (ImGui::IsItemHovered() && ImGui::IsMouseDown(0) && !_editingNotes)
+    {
+        _editingNotes = true;
+        _noteDrawingAndEditingStart = ImGui::GetMousePos();
+    }
+    else if (ImGui::GetID("note") == movingNoteId && _editingNotes && ImGui::IsMouseReleased(0))
+    {
+        _editingNotes = false;
+        auto amountToShiftNote = std::floor(diffy / float(midiEventHeight));
+        region.AddEvent(start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x), noteNumber - amountToShiftNote, true, velocity);
+        region.AddEvent(start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x) + length, noteNumber - amountToShiftNote, false, 0);
+
+        region.RemoveEvent(start, noteNumber);
     }
 }
 

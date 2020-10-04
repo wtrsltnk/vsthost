@@ -53,3 +53,20 @@ void Region::AddEvent(
         _length = requiredLength;
     }
 }
+
+void Region::RemoveEvent(
+    long time,
+    unsigned int noteNumber)
+{
+    if (_events.find(time) == _events.end())
+    {
+        return;
+    }
+
+    auto found = find_if(_events[time].begin(), _events[time].end(), [noteNumber](const MidiEvent &e) { return e.num == noteNumber; });
+
+    if (found != _events[time].end())
+    {
+        _events[time].erase(found);
+    }
+}
