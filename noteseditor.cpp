@@ -201,6 +201,11 @@ void NotesEditor::RenderEditableNote(
         _editingNotes = true;
         _noteDrawingAndEditingStart = ImGui::GetMousePos();
     }
+    if (ImGui::IsItemHovered() && ImGui::IsMouseDown(1) && !_editingNotes)
+    {
+        region.RemoveEvent(start, noteNumber);
+        region.RemoveEvent(start + length, noteNumber);
+    }
     else if (ImGui::GetID("note") == movingNoteId && _editingNotes && ImGui::IsMouseReleased(0))
     {
         _editingNotes = false;
@@ -209,6 +214,7 @@ void NotesEditor::RenderEditableNote(
         region.AddEvent(start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x) + length, noteNumber - amountToShiftNote, false, 0);
 
         region.RemoveEvent(start, noteNumber);
+        region.RemoveEvent(start + length, noteNumber);
     }
 }
 
