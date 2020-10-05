@@ -81,21 +81,61 @@ void NotesEditor::Render(
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 1));
 
                 ImGui::BeginGroup();
+                long eindex = 0;
+                static ImGuiID movingEventId;
                 for (auto t : region._events)
                 {
                     for (auto e : t.second)
                     {
+                        ImGui::PushID(eindex++);
+
                         auto x = StepsToPixels(t.first);
-                        auto y = (127 - e.num) * midiEventHeight;
+                        auto y = (127 - e.num) * midiEventHeight + 1;
                         ImGui::SetCursorPos(ImVec2(origin.x + x - (midiEventHeight / 2), origin.y + y));
 
-                        ImGui::Button("t", ImVec2(midiEventHeight, midiEventHeight));
+                        if (ImGui::ButtonEx("event", ImVec2(midiEventHeight, midiEventHeight - 1), ImGuiButtonFlags_PressedOnClick))
+                        {
+                            movingEventId = ImGui::GetID("event");
+                        }
+
+                        auto center = ImVec2(
+                            originContainerScreenPos.x + x,
+                            originContainerScreenPos.y + y + timelineHeight);
+
+                        if (ImGui::IsItemActive())
+                        {
+                            ImGui::GetWindowDrawList()->AddLine(
+                                ImVec2(
+                                    ImGui::GetIO().MouseClickedPos[0].x - ImGui::GetScrollX(),
+                                    center.y + (midiEventHeight * 0.5f) - ImGui::GetScrollY()),
+                                ImVec2(
+                                    ImGui::GetIO().MousePos.x - ImGui::GetScrollX(),
+                                    center.y + (midiEventHeight * 0.5f) - ImGui::GetScrollY()),
+                                ImGui::GetColorU32(ImGuiCol_PlotLines),
+                                2.0f);
+                        }
+
+                        if (movingEventId == ImGui::GetID("event") && ImGui::IsMouseReleased(0))
+                        {
+                            auto move = ImGui::GetIO().MousePos.x - ImGui::GetIO().MouseClickedPos[0].x;
+                            region.MoveEvent(
+                                e,
+                                t.first,
+                                t.first + PixelsToSteps(move));
+                            movingEventId = 0;
+                        }
 
                         ImGui::GetWindowDrawList()->AddRectFilled(
-                            ImVec2(originContainerScreenPos.x + x - (midiEventHeight * 0.125f), originContainerScreenPos.y + y + timelineHeight + midiEventHeight * 0.375f),
-                            ImVec2(originContainerScreenPos.x + x + (midiEventHeight * 0.125f), originContainerScreenPos.y + y + timelineHeight + midiEventHeight * 0.625f),
+                            ImVec2(
+                                center.x - (midiEventHeight * 0.125f) - ImGui::GetScrollX(),
+                                center.y + midiEventHeight * 0.375f - ImGui::GetScrollY()),
+                            ImVec2(
+                                center.x + (midiEventHeight * 0.125f) - ImGui::GetScrollX(),
+                                center.y + midiEventHeight * 0.625f - ImGui::GetScrollY()),
                             ImColor(ImGui::GetStyle().Colors[ImGuiCol_PlotLinesHovered]),
                             midiEventHeight / 3.0f);
+
+                        ImGui::PopID();
                     }
                 }
 
@@ -231,8 +271,18 @@ void NotesEditor::RenderEditableNote(
     {
         _editingNotes = false;
         auto amountToShiftNote = std::floor(diffy / float(midiEventHeight));
-        region.AddEvent(start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x), noteNumber - amountToShiftNote, true, velocity);
-        region.AddEvent(start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x) + length, noteNumber - amountToShiftNote, false, 0);
+
+        region.AddEvent(
+            start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x),
+            noteNumber - amountToShiftNote,
+            true,
+            velocity);
+
+        region.AddEvent(
+            start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x) + length,
+            noteNumber - amountToShiftNote,
+            false,
+            0);
 
         region.RemoveEvent(start, noteNumber);
         region.RemoveEvent(start + length, noteNumber);

@@ -33,6 +33,11 @@ public:
     void RemoveEvent(
         long time,
         uint32_t noteNumber);
+
+    void MoveEvent(
+        const MidiEvent &e,
+        long from,
+        long to);
 };
 
 #endif // REGION_H

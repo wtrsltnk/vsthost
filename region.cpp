@@ -63,10 +63,45 @@ void Region::RemoveEvent(
         return;
     }
 
-    auto found = find_if(_events[time].begin(), _events[time].end(), [noteNumber](const MidiEvent &e) { return e.num == noteNumber; });
+    auto found = find_if(
+        _events[time].begin(),
+        _events[time].end(),
+        [noteNumber](const MidiEvent &e) {
+            return e.num == noteNumber;
+        });
 
     if (found != _events[time].end())
     {
         _events[time].erase(found);
     }
+}
+
+void Region::MoveEvent(
+    const MidiEvent &e,
+    long from,
+    long to)
+{
+    std::cout << "moving from " << from << " to " << to << "\n";
+    if (_events.find(from) == _events.end())
+    {
+        std::cout << "from not found\n";
+        return;
+    }
+
+    auto found = find_if(
+        _events[from].begin(),
+        _events[from].end(),
+        [e](const MidiEvent &ee) {
+            return e.channel == ee.channel && e.num == ee.num && e.type == ee.type && e.value == ee.value;
+        });
+
+    if (found != _events[from].end())
+    {
+        _events[from].erase(found);
+    }
+    else
+    {
+        std::cout << "not found\n";
+    }
+    _events[to].push_back(e);
 }
