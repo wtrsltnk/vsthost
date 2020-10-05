@@ -26,7 +26,7 @@ void AbstractTimelineEditor::SetTracksManager(
 long AbstractTimelineEditor::PixelsToSteps(
     float pixels)
 {
-    return (pixels / _pixelsPerStep) * 1000.0f;
+    return long((pixels / _pixelsPerStep) * 1000.0f);
 }
 
 float AbstractTimelineEditor::StepsToPixels(

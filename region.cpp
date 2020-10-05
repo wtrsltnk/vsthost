@@ -2,19 +2,19 @@
 
 #include <iostream>
 
-unsigned int Region::GetMinNote() const
+uint32_t Region::GetMinNote() const
 {
     return _minNote;
 }
 
-unsigned int Region::GetMaxNote() const
+uint32_t Region::GetMaxNote() const
 {
     return _maxNote;
 }
 
 void Region::AddEvent(
     long time,
-    unsigned int noteNumber,
+    uint32_t noteNumber,
     bool onOff,
     int velocity)
 {
@@ -56,7 +56,7 @@ void Region::AddEvent(
 
 void Region::RemoveEvent(
     long time,
-    unsigned int noteNumber)
+    uint32_t noteNumber)
 {
     if (_events.find(time) == _events.end())
     {

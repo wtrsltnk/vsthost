@@ -11,7 +11,7 @@
 #include <imgui_internal.h>
 #include <iostream>
 
-const int midiEventHeight = 10;
+const int midiEventHeight = 12;
 const int minPixelsPerStep = 8;
 const int maxPixelsPerStep = 200;
 
@@ -81,6 +81,26 @@ void NotesEditor::Render(
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 1));
 
                 ImGui::BeginGroup();
+                for (auto t : region._events)
+                {
+                    for (auto e : t.second)
+                    {
+                        auto x = StepsToPixels(t.first);
+                        auto y = (127 - e.num) * midiEventHeight;
+                        ImGui::SetCursorPos(ImVec2(origin.x + x - (midiEventHeight / 2), origin.y + y));
+
+                        ImGui::Button("t", ImVec2(midiEventHeight, midiEventHeight));
+
+                        ImGui::GetWindowDrawList()->AddRectFilled(
+                            ImVec2(originContainerScreenPos.x + x - (midiEventHeight * 0.125f), originContainerScreenPos.y + y + timelineHeight + midiEventHeight * 0.375f),
+                            ImVec2(originContainerScreenPos.x + x + (midiEventHeight * 0.125f), originContainerScreenPos.y + y + timelineHeight + midiEventHeight * 0.625f),
+                            ImColor(ImGui::GetStyle().Colors[ImGuiCol_PlotLinesHovered]),
+                            midiEventHeight / 3.0f);
+                    }
+                }
+
+                ImGui::SetCursorPos(origin);
+
                 for (int noteNumber = 127; noteNumber >= 0; noteNumber--)
                 {
                     auto originNotePos = ImGui::GetCursorPos();
@@ -109,7 +129,7 @@ void NotesEditor::Render(
                             ImGui::PushID(note.length);
 
                             ImGui::SetCursorPos(
-                                ImVec2(StepsToPixels(notesInTime.first), originNotePos.y + 1));
+                                ImVec2(StepsToPixels(notesInTime.first) + (midiEventHeight * 0.5f), originNotePos.y + 1));
 
                             RenderEditableNote(
                                 region,
@@ -117,7 +137,7 @@ void NotesEditor::Render(
                                 notesInTime.first,
                                 note.length,
                                 note.velocity,
-                                ImVec2(StepsToPixels(note.length), midiEventHeight - 1),
+                                ImVec2(StepsToPixels(note.length) - midiEventHeight, midiEventHeight - 1),
                                 originContainerScreenPos);
 
                             ImGui::PopID();
@@ -127,6 +147,7 @@ void NotesEditor::Render(
 
                     ImGui::SetCursorPos(ImVec2(originNotePos.x, originNotePos.y + midiEventHeight));
                 }
+
                 ImGui::EndGroup();
 
                 ImGui::PopStyleVar();
