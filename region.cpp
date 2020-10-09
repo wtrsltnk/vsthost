@@ -1,5 +1,16 @@
 #include "region.h"
 
+const std::string &Region::GetName() const
+{
+    return _name;
+}
+
+void Region::SetName(
+    const std::string &name)
+{
+    _name = name;
+}
+
 long Region::Length() const
 {
     return _length;

@@ -8,11 +8,17 @@
 #include <limits>
 #include <map>
 #include <numeric>
+#include <string>
 #include <vector>
 
 class Region
 {
 public:
+    const std::string &GetName() const;
+
+    void SetName(
+        const std::string &name);
+
     long Length() const;
 
     void SetLength(
@@ -40,6 +46,7 @@ public:
         long to);
 
 private:
+    std::string _name = "region";
     long _length = 16000;
     std::map<long, std::vector<MidiEvent>> _events; // the long key of the map is the relaive start of the event from the beginning of the region
     std::map<long, std::vector<MidiEvent>> _selection;

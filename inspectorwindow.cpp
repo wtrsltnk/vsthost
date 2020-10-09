@@ -179,9 +179,35 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
             {
                 auto &region = track->GetRegion(regionStart);
 
-                if (ImGui::CollapsingHeader((std::string("Region: ") + _tracks->GetActiveTrack()->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                if (ImGui::CollapsingHeader((std::string("Region: ") + region.GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
                 {
-                    ImGui::Text("# of midi events: %llu", region.Events().size());
+                    if ((region.Length() % 4000) / 1000 > 0)
+                    {
+                        ImGui::Text("Length: %lu bars and %lu steps", (region.Length() / 4000), (region.Length() % 4000) / 1000);
+                    }
+                    else
+                    {
+                        ImGui::Text("Length: %lu bars", (region.Length() / 4000));
+                    }
+
+                    if (_editRegionName)
+                    {
+                        ImGui::SetKeyboardFocusHere();
+                        if (ImGui::InputText("##editName", _editRegionNameBuffer, 128, ImGuiInputTextFlags_EnterReturnsTrue))
+                        {
+                            region.SetName(_editRegionNameBuffer);
+                            _editRegionName = false;
+                        }
+                    }
+                    else
+                    {
+                        ImGui::Text("%s", region.GetName().c_str());
+                        if (ImGui::IsItemClicked())
+                        {
+                            _editRegionName = true;
+                            strcpy_s(_editRegionNameBuffer, 128, region.GetName().c_str());
+                        }
+                    }
                 }
             }
         }
