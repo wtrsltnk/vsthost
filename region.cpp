@@ -1,6 +1,20 @@
 #include "region.h"
 
-#include <iostream>
+long Region::Length() const
+{
+    return _length;
+}
+
+void Region::SetLength(
+    long length)
+{
+    _length = length;
+}
+
+const std::map<long, std::vector<MidiEvent>> &Region::Events() const
+{
+    return _events;
+}
 
 uint32_t Region::GetMinNote() const
 {
@@ -18,11 +32,6 @@ void Region::AddEvent(
     bool onOff,
     int velocity)
 {
-    std::cout << "time : " << time << std::endl
-              << "noteNumber : " << noteNumber << std::endl
-              << "onOff : " << onOff << std::endl
-              << "velocity : " << velocity << std::endl;
-
     if (noteNumber < _minNote)
     {
         _minNote = noteNumber;
@@ -47,11 +56,7 @@ void Region::AddEvent(
         _events[time].push_back(event);
     }
 
-    auto requiredLength = time + 4000 - (time % 4000);
-    if (_length < requiredLength)
-    {
-        _length = requiredLength;
-    }
+    UpdateLength(time);
 }
 
 void Region::RemoveEvent(
@@ -81,10 +86,8 @@ void Region::MoveEvent(
     long from,
     long to)
 {
-    std::cout << "moving from " << from << " to " << to << "\n";
     if (_events.find(from) == _events.end())
     {
-        std::cout << "from not found\n";
         return;
     }
 
@@ -99,9 +102,18 @@ void Region::MoveEvent(
     {
         _events[from].erase(found);
     }
-    else
-    {
-        std::cout << "not found\n";
-    }
+
     _events[to].push_back(e);
+
+    UpdateLength(to);
+}
+
+void Region::UpdateLength(
+    long time)
+{
+    auto requiredLength = time + 4000 - (time % 4000);
+    if (_length < requiredLength)
+    {
+        _length = requiredLength;
+    }
 }

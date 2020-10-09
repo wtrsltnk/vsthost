@@ -73,16 +73,18 @@ ITrack *TracksManager::AddVstTrack(
     instrumentName << "Instrument " << (tracks.size() + 1);
 
     auto newi = new Instrument();
-    newi->_name = instrumentName.str();
-    newi->_midiChannel = 0;
-    newi->_plugin = nullptr;
+    newi->SetName(instrumentName.str());
+    newi->SetMidiChannel(0);
+    newi->SetPlugin(nullptr);
+
     if (plugin != nullptr)
     {
-        newi->_plugin = new VstPlugin();
-        if (!newi->_plugin->init(plugin))
+        newi->SetPlugin(new VstPlugin());
+        if (!newi->Plugin()->init(plugin))
         {
-            delete newi->_plugin;
-            newi->_plugin = nullptr;
+            auto tmp = newi->Plugin();
+            newi->SetPlugin(nullptr);
+            delete tmp;
         }
     }
 
@@ -139,9 +141,11 @@ void TracksManager::CleanupInstruments()
     while (!instruments.empty())
     {
         auto item = instruments.back();
-        if (item->_plugin != nullptr)
+        if (item->Plugin() != nullptr)
         {
-            delete item->_plugin;
+            auto tmp = item->Plugin();
+            item->SetPlugin(nullptr);
+            delete tmp;
         }
         instruments.pop_back();
         delete item;

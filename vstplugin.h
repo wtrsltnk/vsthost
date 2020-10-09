@@ -21,62 +21,110 @@ public:
 
     ~VstPlugin();
 
-    char const *title = nullptr;
+    const char *Title() const;
 
-    AEffect *getEffect() { return aEffect; }
-    size_t getSamplePos() const { return samplePos; }
-    size_t getSampleRate() const { return 44100; }
-    size_t getBlockSize() const { return 1024; }
-    size_t getChannelCount() const { return 2; }
-    std::string const &getEffectName() const { return vstEffectName; }
-    std::string const &getVendorName() const { return vstVendorName; }
-    static const char *getVendorString() { return "TEST_VENDOR"; }
-    static const char *getProductString() { return "TEST_PRODUCT"; }
-    static int getVendorVersion() { return 1; }
-    static const char **getCapabilities();
+    void SetTitle(
+        const std::string &title);
 
-    bool getFlags(int32_t m) const { return (aEffect->flags & m) == m; }
-    bool flagsHasEditor() const { return getFlags(effFlagsHasEditor); }
-    bool flagsIsSynth() const { return getFlags(effFlagsIsSynth); }
-    intptr_t dispatcher(int32_t opcode, int32_t index = 0, intptr_t value = 0, void *ptr = nullptr, float opt = 0.0f) const;
+    AEffect *getEffect();
 
-    void resizeEditor(const RECT &clientRc) const;
-    void openEditor(HWND hWndParent);
+    size_t getSamplePos() const;
+
+    size_t getSampleRate() const;
+
+    size_t getBlockSize() const;
+
+    size_t getChannelCount() const;
+
+    std::string const &getEffectName() const;
+
+    std::string const &getVendorName() const;
+
+    bool getFlags(
+        int32_t m) const;
+
+    bool flagsHasEditor() const;
+
+    bool flagsIsSynth() const;
+
+    intptr_t dispatcher(
+        int32_t opcode,
+        int32_t index = 0,
+        intptr_t value = 0,
+        void *ptr = nullptr,
+        float opt = 0.0f) const;
+
+    void resizeEditor(
+        const RECT &clientRc) const;
+
+    void openEditor(
+        HWND hWndParent);
+
     bool isEditorOpen();
+
     void closeEditor();
 
-    void sendMidiNote(int midiChannel, int noteNumber, bool onOff, int velocity);
+    void sendMidiNote(
+        int midiChannel,
+        int noteNumber,
+        bool onOff,
+        int velocity);
 
     // This function is called from refillCallback() which is running in audio thread.
     void processEvents();
 
     // This function is called from refillCallback() which is running in audio thread.
-    float **processAudio(size_t frameCount, size_t &outputFrameCount);
+    float **processAudio(
+        size_t frameCount,
+        size_t &outputFrameCount);
 
-    bool init(const wchar_t *vstModulePath);
+    bool init(
+        const wchar_t *vstModulePath);
+
     void cleanup();
 
+    static const char *getVendorString();
+
+    static const char *getProductString();
+
+    static int getVendorVersion();
+
+    static const char **getCapabilities();
+
 private:
-    static VstIntPtr hostCallback_static(AEffect *effect, VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float opt);
-    VstIntPtr hostCallback(VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float);
+    static VstIntPtr hostCallback_static(
+        AEffect *effect,
+        VstInt32 opcode,
+        VstInt32 index,
+        VstIntPtr value,
+        void *ptr,
+        float opt);
+
+    VstIntPtr hostCallback(
+        VstInt32 opcode,
+        VstInt32 index,
+        VstIntPtr value,
+        void *ptr,
+        float);
 
 protected:
-    HWND editorHwnd;
-    HMODULE hModule;
-    AEffect *aEffect;
-    std::atomic<size_t> samplePos;
-    VstTimeInfo timeinfo;
-    std::string directoryMultiByte;
+    std::string _title;
+    HWND _editorHwnd = nullptr;
+    HMODULE _vstLibraryHandle = nullptr;
+    AEffect *_aEffect = nullptr;
+    std::atomic<size_t> _samplePos;
+    VstTimeInfo _timeinfo;
+    std::string _directoryMultiByte;
 
-    std::vector<float> outputBuffer;
-    std::vector<float *> outputBufferHeads;
-    std::vector<float> inputBuffer;
-    std::vector<float *> inputBufferHeads;
+    std::vector<float> _outputBuffer;
+    std::vector<float *> _outputBufferHeads;
+    std::vector<float> _inputBuffer;
+    std::vector<float *> _inputBufferHeads;
 
-    std::vector<VstMidiEvent> vstMidiEvents;
-    std::vector<char> vstEventBuffer;
-    std::string vstEffectName;
-    std::string vstVendorName;
+    std::vector<VstMidiEvent> _vstMidiEvents;
+    std::vector<char> _vstEventBuffer;
+    std::string _vstEffectName;
+    std::string _vstVendorName;
 
     struct
     {
@@ -88,9 +136,14 @@ protected:
 
     private:
         std::mutex mutable mutex;
-    } vstMidi;
+    } _vstMidi;
 
-    friend LRESULT CALLBACK VstWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+    friend LRESULT CALLBACK VstWindowProc(
+        HWND hwnd,
+        UINT message,
+        WPARAM wParam,
+        LPARAM lParam);
+
     void closingEditorWindow();
 };
 

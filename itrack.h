@@ -4,6 +4,7 @@
 #include "region.h"
 #include <map>
 #include <string>
+#include <chrono>
 
 class Instrument;
 
@@ -39,28 +40,28 @@ public:
         float b,
         float a = 1.0f) = 0;
 
-    virtual std::map<long, Region> const &Regions() const = 0;
+    virtual std::map<std::chrono::milliseconds::rep, Region> const &Regions() const = 0;
 
     virtual Region &GetRegion(
-        long at) = 0;
+        std::chrono::milliseconds::rep at) = 0;
 
     virtual void StartRecording() = 0;
 
     virtual long StartNewRegion(
-        long start) = 0;
+        std::chrono::milliseconds::rep start) = 0;
 
     virtual void RecordMidiEvent(
-        long time,
+        std::chrono::milliseconds::rep time,
         int noteNumber,
         bool onOff,
         int velocity) = 0;
 
     virtual void AddRegion(
-        long startAt,
+        std::chrono::milliseconds::rep startAt,
         Region const &region) = 0;
 
     virtual void RemoveRegion(
-        long startAt) = 0;
+        std::chrono::milliseconds::rep startAt) = 0;
 };
 
 #endif // ITRACK_H

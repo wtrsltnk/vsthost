@@ -34,6 +34,7 @@
 #include "tracksmanager.h"
 #include "vstplugin.h"
 #include "wasapi.h"
+#include "win32vstpluginloader.h"
 
 static std::map<int, bool> _noteStates;
 static std::map<int, struct MidiNoteState> _keyboardToNoteMap{
@@ -78,6 +79,9 @@ static TracksEditor _tracksEditor;
 static NotesEditor _notesEditor;
 static InspectorWindow _inspectorWindow;
 static PianoWindow _pianoWindow;
+static Win32VstPluginLoader *_win32VstPluginLoader = nullptr;
+static bool _showInspectorWindow = true;
+static bool _showPianoWindow = true;
 
 void KillAllNotes()
 {
@@ -87,11 +91,12 @@ void KillAllNotes()
         {
             for (int note = 0; note < 128; note++)
             {
-                instrument->_plugin->sendMidiNote(
-                    channel,
-                    note,
-                    false,
-                    0);
+                instrument->Plugin()
+                    ->sendMidiNote(
+                        channel,
+                        note,
+                        false,
+                        0);
             }
         }
     }
@@ -120,15 +125,15 @@ bool refillCallback(
         for (auto region : track->Regions())
         {
             if (region.first > end) continue;
-            if (region.first + region.second._length < start) continue;
+            if (region.first + region.second.Length() < start) continue;
 
-            for (auto event : region.second._events)
+            for (auto event : region.second.Events())
             {
                 if ((event.first + region.first) > end) continue;
                 if ((event.first + region.first) < start) continue;
                 for (auto m : event.second)
                 {
-                    track->GetInstrument()->_plugin->sendMidiNote(
+                    track->GetInstrument()->Plugin()->sendMidiNote(
                         m.channel,
                         m.num,
                         m.value != 0,
@@ -144,7 +149,7 @@ bool refillCallback(
     {
         for (size_t iChannel = 0; iChannel < nDstChannels; ++iChannel)
         {
-            const unsigned int wasapiWriteIndex = iFrame * nDstChannels + iChannel;
+            const size_t wasapiWriteIndex = iFrame * nDstChannels + iChannel;
             *(data + wasapiWriteIndex) = 0;
         }
     }
@@ -157,7 +162,7 @@ bool refillCallback(
             continue;
         }
 
-        auto vstPlugin = instrument->_plugin;
+        auto vstPlugin = instrument->Plugin();
         if (vstPlugin == nullptr)
         {
             continue;
@@ -165,11 +170,11 @@ bool refillCallback(
 
         vstPlugin->processEvents();
 
-        auto tmpsampleCount = sampleCount;
+        size_t tmpsampleCount = sampleCount;
         const auto nSrcChannels = vstPlugin->getChannelCount();
         const auto vstSamplesPerBlock = vstPlugin->getBlockSize();
 
-        int ofs = 0;
+        size_t ofs = 0;
         while (tmpsampleCount > 0)
         {
             size_t outputFrameCount = 0;
@@ -180,29 +185,21 @@ bool refillCallback(
                 break;
             }
 
-            // VST vstOutput[][] format :
-            //  vstOutput[a][b]
-            //      channel = a % vstPlugin.getChannelCount()
-            //      frame   = b + floor(a/2) * vstPlugin.getBlockSize()
-
-            // wasapi data[] format :
-            //  data[x]
-            //      channel = x % mixFormat->nChannels
-            //      frame   = floor(x / mixFormat->nChannels);
-
             const auto nFrame = outputFrameCount;
             for (size_t iFrame = 0; iFrame < nFrame; ++iFrame)
             {
                 for (size_t iChannel = 0; iChannel < nDstChannels; ++iChannel)
                 {
-                    const unsigned int sChannel = iChannel % nSrcChannels;
-                    const unsigned int vstOutputPage = (iFrame / vstSamplesPerBlock) * sChannel + sChannel;
-                    const unsigned int vstOutputIndex = (iFrame % vstSamplesPerBlock);
-                    const unsigned int wasapiWriteIndex = iFrame * nDstChannels + iChannel;
-                    if (!track->IsMuted() && (_tracks.GetSoloTrack() == track || _tracks.GetSoloTrack() == nullptr) && data != 0)
-                    {
-                        *(data + ofs + wasapiWriteIndex) += vstOutput[vstOutputPage][vstOutputIndex];
-                    }
+                    if (track->IsMuted()) continue;
+                    if (data == nullptr) continue;
+                    if (_tracks.GetSoloTrack() != track && _tracks.GetSoloTrack() != nullptr) continue;
+
+                    const size_t sChannel = iChannel % nSrcChannels;
+                    const size_t vstOutputPage = (iFrame / vstSamplesPerBlock) * sChannel + sChannel;
+                    const size_t vstOutputIndex = (iFrame % vstSamplesPerBlock);
+                    const size_t wasapiWriteIndex = iFrame * nDstChannels + iChannel;
+
+                    *(data + ofs + wasapiWriteIndex) += vstOutput[vstOutputPage][vstOutputIndex];
                 }
             }
 
@@ -239,16 +236,17 @@ void HandleIncomingMidiEvent(
 
     for (auto &instrument : _tracks.GetInstruments())
     {
-        if (instrument->_plugin == nullptr)
+        if (instrument->Plugin() == nullptr)
         {
             continue;
         }
 
-        instrument->_plugin->sendMidiNote(
-            midiChannel,
-            noteNumber,
-            onOff,
-            velocity);
+        instrument->Plugin()
+            ->sendMidiNote(
+                midiChannel,
+                noteNumber,
+                onOff,
+                velocity);
     }
 }
 
@@ -365,6 +363,34 @@ void ToolbarWindow(
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
+        if (ImGui::Button(ICON_FK_LIST))
+        {
+            _showInspectorWindow = !_showInspectorWindow;
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip(_showInspectorWindow ? "Hide Inspector Window" : "Show Inspector Window");
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button(ICON_FAD_KEYBOARD))
+        {
+            _showPianoWindow = !_showPianoWindow;
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip(_showPianoWindow ? "Hide Piano Window" : "Show Piano Window");
+        }
+
+        ImGui::PopStyleVar();
+
+        ImGui::SameLine();
+        ImGui::VerticalSeparator();
+        ImGui::SameLine();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+
         if (ImGui::Button(ICON_FAD_BACKWARD))
         {
         }
@@ -438,6 +464,10 @@ void ToolbarWindow(
         {
             _tracks.SetActiveTrack(_tracks.AddVstTrack());
         }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Add Track");
+        }
     }
     ImGui::End();
     ImGui::PopStyleColor(1);
@@ -502,6 +532,8 @@ void MainLoop()
         return refillCallback(_tracks.GetTracks(), data, availableFrameCount, mixFormat);
     });
 
+    _inspectorWindow.SetAudioout(&wasapi);
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -519,7 +551,8 @@ void MainLoop()
 
         glfwGetWindowSize(window, &(state.ui._width), &(state.ui._height));
 
-        static int currentInspectorWidth = inspectorWidth;
+        int currentInspectorWidth = _showInspectorWindow ? inspectorWidth : 0;
+        int currentPianoHeight = _showPianoWindow ? pianoHeight : 0;
 
         MainMenu();
 
@@ -531,26 +564,32 @@ void MainLoop()
             ImVec2(0, currentPos.y - style.WindowPadding.y),
             ImVec2(state.ui._width, toolbarHeight + style.WindowPadding.y));
 
-        _inspectorWindow.Render(
-            ImVec2(0, currentPos.y + toolbarHeight),
-            ImVec2(currentInspectorWidth, state.ui._height - toolbarHeight));
+        if (_showInspectorWindow)
+        {
+            _inspectorWindow.Render(
+                ImVec2(0, currentPos.y + toolbarHeight),
+                ImVec2(currentInspectorWidth, state.ui._height - toolbarHeight));
+        }
 
         if (state.ui._activeCenterScreen == 0)
         {
             _tracksEditor.Render(
                 ImVec2(currentInspectorWidth, currentPos.y + toolbarHeight),
-                ImVec2(state.ui._width - currentInspectorWidth, state.ui._height - currentPos.y - toolbarHeight - pianoHeight));
+                ImVec2(state.ui._width - currentInspectorWidth, state.ui._height - currentPos.y - toolbarHeight - currentPianoHeight));
         }
         else
         {
             _notesEditor.Render(
                 ImVec2(currentInspectorWidth, currentPos.y + toolbarHeight),
-                ImVec2(state.ui._width - currentInspectorWidth, state.ui._height - currentPos.y - toolbarHeight - pianoHeight));
+                ImVec2(state.ui._width - currentInspectorWidth, state.ui._height - currentPos.y - toolbarHeight - currentPianoHeight));
         }
 
-        _pianoWindow.Render(
-            ImVec2(currentInspectorWidth, state.ui._height - pianoHeight),
-            ImVec2(state.ui._width - currentInspectorWidth, pianoHeight));
+        if (_showPianoWindow)
+        {
+            _pianoWindow.Render(
+                ImVec2(currentInspectorWidth, state.ui._height - pianoHeight),
+                ImVec2(state.ui._width - currentInspectorWidth, pianoHeight));
+        }
 
         ImGui::ShowDemoWindow();
 
@@ -566,6 +605,8 @@ void MainLoop()
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+
+    _inspectorWindow.SetAudioout(nullptr);
 }
 
 void SetupFonts()
@@ -618,6 +659,8 @@ int main(
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
+    _win32VstPluginLoader = new Win32VstPluginLoader(window->hwnd);
+
     // Setup ImGui binding
     ImGui::CreateContext();
 
@@ -651,10 +694,13 @@ int main(
     _inspectorWindow.SetState(&state);
     _inspectorWindow.SetTracksManager(&_tracks);
     _inspectorWindow.SetMidiIn(midiIn);
+    _inspectorWindow.SetVstPluginLoader(_win32VstPluginLoader);
 
     MainLoop();
 
     _tracks.CleanupInstruments();
+
+    delete _win32VstPluginLoader;
 
     // Cleanup
     ImGui_ImplGlfwGL2_Shutdown();

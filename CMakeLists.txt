@@ -93,6 +93,9 @@ add_executable(imgui-vsthost
     vstplugin.h
     wasapi.cpp
     wasapi.h
+    ivstpluginloader.h
+    win32vstpluginloader.cpp
+    win32vstpluginloader.h
     )
 
 target_compile_features(imgui-vsthost

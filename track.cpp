@@ -6,7 +6,7 @@ void Track::StartRecording()
 }
 
 long Track::StartNewRegion(
-    long start)
+    std::chrono::milliseconds::rep start)
 {
     if (GetActiveRegionAt(_regions, start, 0) != _regions.end())
     {
@@ -16,17 +16,15 @@ long Track::StartNewRegion(
     start = start - (start % 4000);
 
     Region region;
-    region._length = 4000;
+    region.SetLength(4000);
 
     AddRegion(start, region);
 
     return start;
 }
 
-#include <iostream>
-
 void Track::RecordMidiEvent(
-    long time,
+    std::chrono::milliseconds::rep time,
     int noteNumber,
     bool onOff,
     int velocity)
@@ -39,7 +37,7 @@ void Track::RecordMidiEvent(
     if (_activeRegion == _regions.end())
     {
         Region region;
-        region._length = 4000;
+        region.SetLength(4000);
 
         AddRegion(time - (time % 4000), region);
 
@@ -108,38 +106,38 @@ void Track::SetColor(
     _color[3] = a;
 }
 
-std::map<long, Region> const &Track::Regions() const
+std::map<std::chrono::milliseconds::rep, Region> const &Track::Regions() const
 {
     return _regions;
 }
 
 Region &Track::GetRegion(
-    long at)
+    std::chrono::milliseconds::rep at)
 {
     return _regions[at];
 }
 
 void Track::AddRegion(
-    long startAt,
+    std::chrono::milliseconds::rep startAt,
     Region const &region)
 {
     _regions.insert(std::make_pair(startAt, region));
 }
 
 void Track::RemoveRegion(
-    long startAt)
+    std::chrono::milliseconds::rep startAt)
 {
     _regions.erase(startAt);
 }
 
-std::map<long, Region>::iterator Track::GetActiveRegionAt(
-    std::map<long, Region> &regions,
-    long time,
-    long margin)
+std::map<std::chrono::milliseconds::rep, Region>::iterator Track::GetActiveRegionAt(
+    std::map<std::chrono::milliseconds::rep, Region> &regions,
+    std::chrono::milliseconds::rep time,
+    std::chrono::milliseconds::rep margin)
 {
     for (auto i = regions.begin(); i != regions.end(); ++i)
     {
-        if (i->first <= time && (i->first + i->second._length + margin) >= time)
+        if (i->first <= time && (i->first + i->second.Length() + margin) >= time)
         {
             return i;
         }

@@ -20,7 +20,7 @@ int TracksEditor::MaxTracksWidth()
     {
         for (auto &region : track->Regions())
         {
-            auto end = region.first + region.second._length + 8000;
+            auto end = region.first + region.second.Length() + 8000;
             if (end > _maxTrackLength) _maxTrackLength = end;
         }
     }
@@ -54,7 +54,7 @@ void TracksEditor::Render(
             "TracksTools",
             ImVec2(0, trackToolsHeight));
         {
-            if (ImGui::Button(ICON_FAD_KEYBOARD))
+            if (ImGui::Button(ICON_FAD_PEN))
             {
                 _state->ui._activeCenterScreen = 1;
             }
@@ -193,7 +193,7 @@ long TracksEditor::GetNewRegionLength(
 {
     auto diff = ImVec2(ImGui::GetMousePos().x - _mouseDragStart.x, ImGui::GetMousePos().y - _mouseDragStart.y);
     auto snappedDiffX = SnapRegionsSteps(PixelsToSteps(diff.x));
-    auto newLength = SnapRegionsSteps(region.second._length + snappedDiffX);
+    auto newLength = SnapRegionsSteps(region.second.Length() + snappedDiffX);
 
     return newLength;
 }
@@ -221,7 +221,7 @@ void TracksEditor::UpdateRegionLength(
     long length)
 {
     track->GetRegion(regionAt)
-        ._length = length;
+        .SetLength(length);
 }
 
 void TracksEditor::RenderRegion(
@@ -234,7 +234,7 @@ void TracksEditor::RenderRegion(
     auto isActiveRegion = std::get<ITrack *>(_tracks->GetActiveRegion()) == track && std::get<long>(_tracks->GetActiveRegion()) == region.first;
 
     auto regionOrigin = ImVec2(trackOrigin.x + StepsToPixels(region.first), trackOrigin.y + 4);
-    auto regionWidth = StepsToPixels(region.second._length);
+    auto regionWidth = StepsToPixels(region.second.Length());
 
     ImGui::PushID(region.first);
 
@@ -256,7 +256,7 @@ void TracksEditor::RenderRegion(
     {
         auto newLength = GetNewRegionLength(region);
 
-        if (newLength > 0 && newLength != region.second._length)
+        if (newLength > 0 && newLength != region.second.Length())
         {
             UpdateRegionLength(track, region.first, newLength);
             _mouseDragStart = ImGui::GetMousePos();
@@ -343,12 +343,12 @@ void TracksEditor::RenderNotes(
     };
 
     std::map<unsigned int, ActiveNote> activeNotes;
-    for (auto event : region.second._events)
+    for (auto event : region.second.Events())
     {
         const int noteHeight = 5;
         auto h = (finalTrackHeight - ((regionRounding + noteHeight) * 3));
 
-        if (event.first > region.second._length)
+        if (event.first > region.second.Length())
         {
             break;
         }
@@ -540,86 +540,105 @@ void TracksEditor::RenderTrackHeader(
         {
             _tracks->RemoveTrack(track);
         }
-
-        ImGui::SameLine();
-
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, ImGui::GetStyle().ItemSpacing.y));
+        else
         {
-            if (ImGui::ActiveButton(ICON_FAD_MUTE, track->IsMuted()))
+            if (ImGui::IsItemHovered())
             {
-                track->ToggleMuted();
-                if (track->IsMuted() && _tracks->GetSoloTrack() == track)
-                {
-                    _tracks->SetSoloTrack(nullptr);
-                }
-                _tracks->SetActiveTrack(track);
+                ImGui::SetTooltip("Remove this track");
             }
 
             ImGui::SameLine();
 
-            if (ImGui::ActiveButton(ICON_FAD_SOLO, _tracks->GetSoloTrack() == track))
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, ImGui::GetStyle().ItemSpacing.y));
             {
-                if (_tracks->GetSoloTrack() != track)
+                if (ImGui::ActiveButton(ICON_FAD_MUTE, track->IsMuted()))
                 {
-                    _tracks->SetSoloTrack(track);
-                    track->Unmute();
+                    track->ToggleMuted();
+                    if (track->IsMuted() && _tracks->GetSoloTrack() == track)
+                    {
+                        _tracks->SetSoloTrack(nullptr);
+                    }
+                    _tracks->SetActiveTrack(track);
+                }
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::SetTooltip(track->IsMuted() ? "Unmute this Track" : "Mute this Track");
+                }
+
+                ImGui::SameLine();
+
+                if (ImGui::ActiveButton(ICON_FAD_SOLO, _tracks->GetSoloTrack() == track))
+                {
+                    if (_tracks->GetSoloTrack() != track)
+                    {
+                        _tracks->SetSoloTrack(track);
+                        track->Unmute();
+                    }
+                    else
+                    {
+                        _tracks->SetSoloTrack(nullptr);
+                    }
+                    _tracks->SetActiveTrack(track);
+                }
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::SetTooltip(_tracks->GetSoloTrack() == track ? "Unsolo this Track" : "Solo this Track");
+                }
+
+                ImGui::SameLine();
+
+                if (track->IsReadyForRecoding())
+                {
+                    if (_state->_recording)
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1, 0, 0, 1));
+                    }
+                    else
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0, 0, 1));
+                    }
                 }
                 else
                 {
-                    _tracks->SetSoloTrack(nullptr);
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_Button]);
                 }
-                _tracks->SetActiveTrack(track);
+
+                if (ImGui::Button(ICON_FAD_RECORD))
+                {
+                    track->ToggleReadyForRecording();
+                }
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::SetTooltip(track->IsReadyForRecoding() ? "Stop being ready to record in this track" : "Get ready to record in this track");
+                }
+
+                ImGui::PopStyleColor();
+            }
+            ImGui::PopStyleVar();
+
+            if (finalTrackHeight < 60)
+            {
+                ImGui::SameLine();
             }
 
-            ImGui::SameLine();
-
-            if (track->IsReadyForRecoding())
+            if (_editTrackName == t)
             {
-                if (_state->_recording)
+                ImGui::SetKeyboardFocusHere();
+                if (ImGui::InputText("##editName", _editTrackBuffer, 128, ImGuiInputTextFlags_EnterReturnsTrue))
                 {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1, 0, 0, 1));
-                }
-                else
-                {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0, 0, 1));
+                    track->SetName(_editTrackBuffer);
+                    _editTrackName = -1;
                 }
             }
             else
             {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_Button]);
-            }
-
-            if (ImGui::Button(ICON_FAD_RECORD))
-            {
-                track->ToggleReadyForRecording();
-            }
-
-            ImGui::PopStyleColor();
-        }
-        ImGui::PopStyleVar();
-
-        if (finalTrackHeight < 60)
-        {
-            ImGui::SameLine();
-        }
-
-        if (_editTrackName == t)
-        {
-            ImGui::SetKeyboardFocusHere();
-            if (ImGui::InputText("##editName", _editTrackBuffer, 128, ImGuiInputTextFlags_EnterReturnsTrue))
-            {
-                track->SetName(_editTrackBuffer);
-                _editTrackName = -1;
-            }
-        }
-        else
-        {
-            ImGui::Text("%s", track->GetName().c_str());
-            if (ImGui::IsItemClicked())
-            {
-                _editTrackName = t;
-                strcpy_s(_editTrackBuffer, 128, track->GetName().c_str());
-                _tracks->SetActiveTrack(track);
+                ImGui::Text("%s", track->GetName().c_str());
+                if (ImGui::IsItemClicked())
+                {
+                    _editTrackName = t;
+                    strcpy_s(_editTrackBuffer, 128, track->GetName().c_str());
+                    _tracks->SetActiveTrack(track);
+                }
             }
         }
     }

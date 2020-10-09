@@ -9,17 +9,9 @@
 #include <map>
 #include <string>
 
-class Track : public ITrack
+class Track :
+    public ITrack
 {
-    std::string _name = "track";
-    Instrument *_instrument = nullptr;
-    bool _muted = false;
-    bool _readyForRecord = false;
-    float _color[4];
-
-    std::map<long, Region>::iterator _activeRegion;
-    std::map<long, Region> _regions; // the int key of the map is the absolute start (in timestep=1000 per 1 bar) of the region from the beginning of the song
-
 public:
     virtual ~Track() = default;
 
@@ -50,33 +42,43 @@ public:
         float b,
         float a = 1.0f);
 
-    virtual std::map<long, Region> const &Regions() const;
+    virtual std::map<std::chrono::milliseconds::rep, Region> const &Regions() const;
 
     virtual Region &GetRegion(
-        long at);
+        std::chrono::milliseconds::rep at);
 
     virtual void StartRecording();
 
     virtual long StartNewRegion(
-        long start);
+        std::chrono::milliseconds::rep start);
 
     virtual void RecordMidiEvent(
-        long time,
+        std::chrono::milliseconds::rep time,
         int noteNumber,
         bool onOff,
         int velocity);
 
     virtual void AddRegion(
-        long startAt,
+        std::chrono::milliseconds::rep startAt,
         Region const &region);
 
     virtual void RemoveRegion(
-        long startAt);
+        std::chrono::milliseconds::rep startAt);
 
-    static std::map<long, Region>::iterator GetActiveRegionAt(
-        std::map<long, Region> &regions,
-        long time,
-        long margin = 4000);
+    static std::map<std::chrono::milliseconds::rep, Region>::iterator GetActiveRegionAt(
+        std::map<std::chrono::milliseconds::rep, Region> &regions,
+        std::chrono::milliseconds::rep time,
+        std::chrono::milliseconds::rep margin = 4000);
+
+private:
+    std::string _name = "track";
+    Instrument *_instrument = nullptr;
+    bool _muted = false;
+    bool _readyForRecord = false;
+    float _color[4];
+    std::map<std::chrono::milliseconds::rep, Region> _regions; // the int key of the map is the absolute start (in timestep=1000 per 1 bar) of the region from the beginning of the song
+
+    std::map<std::chrono::milliseconds::rep, Region>::iterator _activeRegion;
 };
 
 #endif // TRACK_H

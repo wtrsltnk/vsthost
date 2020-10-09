@@ -1,6 +1,8 @@
 #include "inspectorwindow.h"
 
+#include "IconsFontaudio.h"
 #include "instrument.h"
+#include "ivstpluginloader.h"
 
 InspectorWindow::InspectorWindow()
 {
@@ -24,24 +26,16 @@ void InspectorWindow::SetMidiIn(
     _midiIn = midiIn;
 }
 
-VstPlugin *loadPlugin()
+void InspectorWindow::SetAudioout(
+    struct Wasapi *wasapi)
 {
-    wchar_t fn[MAX_PATH + 1];
-    OPENFILENAME ofn = {};
-    ofn.lStructSize = sizeof(ofn);
-    ofn.lpstrFilter = L"VSTi DLL(*.dll)\0*.dll\0All Files(*.*)\0*.*\0\0";
-    ofn.lpstrFile = fn;
-    ofn.nMaxFile = _countof(fn);
-    ofn.lpstrTitle = L"Select VST DLL";
-    ofn.Flags = OFN_FILEMUSTEXIST | OFN_ENABLESIZING;
-    if (GetOpenFileName(&ofn) != 0)
-    {
-        auto result = new VstPlugin();
-        result->init(fn);
-        return result;
-    }
+    _wasapi = wasapi;
+}
 
-    return nullptr;
+void InspectorWindow::SetVstPluginLoader(
+    IVstPluginLoader *loader)
+{
+    _vstPluginLoader = loader;
 }
 
 void InspectorWindow::Render(
@@ -53,7 +47,7 @@ void InspectorWindow::Render(
         ImGui::SetWindowPos(pos);
         ImGui::SetWindowSize(size);
 
-        if (ImGui::CollapsingHeader("Midi", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader("Midi in", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Text("Midi ports");
             int ports = _midiIn->getPortCount();
@@ -80,6 +74,28 @@ void InspectorWindow::Render(
             ImGui::EndGroup();
         }
 
+        if (_wasapi != nullptr && ImGui::CollapsingHeader("Audio out"))
+        {
+            const std::string activeDevice(_wasapi->CurrentDevice().begin(), _wasapi->CurrentDevice().end());
+            ImGui::Text("Active Audio Device:");
+            ImGui::BulletText("%s", activeDevice.c_str());
+            ImGui::Text("Other Audio Devices");
+            ImGui::BeginGroup();
+
+            for (auto &d : _wasapi->Devices())
+            {
+                if (d == _wasapi->CurrentDevice())
+                {
+                    continue;
+                }
+
+                const std::string s(d.begin(), d.end());
+
+                ImGui::BulletText("%s", s.c_str());
+            }
+            ImGui::EndGroup();
+        }
+
         if (_tracks->GetActiveTrack() != nullptr)
         {
             if (ImGui::CollapsingHeader((std::string("Track: ") + _tracks->GetActiveTrack()->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
@@ -91,14 +107,18 @@ void InspectorWindow::Render(
 
                 if (_tracks->GetActiveTrack()->GetInstrument() != nullptr)
                 {
-                    auto vstPlugin = _tracks->GetActiveTrack()->GetInstrument()->_plugin;
+                    auto vstPlugin = _tracks->GetActiveTrack()->GetInstrument()->Plugin();
 
                     if (vstPlugin == nullptr)
                     {
-                        if (ImGui::Button("Add plugin"))
+                        if (_vstPluginLoader != nullptr && ImGui::Button("Add plugin"))
                         {
-                            _tracks->GetActiveTrack()->GetInstrument()->_plugin = loadPlugin();
-                            _tracks->GetActiveTrack()->GetInstrument()->_plugin->title = _tracks->GetActiveTrack()->GetInstrument()->_name.c_str();
+                            _tracks->GetActiveTrack()->GetInstrument()->SetPlugin(_vstPluginLoader->LoadFromFileDialog());
+                            if (_tracks->GetActiveTrack()->GetInstrument()->Plugin() != nullptr)
+                            {
+                                _tracks->GetActiveTrack()->GetInstrument()->Plugin()->SetTitle(
+                                    _tracks->GetActiveTrack()->GetInstrument()->Name());
+                            }
                         }
                     }
                     else
@@ -117,16 +137,21 @@ void *getLen;
 plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
 */
 
-                        if (ImGui::Button("Change plugin"))
+                        if (_vstPluginLoader != nullptr)
                         {
-                            auto plugin = loadPlugin();
-                            if (plugin != nullptr)
+                            if (ImGui::Button("Change plugin"))
                             {
-                                _tracks->GetActiveTrack()->GetInstrument()->_plugin = plugin;
-                                _tracks->GetActiveTrack()->GetInstrument()->_plugin->title = _tracks->GetActiveTrack()->GetInstrument()->_name.c_str();
+                                auto plugin = _vstPluginLoader->LoadFromFileDialog();
+                                if (plugin != nullptr)
+                                {
+                                    _tracks->GetActiveTrack()->GetInstrument()->SetPlugin(plugin);
+                                    _tracks->GetActiveTrack()->GetInstrument()->Plugin()->SetTitle(
+                                        _tracks->GetActiveTrack()->GetInstrument()->Name().c_str());
+                                }
                             }
+                            ImGui::SameLine();
                         }
-                        ImGui::SameLine();
+
                         if (!vstPlugin->isEditorOpen())
                         {
                             if (ImGui::Button("Open plugin"))
@@ -147,7 +172,7 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
         }
 
         auto track = std::get<ITrack *>(_tracks->GetActiveRegion());
-        if (track == _tracks->GetActiveTrack())
+        if (track != nullptr && track == _tracks->GetActiveTrack())
         {
             auto regionStart = std::get<long>(_tracks->GetActiveRegion());
             if (track->Regions().find(regionStart) != track->Regions().end())
@@ -156,7 +181,7 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
 
                 if (ImGui::CollapsingHeader((std::string("Region: ") + _tracks->GetActiveTrack()->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
                 {
-                    ImGui::Text("# of midi events: %llu", region._events.size());
+                    ImGui::Text("# of midi events: %llu", region.Events().size());
                 }
             }
         }

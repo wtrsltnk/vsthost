@@ -12,13 +12,13 @@
 
 class Region
 {
-    uint32_t _minNote = std::numeric_limits<uint32_t>::max();
-    uint32_t _maxNote = 0;
-
 public:
-    long _length = 16000;
-    std::map<long, std::vector<MidiEvent>> _events; // the long key of the map is the relaive start of the event from the beginning of the region
-    std::map<long, std::vector<MidiEvent>> _selection;
+    long Length() const;
+
+    void SetLength(
+        long length);
+
+    const std::map<long, std::vector<MidiEvent>> &Events() const;
 
     uint32_t GetMinNote() const;
 
@@ -38,6 +38,17 @@ public:
         const MidiEvent &e,
         long from,
         long to);
+
+private:
+    long _length = 16000;
+    std::map<long, std::vector<MidiEvent>> _events; // the long key of the map is the relaive start of the event from the beginning of the region
+    std::map<long, std::vector<MidiEvent>> _selection;
+
+    uint32_t _minNote = std::numeric_limits<uint32_t>::max();
+    uint32_t _maxNote = 0;
+
+    void UpdateLength(
+        long time);
 };
 
 #endif // REGION_H

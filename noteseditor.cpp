@@ -33,7 +33,7 @@ void NotesEditor::Render(
 
         ImGui::BeginChild(
             "noteseditor_tools",
-            ImVec2(0, trackToolsHeight));
+            ImVec2(0.0f, float(trackToolsHeight)));
         {
             if (ImGui::Button(ICON_FK_CHEVRON_LEFT))
             {
@@ -64,11 +64,11 @@ void NotesEditor::Render(
             float _tracksScrollx = 0;
 
             auto &region = track->GetRegion(regionStart);
-            auto notes = MidiNote::ConvertMidiEventsToMidiNotes(region._events);
+            auto notes = MidiNote::ConvertMidiEventsToMidiNotes(region.Events());
 
             auto originContainerScreenPos = ImGui::GetCursorScreenPos();
 
-            ImGui::MoveCursorPos(ImVec2(0, timelineHeight));
+            ImGui::MoveCursorPos(ImVec2(0.0f, float(timelineHeight)));
 
             ImGui::BeginChild(
                 "NotesContainer",
@@ -83,7 +83,7 @@ void NotesEditor::Render(
                 ImGui::BeginGroup();
                 long eindex = 0;
                 static ImGuiID movingEventId;
-                for (auto t : region._events)
+                for (auto t : region.Events())
                 {
                     for (auto e : t.second)
                     {
@@ -146,13 +146,17 @@ void NotesEditor::Render(
                     auto originNotePos = ImGui::GetCursorPos();
                     auto originNoteScreenPos = ImGui::GetCursorScreenPos();
 
-                    auto gridWidth = std::max(StepsToPixels(region._length), ImGui::GetWindowWidth());
+                    auto gridWidth = std::max(StepsToPixels(region.Length()), ImGui::GetWindowWidth());
                     auto noteInOctave = noteNumber % 12;
                     if (noteInOctave == Note_C_OffsetFromC || noteInOctave == Note_D_OffsetFromC || noteInOctave == Note_E_OffsetFromC || noteInOctave == Note_F_OffsetFromC || noteInOctave == Note_G_OffsetFromC || noteInOctave == Note_A_OffsetFromC || noteInOctave == Note_B_OffsetFromC)
                     {
                         ImGui::GetWindowDrawList()->AddRectFilled(
-                            ImVec2(originNoteScreenPos.x, originNoteScreenPos.y + 1),
-                            ImVec2(originNoteScreenPos.x + gridWidth, originNoteScreenPos.y + midiEventHeight),
+                            ImVec2(
+                                originNoteScreenPos.x,
+                                originNoteScreenPos.y + 1),
+                            ImVec2(
+                                originNoteScreenPos.x + gridWidth,
+                                originNoteScreenPos.y + midiEventHeight),
                             ImColor(1.0f, 1.0f, 1.0f, 0.1f));
                     }
 
@@ -202,7 +206,7 @@ void NotesEditor::Render(
 
             RenderTimeline(
                 ImVec2(originContainerScreenPos.x, originContainerScreenPos.y),
-                StepsToPixels(region._length),
+                StepsToPixels(region.Length()),
                 _tracksScrollx);
 
             RenderCursor(
@@ -295,7 +299,7 @@ void NotesEditor::RenderNotesCanvas(
 {
     ImGui::InvisibleButton(
         "##NotesCanvas",
-        ImVec2(StepsToPixels(region._length), midiEventHeight * 127));
+        ImVec2(StepsToPixels(region.Length()), midiEventHeight * 127));
 
     if (ImGui::IsItemHovered() && ImGui::IsMouseDown(0) && !_drawingNotes)
     {
@@ -317,8 +321,12 @@ void NotesEditor::RenderNotesCanvas(
     {
         auto noteToCreate = std::floor((_noteDrawingAndEditingStart.y - origin.y - timelineHeight - ImGui::GetScrollY()) / midiEventHeight);
         ImGui::GetWindowDrawList()->AddRectFilled(
-            ImVec2(_noteDrawingAndEditingStart.x, 1 + origin.y + timelineHeight + ImGui::GetScrollY() + (noteToCreate * midiEventHeight)),
-            ImVec2(ImGui::GetMousePos().x, origin.y + timelineHeight + ImGui::GetScrollY() + (noteToCreate * midiEventHeight) + midiEventHeight),
+            ImVec2(
+                _noteDrawingAndEditingStart.x,
+                1 + origin.y + timelineHeight + ImGui::GetScrollY() + (noteToCreate * midiEventHeight)),
+            ImVec2(
+                ImGui::GetMousePos().x,
+                origin.y + timelineHeight + ImGui::GetScrollY() + (noteToCreate * midiEventHeight) + midiEventHeight),
             ImColor(ImGui::GetStyle().Colors[ImGuiCol_Button]));
     }
 }
