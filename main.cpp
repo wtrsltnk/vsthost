@@ -197,6 +197,15 @@ void HandleIncomingMidiEvent(
     bool onOff,
     int velocity)
 {
+    if (onOff)
+    {
+        PianoWindow::downKeys.insert(noteNumber);
+    }
+    else
+    {
+        PianoWindow::downKeys.erase(noteNumber);
+    }
+
     if (state.IsRecording())
     {
         for (auto &track : _tracks.GetTracks())
@@ -485,6 +494,26 @@ void MainMenu()
             }
             ImGui::EndMenu();
         }
+        if (ImGui::BeginMenu("View"))
+        {
+            if (ImGui::MenuItem("Dark-mode"))
+            {
+                ImGui::StyleColorsDark();
+            }
+
+            if (ImGui::MenuItem("Light-mode"))
+            {
+                ImGui::StyleColorsLight();
+            }
+
+            if (ImGui::MenuItem("Classic-mode"))
+            {
+                ImGui::StyleColorsClassic();
+            }
+
+            ImGui::EndMenu();
+        }
+
         ImGui::EndMainMenuBar();
     }
 }
@@ -657,6 +686,7 @@ int main(
     auto &style = ImGui::GetStyle();
 
     style.WindowRounding = 0;
+    style.WindowBorderSize = 0;
     style.WindowPadding = ImVec2(10, 10);
     style.FramePadding = ImVec2(12, 6);
     style.ItemInnerSpacing = ImVec2(20, 20);

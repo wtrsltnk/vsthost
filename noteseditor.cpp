@@ -15,9 +15,7 @@ const int midiEventHeight = 12;
 const int minPixelsPerStep = 8;
 const int maxPixelsPerStep = 200;
 
-NotesEditor::NotesEditor()
-{
-}
+NotesEditor::NotesEditor() = default;
 
 void NotesEditor::Render(
     const ImVec2 &pos,
@@ -96,6 +94,18 @@ void NotesEditor::Render(
                         if (ImGui::ButtonEx("event", ImVec2(midiEventHeight, midiEventHeight - 1), ImGuiButtonFlags_PressedOnClick))
                         {
                             movingEventId = ImGui::GetID("event");
+                        }
+
+                        if (ImGui::IsItemHovered())
+                        {
+                            if (e.type == MidiEventTypes::M_NOTE && e.value > 0)
+                            {
+                                ImGui::SetTooltip("Move Note Down event");
+                            }
+                            if (e.type == MidiEventTypes::M_NOTE && e.value <= 0)
+                            {
+                                ImGui::SetTooltip("Move Note Release event");
+                            }
                         }
 
                         auto center = ImVec2(
@@ -246,6 +256,10 @@ void NotesEditor::RenderEditableNote(
         }
     }
 
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("Move whole Note");
+    }
     auto diffy = ImGui::GetMousePos().y - _noteDrawingAndEditingStart.y;
     diffy -= (int(std::floor(diffy)) % midiEventHeight);
 
@@ -276,14 +290,16 @@ void NotesEditor::RenderEditableNote(
         _editingNotes = false;
         auto amountToShiftNote = std::floor(diffy / float(midiEventHeight));
 
+        auto from = start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x);
+
         region.AddEvent(
-            start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x),
+            from,
             noteNumber - amountToShiftNote,
             true,
             velocity);
 
         region.AddEvent(
-            start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x) + length,
+            from + length,
             noteNumber - amountToShiftNote,
             false,
             0);
@@ -315,6 +331,12 @@ void NotesEditor::RenderNotesCanvas(
         auto noteStart = PixelsToSteps(_noteDrawingAndEditingStart.x - origin.x);
         auto noteEnd = PixelsToSteps(ImGui::GetMousePos().x - origin.x);
 
+        if (noteStart > noteEnd)
+        {
+            auto tmp = noteStart;
+            noteStart = noteEnd;
+            noteEnd = tmp;
+        }
         region.AddEvent(noteStart, noteToCreate, true, 100);
         region.AddEvent(noteEnd, noteToCreate, false, 0);
     }
