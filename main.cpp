@@ -471,7 +471,7 @@ void StyleColorsCustomDark(ImGuiStyle *dst = nullptr)
     ImGuiStyle *style = dst ? dst : &ImGui::GetStyle();
     ImVec4 *colors = style->Colors;
 
-    colors[ImGuiCol_WindowBg] = ImVec4(0.06f, 0.10f, 0.14f, 0.94f);
+    colors[ImGuiCol_WindowBg] = ImVec4(0.06f, 0.10f, 0.12f, 0.94f);
     //    colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
     //    colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
     //    colors[ImGuiCol_ChildBg] = ImVec4(1.00f, 1.00f, 1.00f, 0.00f);

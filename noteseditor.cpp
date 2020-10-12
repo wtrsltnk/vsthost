@@ -47,6 +47,30 @@ void NotesEditor::Render(
             ImGui::SameLine();
             ImGui::SliderInt("##zoom", &(_pixelsPerStep), minPixelsPerStep, maxPixelsPerStep);
             ImGui::PopItemWidth();
+
+            ImGui::SameLine();
+            ImGui::VerticalSeparator();
+            ImGui::SameLine();
+
+            if (ImGui::Button("Open Arpeggiator"))
+            {
+                ImGui::OpenPopup("Arpeggiator");
+            }
+
+            if (ImGui::BeginPopupModal("Arpeggiator"))
+            {
+                ImGui::Text("Aquarium");
+                ImGui::Separator();
+                ImGui::Text("s sdf");
+
+                if (ImGui::Button("Replace", ImVec2(120,0))) { ImGui::CloseCurrentPopup(); }
+                ImGui::SetItemDefaultFocus();
+                ImGui::SameLine();
+                if (ImGui::Button("Append", ImVec2(120,0))) { ImGui::CloseCurrentPopup(); }
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel", ImVec2(120,0))) { ImGui::CloseCurrentPopup(); }
+                ImGui::EndPopup();
+            }
         }
         ImGui::EndChild();
 
