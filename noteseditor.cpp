@@ -226,7 +226,7 @@ void NotesEditor::RenderEditableNote(
     int noteNumber,
     std::chrono::milliseconds::rep start,
     std::chrono::milliseconds::rep length,
-    unsigned int velocity,
+    uint32_t velocity,
     const ImVec2 &noteSize,
     const ImVec2 &origin)
 {
@@ -297,6 +297,8 @@ void NotesEditor::RenderNotesCanvas(
     Region &region,
     const ImVec2 &origin)
 {
+    static uint32_t previousNoteWhenDragging = 0;
+
     ImGui::InvisibleButton(
         "##NotesCanvas",
         ImVec2(StepsToPixels(region.Length()), midiEventHeight * 127));
@@ -320,6 +322,13 @@ void NotesEditor::RenderNotesCanvas(
     if (ImGui::IsItemActive() && _drawingNotes)
     {
         auto noteToCreate = std::floor((_noteDrawingAndEditingStart.y - origin.y - timelineHeight - ImGui::GetScrollY()) / midiEventHeight);
+        if (uint32_t(noteToCreate) != previousNoteWhenDragging)
+        {
+            // todo play note with a length from the selected note
+
+            previousNoteWhenDragging = uint32_t(noteToCreate);
+        }
+
         ImGui::GetWindowDrawList()->AddRectFilled(
             ImVec2(
                 _noteDrawingAndEditingStart.x,

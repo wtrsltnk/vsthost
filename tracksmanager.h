@@ -6,14 +6,9 @@
 
 #include <vector>
 
-class TracksManager : public ITracksManager
+class TracksManager :
+    public ITracksManager
 {
-    std::vector<ITrack *> tracks;
-    std::vector<Instrument *> instruments;
-    ITrack *activeTrack = nullptr;
-    ITrack *soloTrack = nullptr;
-    std::tuple<ITrack *, long> activeRegion{nullptr, -1};
-
 public:
     TracksManager();
 
@@ -44,9 +39,20 @@ public:
 
     virtual void CleanupInstruments();
 
+    virtual void SendMidiNotesInSong(
+        std::chrono::milliseconds::rep start,
+        std::chrono::milliseconds::rep end);
+
 public:
     ITrack *AddVstTrack(
         wchar_t const *plugin = nullptr);
+
+private:
+    std::vector<ITrack *> tracks;
+    std::vector<Instrument *> instruments;
+    ITrack *activeTrack = nullptr;
+    ITrack *soloTrack = nullptr;
+    std::tuple<ITrack *, long> activeRegion{nullptr, -1};
 };
 
 #endif // TRACKSMANAGER_H

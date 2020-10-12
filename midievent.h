@@ -22,10 +22,10 @@ enum class MidiEventTypes
 struct MidiEvent
 {
     MidiEvent();
-    unsigned int channel; // the midi channel for the event
+    uint32_t channel; // the midi channel for the event
     MidiEventTypes type;  // type=1 for note, type=2 for controller
-    unsigned int num;     // note, controller or program number
-    unsigned int value;   // velocity or controller value
+    uint32_t num;     // note, controller or program number
+    uint32_t value;   // velocity or controller value
 
     typedef std::vector<MidiEvent> Collection;
     typedef std::map<long, Collection> CollectionInTime;

@@ -30,7 +30,7 @@ private:
 
     void StopAndCleanupDevice();
 
-    unsigned int threadFunc();
+    uint32_t threadFunc();
 
     HANDLE _hThread;
     IMMDevice *_mmDevice;

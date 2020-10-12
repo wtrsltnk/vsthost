@@ -27,14 +27,14 @@ public:
     MidiNote();
     MidiNote(
         std::chrono::milliseconds::rep t,
-        unsigned int v);
+        uint32_t v);
 
     std::chrono::milliseconds::rep length;
-    unsigned int velocity;
+    uint32_t velocity;
 
 public:
     typedef std::vector<MidiNote> Collection;
-    typedef std::map<long, Collection> CollectionInTime;
+    typedef std::map<std::chrono::milliseconds::rep, Collection> CollectionInTime;
     typedef std::map<unsigned char, CollectionInTime> CollectionInTimeByNote;
 
     static MidiNote::CollectionInTimeByNote ConvertMidiEventsToMidiNotes(

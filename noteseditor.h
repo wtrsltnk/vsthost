@@ -11,6 +11,14 @@
 class NotesEditor :
     public AbstractTimelineEditor
 {
+public:
+    NotesEditor();
+
+    void Render(
+        const ImVec2 &pos,
+        const ImVec2 &size);
+
+private:
     ImVec2 _noteDrawingAndEditingStart;
     bool _drawingNotes = false;
     bool _editingNotes = false;
@@ -26,16 +34,9 @@ class NotesEditor :
         int noteNumber,
         std::chrono::milliseconds::rep start,
         std::chrono::milliseconds::rep length,
-        unsigned int velocity,
+        uint32_t velocity,
         const ImVec2 &noteSize,
         const ImVec2 &origin);
-
-public:
-    NotesEditor();
-
-    void Render(
-        const ImVec2 &pos,
-        const ImVec2 &size);
 };
 
 #endif // NOTESEDITOR_H

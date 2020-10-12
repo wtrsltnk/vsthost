@@ -23,14 +23,14 @@ void AbstractTimelineEditor::SetTracksManager(
     _tracks = tracks;
 }
 
-long AbstractTimelineEditor::PixelsToSteps(
+std::chrono::milliseconds::rep AbstractTimelineEditor::PixelsToSteps(
     float pixels)
 {
-    return long((pixels / _pixelsPerStep) * 1000.0f);
+    return std::chrono::milliseconds::rep((pixels / _pixelsPerStep) * 1000.0f);
 }
 
 float AbstractTimelineEditor::StepsToPixels(
-    long steps)
+    std::chrono::milliseconds::rep steps)
 {
     return (steps / 1000.0f) * _pixelsPerStep;
 }
@@ -76,7 +76,7 @@ void AbstractTimelineEditor::RenderCursor(
     int scrollX,
     int horizontalOffset)
 {
-    auto cursor = ImVec2(p.x + StepsToPixels(_state->_cursor) - scrollX, p.y);
+    auto cursor = ImVec2(p.x + StepsToPixels(_state->_cursor) - float(scrollX), p.y);
 
     if (cursor.x < ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMin().x + horizontalOffset)
     {
@@ -97,9 +97,9 @@ void AbstractTimelineEditor::RenderTimeline(
 {
     ImGui::SetCursorScreenPos(screenOrigin);
 
-    if (ImGui::InvisibleButton("##TimeLine", ImVec2(windowWidth, timelineHeight)))
+    if (ImGui::InvisibleButton("##TimeLine", ImVec2(float(windowWidth), float(timelineHeight))))
     {
-        int step = float((ImGui::GetMousePos().x - screenOrigin.x + scrollX) / _pixelsPerStep) + 0.5f;
+        int step = int(float((ImGui::GetMousePos().x - screenOrigin.x + scrollX) / _pixelsPerStep) + 0.5f);
         _state->SetCursorAtStep(step);
     }
 

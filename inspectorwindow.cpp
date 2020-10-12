@@ -2,7 +2,7 @@
 
 #include "IconsFontaudio.h"
 #include "instrument.h"
-#include "ivstpluginloader.h"
+#include "ivstpluginservice.h"
 
 InspectorWindow::InspectorWindow()
 {
@@ -26,14 +26,14 @@ void InspectorWindow::SetMidiIn(
     _midiIn = midiIn;
 }
 
-void InspectorWindow::SetAudioout(
+void InspectorWindow::SetAudioOut(
     struct Wasapi *wasapi)
 {
     _wasapi = wasapi;
 }
 
 void InspectorWindow::SetVstPluginLoader(
-    IVstPluginLoader *loader)
+    IVstPluginService *loader)
 {
     _vstPluginLoader = loader;
 }
@@ -47,12 +47,14 @@ void InspectorWindow::Render(
         ImGui::SetWindowPos(pos);
         ImGui::SetWindowSize(size);
 
-        if (ImGui::CollapsingHeader("Midi in", ImGuiTreeNodeFlags_DefaultOpen))
+        bool midiPortsAvailable = _midiIn != nullptr && _midiIn->getPortCount() > 0;
+
+        if (ImGui::CollapsingHeader("Midi in", midiPortsAvailable ? ImGuiTreeNodeFlags_DefaultOpen : 0))
         {
             ImGui::Text("Midi ports");
             int ports = _midiIn->getPortCount();
             std::string portName;
-            static int currentPort = -1;
+            static int currentPort = midiPortsAvailable ? 0 : -1;
             ImGui::BeginGroup();
             for (int i = 0; i < ports; i++)
             {
@@ -79,9 +81,9 @@ void InspectorWindow::Render(
             const std::string activeDevice(_wasapi->CurrentDevice().begin(), _wasapi->CurrentDevice().end());
             ImGui::Text("Active Audio Device:");
             ImGui::BulletText("%s", activeDevice.c_str());
+
             ImGui::Text("Other Audio Devices");
             ImGui::BeginGroup();
-
             for (auto &d : _wasapi->Devices())
             {
                 if (d == _wasapi->CurrentDevice())

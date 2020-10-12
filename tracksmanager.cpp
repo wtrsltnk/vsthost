@@ -151,3 +151,40 @@ void TracksManager::CleanupInstruments()
         delete item;
     }
 }
+
+void TracksManager::SendMidiNotesInSong(
+    std::chrono::milliseconds::rep start,
+    std::chrono::milliseconds::rep end)
+{
+    for (auto track : GetTracks())
+    {
+        if (track->GetInstrument() == nullptr)
+        {
+            continue;
+        }
+        if (track->GetInstrument()->Plugin() == nullptr)
+        {
+            continue;
+        }
+
+        for (auto region : track->Regions())
+        {
+            if (region.first > end) continue;
+            if (region.first + region.second.Length() < start) continue;
+
+            for (auto event : region.second.Events())
+            {
+                if ((event.first + region.first) > end) continue;
+                if ((event.first + region.first) < start) continue;
+                for (auto m : event.second)
+                {
+                    track->GetInstrument()->Plugin()->sendMidiNote(
+                        m.channel,
+                        m.num,
+                        m.value != 0,
+                        m.value);
+                }
+            }
+        }
+    }
+}

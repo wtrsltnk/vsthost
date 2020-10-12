@@ -34,6 +34,10 @@ public:
     virtual void RemoveActiveRegion() = 0;
 
     virtual void CleanupInstruments() = 0;
+
+    virtual void SendMidiNotesInSong(
+        std::chrono::milliseconds::rep start,
+        std::chrono::milliseconds::rep end) = 0;
 };
 
 #endif // ITRACKSMANAGER_H

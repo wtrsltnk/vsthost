@@ -339,10 +339,10 @@ void TracksEditor::RenderNotes(
     struct ActiveNote
     {
         std::chrono::milliseconds::rep time;
-        unsigned int velocity;
+        uint32_t velocity;
     };
 
-    std::map<unsigned int, ActiveNote> activeNotes;
+    std::map<uint32_t, ActiveNote> activeNotes;
     for (auto event : region.second.Events())
     {
         const int noteHeight = 5;

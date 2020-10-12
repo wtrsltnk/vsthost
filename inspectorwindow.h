@@ -2,7 +2,7 @@
 #define INSPECTORWINDOW_H
 
 #include "itracksmanager.h"
-#include "ivstpluginloader.h"
+#include "ivstpluginservice.h"
 #include "state.h"
 #include "wasapi.h"
 
@@ -23,11 +23,11 @@ public:
     void SetMidiIn(
         RtMidiIn *midiIn);
 
-    void SetAudioout(
+    void SetAudioOut(
         struct Wasapi *wasapi);
 
     void SetVstPluginLoader(
-        IVstPluginLoader *loader);
+        IVstPluginService *loader);
 
     void Render(
         ImVec2 const &pos,
@@ -38,7 +38,7 @@ private:
     ITracksManager *_tracks = nullptr;
     RtMidiIn *_midiIn = nullptr;
     struct Wasapi *_wasapi = nullptr;
-    IVstPluginLoader *_vstPluginLoader = nullptr;
+    IVstPluginService *_vstPluginLoader = nullptr;
     bool _editRegionName = false;
     char _editRegionNameBuffer[128] = {0};
 };

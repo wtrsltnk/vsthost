@@ -37,7 +37,7 @@ public:
     std::chrono::milliseconds::rep _lastTime;
     bool _recording = false;
     bool _loop;
-    unsigned int _bpm = 48;
+    uint32_t _bpm = 48;
     std::chrono::milliseconds::rep _cursor = 0;
 
 #ifdef TEST_YOUR_CODE

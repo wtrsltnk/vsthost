@@ -1,14 +1,14 @@
-#include "win32vstpluginloader.h"
+#include "win32vstpluginservice.h"
 
 #include "vstplugin.h"
 
-Win32VstPluginLoader::Win32VstPluginLoader(
+Win32VstPluginService::Win32VstPluginService(
     HWND owner)
     : _owner(owner)
 {
 }
 
-VstPlugin *Win32VstPluginLoader::LoadFromFileDialog()
+VstPlugin *Win32VstPluginService::LoadFromFileDialog()
 {
     wchar_t fn[MAX_PATH + 1] = {'\0'};
     OPENFILENAME ofn = {};
@@ -28,4 +28,9 @@ VstPlugin *Win32VstPluginLoader::LoadFromFileDialog()
     }
 
     return nullptr;
+}
+
+const std::vector<VstPlugin *> &Win32VstPluginService::LoadedPlugins() const
+{
+    return _loadedPlugins;
 }

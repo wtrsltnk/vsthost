@@ -31,9 +31,9 @@ protected:
     const int timelineHeight = 30;
 
     float StepsToPixels(
-        long steps);
+        std::chrono::milliseconds::rep steps);
 
-    long PixelsToSteps(
+    std::chrono::milliseconds::rep PixelsToSteps(
         float pixels);
 
     long SnapRegionsSteps(

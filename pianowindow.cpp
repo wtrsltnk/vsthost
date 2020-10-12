@@ -7,7 +7,7 @@ PianoWindow::PianoWindow()
 }
 
 char const *NoteToString(
-    unsigned int note);
+    uint32_t note);
 
 void PianoWindow::Render(
     ImVec2 const &pos,
@@ -27,7 +27,7 @@ void PianoWindow::Render(
 
         auto drawPos = ImGui::GetCursorScreenPos();
         auto drawHeight = ImGui::GetContentRegionAvail().y;
-        int octaveWidth = (keyWidth + ImGui::GetStyle().ItemSpacing.x) * 7;
+        int octaveWidth = int(float(keyWidth + ImGui::GetStyle().ItemSpacing.x) * 7);
         int n;
         for (int i = 0; i < _octaves; i++)
         {
@@ -134,7 +134,7 @@ void PianoWindow::Render(
 }
 
 char const *NoteToString(
-    unsigned int note)
+    uint32_t note)
 {
     switch (note)
     {

@@ -266,10 +266,10 @@ const std::vector<std::wstring> &Wasapi::Devices() const
 unsigned __stdcall Wasapi::tmpThreadFunc(
     void *arg)
 {
-    return static_cast<unsigned int>((reinterpret_cast<Wasapi *>(arg))->threadFunc());
+    return static_cast<uint32_t>((reinterpret_cast<Wasapi *>(arg))->threadFunc());
 }
 
-unsigned int Wasapi::threadFunc()
+uint32_t Wasapi::threadFunc()
 {
     const HANDLE events[2] = {_hClose, _hRefillEvent};
     for (bool run = true; run;)

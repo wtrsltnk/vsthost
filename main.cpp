@@ -34,7 +34,7 @@
 #include "tracksmanager.h"
 #include "vstplugin.h"
 #include "wasapi.h"
-#include "win32vstpluginloader.h"
+#include "win32vstpluginservice.h"
 
 static std::map<int, bool> _noteStates;
 static std::map<int, struct MidiNoteState> _keyboardToNoteMap{
@@ -79,7 +79,7 @@ static TracksEditor _tracksEditor;
 static NotesEditor _notesEditor;
 static InspectorWindow _inspectorWindow;
 static PianoWindow _pianoWindow;
-static Win32VstPluginLoader *_win32VstPluginLoader = nullptr;
+static Win32VstPluginService *_vstPluginService = nullptr;
 static bool _showInspectorWindow = true;
 static bool _showPianoWindow = true;
 
@@ -110,7 +110,8 @@ void HandleIncomingMidiEvent(
 
 // This function is called from Wasapi::threadFunc() which is running in audio thread.
 bool refillCallback(
-    std::vector<ITrack *> const &tracks,
+    ITracksManager *tracks,
+    IVstPluginService *pluginService,
     float *const data,
     uint32_t sampleCount,
     const WAVEFORMATEX *const mixFormat)
@@ -120,28 +121,7 @@ bool refillCallback(
     state.UpdateByDiff(diff);
     auto end = state._cursor;
 
-    for (auto track : tracks)
-    {
-        for (auto region : track->Regions())
-        {
-            if (region.first > end) continue;
-            if (region.first + region.second.Length() < start) continue;
-
-            for (auto event : region.second.Events())
-            {
-                if ((event.first + region.first) > end) continue;
-                if ((event.first + region.first) < start) continue;
-                for (auto m : event.second)
-                {
-                    track->GetInstrument()->Plugin()->sendMidiNote(
-                        m.channel,
-                        m.num,
-                        m.value != 0,
-                        m.value);
-                }
-            }
-        }
-    }
+    tracks->SendMidiNotesInSong(start, end);
 
     const auto nDstChannels = mixFormat->nChannels;
 
@@ -154,7 +134,7 @@ bool refillCallback(
         }
     }
 
-    for (auto track : tracks)
+    for (auto track : tracks->GetTracks())
     {
         auto instrument = track->GetInstrument();
         if (instrument == nullptr)
@@ -529,10 +509,10 @@ void HandleKeyboardToMidiEvents()
 void MainLoop()
 {
     Wasapi wasapi([&](float *const data, uint32_t availableFrameCount, const WAVEFORMATEX *const mixFormat) {
-        return refillCallback(_tracks.GetTracks(), data, availableFrameCount, mixFormat);
+        return refillCallback(&_tracks, _vstPluginService, data, availableFrameCount, mixFormat);
     });
 
-    _inspectorWindow.SetAudioout(&wasapi);
+    _inspectorWindow.SetAudioOut(&wasapi);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -606,7 +586,7 @@ void MainLoop()
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
-    _inspectorWindow.SetAudioout(nullptr);
+    _inspectorWindow.SetAudioOut(nullptr);
 }
 
 void SetupFonts()
@@ -655,11 +635,17 @@ int main(
     midiIn = &localMidiIn;
     midiIn->setCallback(callback);
 
+    if (localMidiIn.getPortCount() > 0)
+    {
+        localMidiIn.openPort(0);
+        _showPianoWindow = false;
+    }
+
     window = glfwCreateWindow(1280, 720, L"VstHost", nullptr, nullptr);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
-    _win32VstPluginLoader = new Win32VstPluginLoader(window->hwnd);
+    _vstPluginService = new Win32VstPluginService(window->hwnd);
 
     // Setup ImGui binding
     ImGui::CreateContext();
@@ -694,13 +680,13 @@ int main(
     _inspectorWindow.SetState(&state);
     _inspectorWindow.SetTracksManager(&_tracks);
     _inspectorWindow.SetMidiIn(midiIn);
-    _inspectorWindow.SetVstPluginLoader(_win32VstPluginLoader);
+    _inspectorWindow.SetVstPluginLoader(_vstPluginService);
 
     MainLoop();
 
     _tracks.CleanupInstruments();
 
-    delete _win32VstPluginLoader;
+    delete _vstPluginService;
 
     // Cleanup
     ImGui_ImplGlfwGL2_Shutdown();

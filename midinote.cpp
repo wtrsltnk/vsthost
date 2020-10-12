@@ -6,7 +6,7 @@ MidiNote::MidiNote()
 
 MidiNote::MidiNote(
     std::chrono::milliseconds::rep t,
-    unsigned int v)
+    uint32_t v)
     : length(t),
       velocity(v)
 {
@@ -20,10 +20,10 @@ MidiNote::CollectionInTimeByNote MidiNote::ConvertMidiEventsToMidiNotes(
     struct ActiveNote
     {
         std::chrono::milliseconds::rep time;
-        unsigned int velocity;
+        uint32_t velocity;
     };
 
-    std::map<unsigned int, ActiveNote> activeNotes;
+    std::map<uint32_t, ActiveNote> activeNotes;
 
     for (auto eventsAtTime : events)
     {

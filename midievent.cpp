@@ -1,6 +1,7 @@
 #include "midievent.h"
 
-MidiNoteState::MidiNoteState(int midiNote)
+MidiNoteState::MidiNoteState(
+    int midiNote)
     : midiNote(midiNote),
       status(false)
 {}

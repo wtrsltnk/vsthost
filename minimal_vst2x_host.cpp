@@ -63,7 +63,9 @@
 class VstPlugin
 {
 public:
-    VstPlugin(const wchar_t *vstModulePath, HWND hWndParent)
+    VstPlugin(
+        const wchar_t *vstModulePath,
+        HWND hWndParent)
     {
         init(vstModulePath, hWndParent);
     }
@@ -95,12 +97,19 @@ public:
     bool getFlags(int32_t m) const { return (aEffect->flags & m) == m; }
     bool flagsHasEditor() const { return getFlags(effFlagsHasEditor); }
     bool flagsIsSynth() const { return getFlags(effFlagsIsSynth); }
-    intptr_t dispatcher(int32_t opcode, int32_t index = 0, intptr_t value = 0, void *ptr = nullptr, float opt = 0.0f) const
+
+    intptr_t dispatcher(
+        int32_t opcode,
+        int32_t index = 0,
+        intptr_t value = 0,
+        void *ptr = nullptr,
+        float opt = 0.0f) const
     {
         return aEffect->dispatcher(aEffect, opcode, index, value, ptr, opt);
     }
 
-    void resizeEditor(const RECT &clientRc) const
+    void resizeEditor(
+        const RECT &clientRc) const
     {
         if (editorHwnd)
         {
@@ -113,7 +122,11 @@ public:
         }
     }
 
-    void sendMidiNote(int midiChannel, int noteNumber, bool onOff, int velocity)
+    void sendMidiNote(
+        int midiChannel,
+        int noteNumber,
+        bool onOff,
+        int velocity)
     {
         VstMidiEvent e{};
         e.type = kVstMidiType;
@@ -153,7 +166,9 @@ public:
     }
 
     // This function is called from refillCallback() which is running in audio thread.
-    float **processAudio(size_t frameCount, size_t &outputFrameCount)
+    float **processAudio(
+        size_t frameCount,
+        size_t &outputFrameCount)
     {
         frameCount = std::min<size_t>(frameCount, outputBuffer.size() / getChannelCount());
         aEffect->processReplacing(aEffect, inputBufferHeads.data(), outputBufferHeads.data(), frameCount);
@@ -163,7 +178,9 @@ public:
     }
 
 private:
-    bool init(const wchar_t *vstModulePath, HWND hWndParent)
+    bool init(
+        const wchar_t *vstModulePath,
+        HWND hWndParent)
     {
         {
             wchar_t buf[MAX_PATH + 1]{};
@@ -258,7 +275,13 @@ private:
         }
     }
 
-    static VstIntPtr hostCallback_static(AEffect *effect, VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float opt)
+    static VstIntPtr hostCallback_static(
+        AEffect *effect,
+        VstInt32 opcode,
+        VstInt32 index,
+        VstIntPtr value,
+        void *ptr,
+        float opt)
     {
         if (effect && effect->user)
         {
@@ -275,7 +298,12 @@ private:
         }
     }
 
-    VstIntPtr hostCallback(VstInt32 opcode, VstInt32 index, VstIntPtr value, void *ptr, float)
+    VstIntPtr hostCallback(
+        VstInt32 opcode,
+        VstInt32 index,
+        VstIntPtr value,
+        void *ptr,
+        float)
     {
         switch (opcode)
         {
@@ -461,10 +489,10 @@ struct Wasapi
 private:
     static unsigned __stdcall tmpThreadFunc(void *arg)
     {
-        return (unsigned int)(reinterpret_cast<Wasapi *>(arg))->threadFunc();
+        return (uint32_t)(reinterpret_cast<Wasapi *>(arg))->threadFunc();
     }
 
-    unsigned int threadFunc()
+    uint32_t threadFunc()
     {
         ComInit comInit{};
         bool flag = false;
