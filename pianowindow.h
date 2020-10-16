@@ -7,6 +7,10 @@
 extern void HandleKeyUpDown(
     int noteNumber);
 
+extern void NoteButton(
+    int note,
+    const ImVec2 &size);
+
 class PianoWindow
 {
     int _octaves = 8;

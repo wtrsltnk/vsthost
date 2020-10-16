@@ -9,8 +9,8 @@
 #include <iostream>
 #include <sstream>
 
-const int regionRounding = 5.0f;
-const int regionResizeHandleWidth = 20.0f;
+const int regionRounding = 5;
+const int regionResizeHandleWidth = 20;
 
 TracksEditor::TracksEditor() = default;
 

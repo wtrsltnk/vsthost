@@ -11,18 +11,18 @@ void Region::SetName(
     _name = name;
 }
 
-long Region::Length() const
+std::chrono::milliseconds::rep Region::Length() const
 {
     return _length;
 }
 
 void Region::SetLength(
-    long length)
+    std::chrono::milliseconds::rep length)
 {
     _length = length;
 }
 
-const std::map<long, std::vector<MidiEvent>> &Region::Events() const
+const MidiEvent::CollectionInTime &Region::Events() const
 {
     return _events;
 }
@@ -38,7 +38,7 @@ uint32_t Region::GetMaxNote() const
 }
 
 void Region::AddEvent(
-    long time,
+    std::chrono::milliseconds::rep time,
     uint32_t noteNumber,
     bool onOff,
     int velocity)
@@ -71,7 +71,7 @@ void Region::AddEvent(
 }
 
 void Region::RemoveEvent(
-    long time,
+    std::chrono::milliseconds::rep time,
     uint32_t noteNumber)
 {
     if (_events.find(time) == _events.end())
@@ -94,8 +94,8 @@ void Region::RemoveEvent(
 
 void Region::MoveEvent(
     const MidiEvent &e,
-    long from,
-    long to)
+    std::chrono::milliseconds::rep from,
+    std::chrono::milliseconds::rep to)
 {
     if (_events.find(from) == _events.end())
     {
@@ -120,7 +120,7 @@ void Region::MoveEvent(
 }
 
 void Region::UpdateLength(
-    long time)
+    std::chrono::milliseconds::rep time)
 {
     auto requiredLength = time + 4000 - (time % 4000);
     if (_length < requiredLength)

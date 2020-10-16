@@ -102,17 +102,19 @@ void InspectorWindow::Render(
         {
             if (ImGui::CollapsingHeader((std::string("Track: ") + _tracks->GetActiveTrack()->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
             {
-                ImGui::ColorEdit4(
-                    "MyColor##track",
-                    _tracks->GetActiveTrack()->GetColor(),
-                    ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-
                 if (_tracks->GetActiveTrack()->GetInstrument() != nullptr)
                 {
                     auto vstPlugin = _tracks->GetActiveTrack()->GetInstrument()->Plugin();
 
                     if (vstPlugin == nullptr)
                     {
+                        ImGui::ColorEdit4(
+                            "MyColor##track",
+                            _tracks->GetActiveTrack()->GetColor(),
+                            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+
+                        ImGui::SameLine();
+
                         if (_vstPluginLoader != nullptr && ImGui::Button("Add plugin"))
                         {
                             _tracks->GetActiveTrack()->GetInstrument()->SetPlugin(_vstPluginLoader->LoadFromFileDialog());
@@ -125,11 +127,6 @@ void InspectorWindow::Render(
                     }
                     else
                     {
-                        ImGui::Text(
-                            "%s by %s",
-                            vstPlugin->getEffectName().c_str(),
-                            vstPlugin->getVendorName().c_str());
-
                         /* Save plugin data
 void *getLen;
     int length = plugin->dispatcher(plugin,effGetChunk,0,0,&getLen,0.f);
@@ -138,6 +135,13 @@ void *getLen;
                         /* Load plugin data
 plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
 */
+
+                        ImGui::ColorEdit4(
+                            "MyColor##track",
+                            _tracks->GetActiveTrack()->GetColor(),
+                            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+
+                        ImGui::SameLine();
 
                         if (_vstPluginLoader != nullptr)
                         {
@@ -168,6 +172,11 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
                                 vstPlugin->closeEditor();
                             }
                         }
+
+                        ImGui::Text(
+                            "%s by %s",
+                            vstPlugin->getEffectName().c_str(),
+                            vstPlugin->getVendorName().c_str());
                     }
                 }
             }

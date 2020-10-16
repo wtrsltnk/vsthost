@@ -1,6 +1,7 @@
 #ifndef MIDIEVENT_H
 #define MIDIEVENT_H
 
+#include <chrono>
 #include <map>
 #include <vector>
 
@@ -22,13 +23,13 @@ enum class MidiEventTypes
 struct MidiEvent
 {
     MidiEvent();
-    uint32_t channel; // the midi channel for the event
-    MidiEventTypes type;  // type=1 for note, type=2 for controller
-    uint32_t num;     // note, controller or program number
-    uint32_t value;   // velocity or controller value
+    uint32_t channel;    // the midi channel for the event
+    MidiEventTypes type; // type=1 for note, type=2 for controller
+    uint32_t num;        // note, controller or program number
+    uint32_t value;      // velocity or controller value
 
     typedef std::vector<MidiEvent> Collection;
-    typedef std::map<long, Collection> CollectionInTime;
+    typedef std::map<std::chrono::milliseconds::rep, Collection> CollectionInTime;
 };
 
 #endif // MIDIEVENT_H

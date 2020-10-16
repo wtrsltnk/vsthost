@@ -4,6 +4,7 @@
 #include "IconsForkAwesome.h"
 #include "imguiutils.h"
 #include "midinote.h"
+#include "pianowindow.h"
 #include "region.h"
 #include "track.h"
 
@@ -52,23 +53,128 @@ void NotesEditor::Render(
             ImGui::VerticalSeparator();
             ImGui::SameLine();
 
+            static int selectedArp = 0;
+            static int timeDiv = 0;
+            static bool preview = false;
+            static float noteLength = 1.0f;
+
             if (ImGui::Button("Open Arpeggiator"))
             {
                 ImGui::OpenPopup("Arpeggiator");
             }
-
-            if (ImGui::BeginPopupModal("Arpeggiator"))
+            if (ImGui::BeginPopupModal("Arpeggiator", nullptr, ImGuiWindowFlags_NoResize))
             {
-                ImGui::Text("Aquarium");
-                ImGui::Separator();
-                ImGui::Text("s sdf");
+                ImGui::Checkbox("Preview", &preview);
 
-                if (ImGui::Button("Replace", ImVec2(120,0))) { ImGui::CloseCurrentPopup(); }
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 5));
+
+                ImGui::Separator();
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Arp Mode:");
+                ImGui::SameLine(90);
+                ImGui::RadioIconButton(ICON_FAD_ARPPLAYORDER, "Play Order", 0, &selectedArp);
+                ImGui::SameLine();
+                ImGui::RadioIconButton(ICON_FAD_ARPCHORD, "Chord", 1, &selectedArp);
+                ImGui::SameLine();
+                ImGui::RadioIconButton(ICON_FAD_ARPDOWN, "Down", 2, &selectedArp);
+                ImGui::SameLine();
+                ImGui::RadioIconButton(ICON_FAD_ARPDOWNANDUP, "Down And up", 3, &selectedArp);
+                ImGui::SameLine();
+                ImGui::RadioIconButton(ICON_FAD_ARPDOWNUP, "Down Up", 4, &selectedArp);
+                ImGui::SameLine();
+                ImGui::RadioIconButton(ICON_FAD_ARPUP, "Up", 5, &selectedArp);
+                ImGui::SameLine();
+                ImGui::RadioIconButton(ICON_FAD_ARPUPANDOWN, "Up And Down", 6, &selectedArp);
+                ImGui::SameLine();
+                ImGui::RadioIconButton(ICON_FAD_ARPUPDOWN, "Up Down", 7, &selectedArp);
+                ImGui::SameLine();
+                ImGui::RadioIconButton(ICON_FAD_ARPRANDOM, "Random", 8, &selectedArp);
+
+                ImGui::Separator();
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Time Div:");
+                ImGui::SameLine(90);
+                ImGui::RadioIconButton("1/4", "1/4 notes", 0, &timeDiv);
+                ImGui::SameLine();
+                ImGui::RadioIconButton("1/8", "1/8 notes", 1, &timeDiv);
+                ImGui::SameLine();
+                ImGui::RadioIconButton("1/16", "1/16 notes", 2, &timeDiv);
+                ImGui::SameLine();
+                ImGui::RadioIconButton("1/32", "1/32 notes", 3, &timeDiv);
+
+                ImGui::PopStyleVar();
+
+                ImGui::Separator();
+
+                ImGui::Knob("Length", &noteLength, 0.1f, 1.0f, ImVec2(55, 55));
+
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 2));
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 18));
+                ImGui::Separator();
+
+                const int keyWidth = 28;
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.05f, 0.18f, 0.3f, 1.0f));
+                ImGui::InvisibleButton("spacer", ImVec2(keyWidth / 2, 40));
+                for (int i = 3; i < 6; i++)
+                {
+                    ImGui::SameLine();
+                    NoteButton(firstKeyNoteNumber + (i * 12) + Note_CSharp_OffsetFromC, ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                    NoteButton(firstKeyNoteNumber + (i * 12) + Note_DSharp_OffsetFromC, ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                    ImGui::InvisibleButton("spacer", ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                    NoteButton(firstKeyNoteNumber + (i * 12) + Note_FSharp_OffsetFromC, ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                    NoteButton(firstKeyNoteNumber + (i * 12) + Note_GSharp_OffsetFromC, ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                    NoteButton(firstKeyNoteNumber + (i * 12) + Note_ASharp_OffsetFromC, ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                    ImGui::InvisibleButton("spacer", ImVec2(keyWidth, 40));
+                }
+                ImGui::Dummy(ImVec2(0, 0));
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                for (int i = 3; i < 6; i++)
+                {
+                    NoteButton(firstKeyNoteNumber + (i * 12) + Note_C_OffsetFromC, ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                    NoteButton(firstKeyNoteNumber + (i * 12) + Note_D_OffsetFromC, ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                    NoteButton(firstKeyNoteNumber + (i * 12) + Note_E_OffsetFromC, ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                    NoteButton(firstKeyNoteNumber + (i * 12) + Note_F_OffsetFromC, ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                    NoteButton(firstKeyNoteNumber + (i * 12) + Note_G_OffsetFromC, ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                    NoteButton(firstKeyNoteNumber + (i * 12) + Note_A_OffsetFromC, ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                    NoteButton(firstKeyNoteNumber + (i * 12) + Note_B_OffsetFromC, ImVec2(keyWidth, 40));
+                    ImGui::SameLine();
+                }
+                ImGui::PopStyleColor(2);
+                ImGui::Dummy(ImVec2(0, 0));
+
+                ImGui::PopStyleVar(2);
+
+                ImGui::Separator();
+
+                if (ImGui::Button("Replace", ImVec2(120, 0)))
+                {
+                    ImGui::CloseCurrentPopup();
+                }
                 ImGui::SetItemDefaultFocus();
                 ImGui::SameLine();
-                if (ImGui::Button("Append", ImVec2(120,0))) { ImGui::CloseCurrentPopup(); }
+                if (ImGui::Button("Append", ImVec2(120, 0)))
+                {
+                    ImGui::CloseCurrentPopup();
+                }
                 ImGui::SameLine();
-                if (ImGui::Button("Cancel", ImVec2(120,0))) { ImGui::CloseCurrentPopup(); }
+                if (ImGui::Button("Cancel", ImVec2(120, 0)))
+                {
+                    ImGui::CloseCurrentPopup();
+                }
                 ImGui::EndPopup();
             }
         }

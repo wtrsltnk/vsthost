@@ -19,43 +19,43 @@ public:
     void SetName(
         const std::string &name);
 
-    long Length() const;
+    std::chrono::milliseconds::rep Length() const;
 
     void SetLength(
-        long length);
+        std::chrono::milliseconds::rep length);
 
-    const std::map<long, std::vector<MidiEvent>> &Events() const;
+    const MidiEvent::CollectionInTime &Events() const;
 
     uint32_t GetMinNote() const;
 
     uint32_t GetMaxNote() const;
 
     void AddEvent(
-        long time,
+        std::chrono::milliseconds::rep time,
         uint32_t noteNumber,
         bool onOff,
         int velocity);
 
     void RemoveEvent(
-        long time,
+        std::chrono::milliseconds::rep time,
         uint32_t noteNumber);
 
     void MoveEvent(
         const MidiEvent &e,
-        long from,
-        long to);
+        std::chrono::milliseconds::rep from,
+        std::chrono::milliseconds::rep to);
 
 private:
     std::string _name = "region";
-    long _length = 16000;
-    std::map<long, std::vector<MidiEvent>> _events; // the long key of the map is the relaive start of the event from the beginning of the region
-    std::map<long, std::vector<MidiEvent>> _selection;
+    std::chrono::milliseconds::rep _length = 16000;
+    MidiEvent::CollectionInTime _events; // the long key of the map is the relaive start of the event from the beginning of the region
+    MidiEvent::CollectionInTime _selection;
 
     uint32_t _minNote = std::numeric_limits<uint32_t>::max();
     uint32_t _maxNote = 0;
 
     void UpdateLength(
-        long time);
+        std::chrono::milliseconds::rep time);
 };
 
 #endif // REGION_H
