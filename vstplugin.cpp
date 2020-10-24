@@ -232,6 +232,7 @@ void VstPlugin::sendMidiNote(
     bool onOff,
     int velocity)
 {
+    std::cout << noteNumber << (onOff ? " on @ " : " off @ ") << velocity << std::endl;
     VstMidiEvent e{};
     e.type = kVstMidiType;
     e.byteSize = sizeof(e);

@@ -20,6 +20,7 @@
 #include "IconsForkAwesome.h"
 #include "RtError.h"
 #include "RtMidi.h"
+#include "arpeggiatorpreviewservice.h"
 #include "imguiutils.h"
 #include "inspectorwindow.h"
 #include "instrument.h"
@@ -82,6 +83,7 @@ static PianoWindow _pianoWindow;
 static Win32VstPluginService *_vstPluginService = nullptr;
 static bool _showInspectorWindow = true;
 static bool _showPianoWindow = true;
+ArpeggiatorPreviewService _arpeggiatorPreviewService;
 
 void KillAllNotes()
 {
@@ -111,7 +113,6 @@ void HandleIncomingMidiEvent(
 // This function is called from Wasapi::threadFunc() which is running in audio thread.
 bool refillCallback(
     ITracksManager *tracks,
-    IVstPluginService *pluginService,
     float *const data,
     uint32_t sampleCount,
     const WAVEFORMATEX *const mixFormat)
@@ -122,6 +123,7 @@ bool refillCallback(
     auto end = state._cursor;
 
     tracks->SendMidiNotesInSong(start, end);
+    _arpeggiatorPreviewService.SendMidiNotesInTimeRange(diff);
 
     const auto nDstChannels = mixFormat->nChannels;
 
@@ -199,6 +201,7 @@ void HandleIncomingMidiEvent(
 {
     if (onOff)
     {
+        _arpeggiatorPreviewService.TriggerNote(noteNumber, float(velocity) / 127.0f);
         PianoWindow::downKeys.insert(noteNumber);
     }
     else
@@ -587,7 +590,7 @@ void HandleKeyboardToMidiEvents()
 void MainLoop()
 {
     Wasapi wasapi([&](float *const data, uint32_t availableFrameCount, const WAVEFORMATEX *const mixFormat) {
-        return refillCallback(&_tracks, _vstPluginService, data, availableFrameCount, mixFormat);
+        return refillCallback(&_tracks, data, availableFrameCount, mixFormat);
     });
 
     _inspectorWindow.SetAudioOut(&wasapi);
@@ -612,17 +615,21 @@ void MainLoop()
         int currentInspectorWidth = _showInspectorWindow ? inspectorWidth : 0;
         int currentPianoHeight = _showPianoWindow ? pianoHeight : 0;
 
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyle().Colors[ImGuiCol_MenuBarBg]);
-        MainMenu();
-
         auto &style = ImGui::GetStyle();
-        toolbarHeight = (style.FramePadding.y * 2) + style.WindowPadding.y + ImGui::GetFont()->FontSize;
+        ImVec2 currentPos;
 
-        auto currentPos = ImGui::GetCursorPos();
-        ToolbarWindow(
-            ImVec2(0, currentPos.y - style.WindowPadding.y),
-            ImVec2(state.ui._width, toolbarHeight + style.WindowPadding.y));
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyle().Colors[ImGuiCol_MenuBarBg]);
+        {
+            MainMenu();
 
+            toolbarHeight = (style.FramePadding.y * 2) + style.WindowPadding.y + ImGui::GetFont()->FontSize;
+
+            currentPos = ImGui::GetCursorPos();
+
+            ToolbarWindow(
+                ImVec2(0, currentPos.y - style.WindowPadding.y),
+                ImVec2(state.ui._width, toolbarHeight + style.WindowPadding.y));
+        }
         ImGui::PopStyleColor();
 
         if (_showInspectorWindow)
@@ -763,6 +770,9 @@ int main(
     _inspectorWindow.SetTracksManager(&_tracks);
     _inspectorWindow.SetMidiIn(midiIn);
     _inspectorWindow.SetVstPluginLoader(_vstPluginService);
+
+    _arpeggiatorPreviewService.SetState(&state);
+    _arpeggiatorPreviewService.SetTracksManager(&_tracks);
 
     MainLoop();
 

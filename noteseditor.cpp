@@ -2,6 +2,7 @@
 
 #include "IconsFontaudio.h"
 #include "IconsForkAwesome.h"
+#include "arpeggiatorpreviewservice.h"
 #include "imguiutils.h"
 #include "midinote.h"
 #include "pianowindow.h"
@@ -53,10 +54,8 @@ void NotesEditor::Render(
             ImGui::VerticalSeparator();
             ImGui::SameLine();
 
-            static int selectedArp = 0;
-            static int timeDiv = 0;
-            static bool preview = false;
-            static float noteLength = 1.0f;
+            int &selectedArp = (int &)_arpeggiatorPreviewService.CurrentArpeggiator.Mode;
+            int &rate = (int &)_arpeggiatorPreviewService.CurrentArpeggiator.Rate;
 
             if (ImGui::Button("Open Arpeggiator"))
             {
@@ -64,7 +63,13 @@ void NotesEditor::Render(
             }
             if (ImGui::BeginPopupModal("Arpeggiator", nullptr, ImGuiWindowFlags_NoResize))
             {
-                ImGui::Checkbox("Preview", &preview);
+                if (ImGui::Checkbox("Preview", &(_arpeggiatorPreviewService.Enabled)))
+                {
+                    if (!_arpeggiatorPreviewService.Enabled)
+                    {
+                        KillAllNotes();
+                    }
+                }
 
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 5));
 
@@ -94,29 +99,78 @@ void NotesEditor::Render(
                 ImGui::Separator();
 
                 ImGui::AlignTextToFramePadding();
-                ImGui::Text("Time Div:");
+                ImGui::Text("Rate:");
                 ImGui::SameLine(90);
-                ImGui::RadioIconButton("1/4", "1/4 notes", 0, &timeDiv);
+                ImGui::RadioIconButton("1/4", "1/4 notes", 4, &rate);
                 ImGui::SameLine();
-                ImGui::RadioIconButton("1/8", "1/8 notes", 1, &timeDiv);
+                ImGui::RadioIconButton("1/8", "1/8 notes", 8, &rate);
                 ImGui::SameLine();
-                ImGui::RadioIconButton("1/16", "1/16 notes", 2, &timeDiv);
+                ImGui::RadioIconButton("1/16", "1/16 notes", 16, &rate);
                 ImGui::SameLine();
-                ImGui::RadioIconButton("1/32", "1/32 notes", 3, &timeDiv);
+                ImGui::RadioIconButton("1/32", "1/32 notes", 32, &rate);
 
                 ImGui::PopStyleVar();
 
                 ImGui::Separator();
 
-                ImGui::Knob("Length", &noteLength, 0.1f, 1.0f, ImVec2(55, 55));
+                ImGui::Text("_cursorInNotes: %zu", _arpeggiatorPreviewService._cursorInNotes);
+                ImGui::Text("_localCursor: %zu", _arpeggiatorPreviewService._localCursor);
+
+                ImGui::Separator();
+
+                ImGui::Knob("Length", &(_arpeggiatorPreviewService.CurrentArpeggiator.Length), 0.0f, 1.0f, ImVec2(55, 55));
+
+                ImGui::SameLine();
+
+                ImGui::BeginGroup();
+                static float velocities[16] = {1.0f};
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 5));
+                for (size_t i = 0; i < 16; i++)
+                {
+                    ImGui::PushID(i);
+                    if (i > 0) ImGui::SameLine();
+                    if (i < _arpeggiatorPreviewService.CurrentArpeggiator.Notes.size())
+                    {
+                        ImGui::VSliderFloat("##velocity", ImVec2(30, 100), &(velocities[0]), 0.0f, 1.0f, "%.2f");
+                    }
+                    else
+                    {
+                        ImGui::InvisibleButton("##velocity", ImVec2(30, 100));
+                    }
+                    ImGui::PopID();
+                }
+
+                char label[8] = {0};
+                for (size_t i = 0; i < 16; i++)
+                {
+                    sprintf_s(label, 8, "%zu", i + 1);
+                    if (i > 0) ImGui::SameLine();
+                    ImGui::Button(label, ImVec2(30, 30));
+                }
+                ImGui::PopStyleVar();
+                ImGui::EndGroup();
+                ImGui::SameLine();
+
+                ImGui::BeginGroup();
+                if (ImGui::Button("Delete last"))
+                {
+                    _arpeggiatorPreviewService.CurrentArpeggiator.Notes.pop_back();
+                }
+                if (ImGui::Button("Clear"))
+                {
+                    _arpeggiatorPreviewService.CurrentArpeggiator.Notes.clear();
+                }
+                ImGui::EndGroup();
+
+                ImGui::Separator();
 
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 2));
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 18));
-                ImGui::Separator();
 
                 const int keyWidth = 28;
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.05f, 0.18f, 0.3f, 1.0f));
                 ImGui::InvisibleButton("spacer", ImVec2(keyWidth / 2, 40));
+                ImGui::PushID("ArpKeys");
                 for (int i = 3; i < 6; i++)
                 {
                     ImGui::SameLine();
@@ -153,6 +207,7 @@ void NotesEditor::Render(
                     NoteButton(firstKeyNoteNumber + (i * 12) + Note_B_OffsetFromC, ImVec2(keyWidth, 40));
                     ImGui::SameLine();
                 }
+                ImGui::PopID();
                 ImGui::PopStyleColor(2);
                 ImGui::Dummy(ImVec2(0, 0));
 
@@ -162,17 +217,23 @@ void NotesEditor::Render(
 
                 if (ImGui::Button("Replace", ImVec2(120, 0)))
                 {
+                    _arpeggiatorPreviewService.Enabled = false;
+                    KillAllNotes();
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::SetItemDefaultFocus();
                 ImGui::SameLine();
                 if (ImGui::Button("Append", ImVec2(120, 0)))
                 {
+                    _arpeggiatorPreviewService.Enabled = false;
+                    KillAllNotes();
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Cancel", ImVec2(120, 0)))
                 {
+                    _arpeggiatorPreviewService.Enabled = false;
+                    KillAllNotes();
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::EndPopup();

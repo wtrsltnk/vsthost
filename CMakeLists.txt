@@ -60,6 +60,10 @@ target_compile_definitions(minimal-vsthost
 add_executable(imgui-vsthost
     abstracttimelineeditor.cpp
     abstracttimelineeditor.h
+    arpeggiatorpreviewservice.cpp
+    arpeggiatorpreviewservice.h
+    arpeggiator.cpp
+    arpeggiator.h
     common.h
     imgui_impl_win32_gl2.cpp
     imgui_impl_win32_gl2.h
@@ -69,6 +73,7 @@ add_executable(imgui-vsthost
     inspectorwindow.h
     instrument.cpp
     instrument.h
+    ivstpluginservice.h
     main.cpp
     midicontrollers.h
     midievent.cpp
@@ -93,7 +98,6 @@ add_executable(imgui-vsthost
     vstplugin.h
     wasapi.cpp
     wasapi.h
-    ivstpluginservice.h
     win32vstpluginservice.cpp
     win32vstpluginservice.h
     )

@@ -24,6 +24,7 @@ void NoteButton(
     {
         ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(note / float(12 * 3), 0.6f, 0.6f));
     }
+
     ImGui::Button(NoteToString(note), size);
     HandleKeyUpDown(note);
 
@@ -67,7 +68,7 @@ void PianoWindow::Render(
         const int keyWidth = 32;
         const int keyHeight = 64;
 
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 38));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 2));
         ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(50, 50, 50));
         ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)ImColor(250, 250, 250));

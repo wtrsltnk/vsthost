@@ -7,25 +7,40 @@ extern void KillAllNotes();
 
 class State
 {
-    bool _playing = false;
-
 public:
     static std::chrono::milliseconds::rep CurrentTime();
+
     void Update();
-    void UpdateByDiff(std::chrono::milliseconds::rep diff);
-    void SetCursorAtStep(int step);
+
+    void UpdateByDiff(
+        std::chrono::milliseconds::rep diff);
+
+    void SetCursorAtStep(
+        int step);
+
     void StartPlaying();
+
     void Pause();
+
     void TogglePlaying();
+
     void StopPlaying();
+
     bool IsPlaying() const;
+
     void StartRecording();
+
     void ToggleRecording();
+
     void StopRecording();
+
     bool IsRecording() const;
 
-    long MsToSteps(std::chrono::milliseconds::rep diff);
-    std::chrono::milliseconds::rep StepsToMs(long diff);
+    long MsToSteps(
+        std::chrono::milliseconds::rep diff);
+
+    std::chrono::milliseconds::rep StepsToMs(
+        long diff);
 
     struct
     {
@@ -40,6 +55,10 @@ public:
     uint32_t _bpm = 48;
     std::chrono::milliseconds::rep _cursor = 0;
 
+private:
+    bool _playing = false;
+
+public:
 #ifdef TEST_YOUR_CODE
     static void Tests();
 #endif
