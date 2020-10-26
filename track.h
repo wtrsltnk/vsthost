@@ -41,6 +41,8 @@ public:
         float g,
         float b,
         float a = 1.0f);
+    virtual void Track::SetColor(
+        const glm::vec4 &color);
 
     virtual RegionCollection const &Regions() const;
 

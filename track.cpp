@@ -106,6 +106,15 @@ void Track::SetColor(
     _color[3] = a;
 }
 
+void Track::SetColor(
+    const glm::vec4 &color)
+{
+    _color[0] = color.r;
+    _color[1] = color.g;
+    _color[2] = color.b;
+    _color[3] = color.a;
+}
+
 ITrack::RegionCollection const &Track::Regions() const
 {
     return _regions;

@@ -2,9 +2,10 @@
 #define ITRACK_H
 
 #include "region.h"
+#include <chrono>
+#include <glm/glm.hpp>
 #include <map>
 #include <string>
-#include <chrono>
 
 class Instrument;
 
@@ -42,6 +43,8 @@ public:
         float g,
         float b,
         float a = 1.0f) = 0;
+    virtual void SetColor(
+        const glm::vec4 &color) = 0;
 
     virtual RegionCollection const &Regions() const = 0;
 

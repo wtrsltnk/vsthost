@@ -98,6 +98,8 @@ void SerializeTrack(
     out << YAML::BeginMap; // Track
     out << YAML::Key << "Name" << YAML::Value << track->GetName();
     out << YAML::Key << "Color" << YAML::Value << glm::vec4(track->GetColor()[0], track->GetColor()[1], track->GetColor()[2], track->GetColor()[3]);
+    out << YAML::Key << "IsMuted" << YAML::Value << track->IsMuted();
+    out << YAML::Key << "IsReadyForRecoding" << YAML::Value << track->IsReadyForRecoding();
 
     SerializeInstrument(out, track->GetInstrument());
 
@@ -144,8 +146,6 @@ VstPlugin *DeserializePlugin(
     auto pluginModulePath = pluginData["ModulePath"].as<std::string>();
     auto pluginPluginData = pluginData["PluginData"].as<std::string>();
 
-    spdlog::debug("loading module from {0}", pluginModulePath);
-
     VstPlugin *plugin = new VstPlugin();
     if (!plugin->init(pluginModulePath.c_str()))
     {
@@ -167,8 +167,6 @@ VstPlugin *DeserializePlugin(
 Instrument *DeserializeInstrument(
     const YAML::Node &trackData)
 {
-    spdlog::debug("loading Instrument");
-
     auto instrumentData = trackData["Instrument"];
     if (!instrumentData)
     {
@@ -210,8 +208,6 @@ bool TracksSerializer::Deserialize(
 
     std::string songName = data["Song"].as<std::string>();
 
-    spdlog::debug("loading {0}", songName);
-
     auto allTracksData = data["Tracks"];
     if (!allTracksData)
     {
@@ -223,16 +219,26 @@ bool TracksSerializer::Deserialize(
     for (auto trackData : allTracksData)
     {
         auto trackName = trackData["Name"].as<std::string>();
-        auto trackColor = trackData["Color"].as<glm::vec4>();
-
-        spdlog::debug("loading track name {0}", trackName);
-        spdlog::debug("loading track color {0}", glm::to_string(trackColor));
+        auto trackColor = trackData["Color"];
+        auto trackIsMuted = trackData["IsMuted"];
+        auto trackIsReadyForRecoding = trackData["IsReadyForRecoding"];
 
         Instrument *instrument = DeserializeInstrument(trackData);
 
         auto track = _tracks.AddTrack(trackName, instrument);
 
-        track->SetColor(trackColor.x, trackColor.y, trackColor.z, trackColor.w);
+        if (trackColor)
+        {
+            track->SetColor(trackColor.as<glm::vec4>());
+        }
+        if (trackIsMuted)
+        {
+            trackIsMuted.as<bool>() ? track->Mute() : track->Unmute();
+        }
+        if (trackIsReadyForRecoding)
+        {
+            track->SetReadyForRecording(trackIsReadyForRecoding.as<bool>());
+        }
     }
 
     return true;
