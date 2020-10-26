@@ -23,8 +23,9 @@ public:
 
     const char *Title() const;
 
-    void SetTitle(
-        const std::string &title);
+    const char *Vendor() const;
+
+    std::string ModulePath() const;
 
     AEffect *getEffect();
 
@@ -79,7 +80,7 @@ public:
         size_t &outputFrameCount);
 
     bool init(
-        const wchar_t *vstModulePath);
+        const char *vstModulePath);
 
     void cleanup();
 
@@ -108,13 +109,14 @@ private:
         float);
 
 protected:
-    std::string _title;
+    std::string _modulePath;
+    std::string _moduleDirectory;
+
     HWND _editorHwnd = nullptr;
     HMODULE _vstLibraryHandle = nullptr;
     AEffect *_aEffect = nullptr;
     std::atomic<size_t> _samplePos;
     VstTimeInfo _timeinfo;
-    std::string _directoryMultiByte;
 
     std::vector<float> _outputBuffer;
     std::vector<float *> _outputBufferHeads;

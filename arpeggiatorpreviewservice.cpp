@@ -26,6 +26,22 @@ void ArpeggiatorPreviewService::TriggerNote(
     CurrentArpeggiator.Notes.push_back(ArpeggiatorNote({velocity, note}));
 }
 
+void ArpeggiatorPreviewService::SetEnabled(
+    bool enabled)
+{
+    Enabled = enabled;
+    auto step = _state->MsToSteps(1000.0 / (int)CurrentArpeggiator.Rate);
+
+    _localCursor = 0;
+    _timeSinceLastNote = -step;
+    _cursorInNotes = -1;
+
+    if (!Enabled)
+    {
+        KillAllNotes();
+    }
+}
+
 void ArpeggiatorPreviewService::SendMidiNotesInTimeRange(
     std::chrono::milliseconds::rep diff)
 {
@@ -75,7 +91,7 @@ void ArpeggiatorPreviewService::SendMidiNotesInTimeRange(
 
     auto step = _state->MsToSteps(1000.0 / (int)CurrentArpeggiator.Rate);
 
-    auto note = CurrentArpeggiator.Notes[_cursorInNotes];
+    auto note = CurrentArpeggiator.Notes[_cursorInNotes % CurrentArpeggiator.Notes.size()];
 
     if (_timeSinceLastNote + step < _localCursor)
     {
@@ -86,7 +102,7 @@ void ArpeggiatorPreviewService::SendMidiNotesInTimeRange(
 
         note = CurrentArpeggiator.Notes[_cursorInNotes];
 
-        plugin->sendMidiNote(1, note.Note, true, 100);
+        plugin->sendMidiNote(1, note.Note, true, note.Velocity);
 
         _timeSinceLastNote += step;
     }

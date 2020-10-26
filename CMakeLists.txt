@@ -1,6 +1,38 @@
 cmake_minimum_required(VERSION 3.14)
 
+include(cmake/CPM.cmake)
+
 find_package(OpenGL REQUIRED)
+
+CPMAddPackage(
+    NAME spdlog
+    GITHUB_REPOSITORY gabime/spdlog
+    VERSION 1.7.0)
+
+CPMAddPackage(
+  NAME yaml-cpp
+  GITHUB_REPOSITORY jbeder/yaml-cpp
+  # 0.6.2 uses deprecated CMake syntax
+  VERSION 0.6.3
+  # 0.6.3 is not released yet, so use a recent commit
+  GIT_TAG 012269756149ae99745b6dafefd415843d7420bb
+  OPTIONS
+    "YAML_CPP_BUILD_TESTS Off"
+    "YAML_CPP_BUILD_CONTRIB Off"
+    "YAML_CPP_BUILD_TOOLS Off"
+)
+
+CPMAddPackage(
+  NAME fmt
+  GIT_TAG 6.1.2
+  GITHUB_REPOSITORY fmtlib/fmt
+)
+
+CPMAddPackage(
+  NAME glm
+  GITHUB_REPOSITORY g-truc/glm
+  GIT_TAG 0.9.9.7
+)
 
 project(vsthost)
 
@@ -15,7 +47,6 @@ target_include_directories(RtMidi
     PUBLIC thirdparty/RtMidi/include)
 
 target_compile_definitions(RtMidi
-    PRIVATE -DUNICODE
     PRIVATE -D_WIN32_WINNT=0x602
     PRIVATE -D__WINDOWS_MM__
     )
@@ -60,10 +91,12 @@ target_compile_definitions(minimal-vsthost
 add_executable(imgui-vsthost
     abstracttimelineeditor.cpp
     abstracttimelineeditor.h
-    arpeggiatorpreviewservice.cpp
-    arpeggiatorpreviewservice.h
     arpeggiator.cpp
     arpeggiator.h
+    arpeggiatorpreviewservice.cpp
+    arpeggiatorpreviewservice.h
+    base64.cpp
+    base64.h
     common.h
     imgui_impl_win32_gl2.cpp
     imgui_impl_win32_gl2.h
@@ -86,6 +119,8 @@ add_executable(imgui-vsthost
     pianowindow.h
     region.cpp
     region.h
+    song.cpp
+    song.h
     state.cpp
     state.h
     track.cpp
@@ -94,6 +129,8 @@ add_executable(imgui-vsthost
     trackseditor.h
     tracksmanager.cpp
     tracksmanager.h
+    tracksserializer.cpp
+    tracksserializer.h
     vstplugin.cpp
     vstplugin.h
     wasapi.cpp
@@ -114,11 +151,14 @@ target_link_libraries(imgui-vsthost
     winmm
     RtMidi
     glad
+    glm
     imgui
+    spdlog
+    yaml-cpp
+    fmt
     )
 
 target_compile_definitions(imgui-vsthost
-    PRIVATE -DUNICODE
     PRIVATE -D_WIN32_WINNT=0x602
     PRIVATE -D__WINDOWS_MM__
     PRIVATE -DTEST_YOUR_CODE

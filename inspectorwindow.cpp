@@ -118,11 +118,6 @@ void InspectorWindow::Render(
                         if (_vstPluginLoader != nullptr && ImGui::Button("Add plugin"))
                         {
                             _tracks->GetActiveTrack()->GetInstrument()->SetPlugin(_vstPluginLoader->LoadFromFileDialog());
-                            if (_tracks->GetActiveTrack()->GetInstrument()->Plugin() != nullptr)
-                            {
-                                _tracks->GetActiveTrack()->GetInstrument()->Plugin()->SetTitle(
-                                    _tracks->GetActiveTrack()->GetInstrument()->Name());
-                            }
                         }
                     }
                     else
@@ -151,8 +146,6 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
                                 if (plugin != nullptr)
                                 {
                                     _tracks->GetActiveTrack()->GetInstrument()->SetPlugin(plugin);
-                                    _tracks->GetActiveTrack()->GetInstrument()->Plugin()->SetTitle(
-                                        _tracks->GetActiveTrack()->GetInstrument()->Name().c_str());
                                 }
                             }
                             ImGui::SameLine();
@@ -185,7 +178,7 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
         auto track = std::get<ITrack *>(_tracks->GetActiveRegion());
         if (track != nullptr && track == _tracks->GetActiveTrack())
         {
-            auto regionStart = std::get<long>(_tracks->GetActiveRegion());
+            auto regionStart = std::get<std::chrono::milliseconds::rep>(_tracks->GetActiveRegion());
             if (track->Regions().find(regionStart) != track->Regions().end())
             {
                 auto &region = track->GetRegion(regionStart);

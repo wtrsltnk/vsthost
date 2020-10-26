@@ -8,6 +8,7 @@
 #include <map>
 #include <numeric>
 #include <set>
+#include <spdlog/spdlog.h>
 #include <sstream>
 #include <thread>
 #include <windows.h>
@@ -33,6 +34,7 @@
 #include "track.h"
 #include "trackseditor.h"
 #include "tracksmanager.h"
+#include "tracksserializer.h"
 #include "vstplugin.h"
 #include "wasapi.h"
 #include "win32vstpluginservice.h"
@@ -201,7 +203,7 @@ void HandleIncomingMidiEvent(
 {
     if (onOff)
     {
-        _arpeggiatorPreviewService.TriggerNote(noteNumber, float(velocity) / 127.0f);
+        _arpeggiatorPreviewService.TriggerNote(noteNumber, velocity);
         PianoWindow::downKeys.insert(noteNumber);
     }
     else
@@ -524,6 +526,48 @@ void MainMenu()
     {
         if (ImGui::BeginMenu("File"))
         {
+            if (ImGui::MenuItem("New", "CTRL+N"))
+            {
+                state.StopPlaying();
+                state.StopRecording();
+            }
+
+            if (ImGui::MenuItem("Open...", "CTRL+O"))
+            {
+                state.StopPlaying();
+                state.StopRecording();
+
+                TracksSerializer serializer(_tracks);
+
+                serializer.Deserialize("c:\\temp\\file.yaml");
+            }
+
+            if (ImGui::MenuItem("Save", "CTRL+S"))
+            {
+                state.StopPlaying();
+                state.StopRecording();
+
+                TracksSerializer serializer(_tracks);
+
+                serializer.Serialize("c:\\temp\\file.yaml");
+            }
+
+            if (ImGui::MenuItem("Save As...", "CTRL+SHIFT+S"))
+            {
+                state.StopPlaying();
+                state.StopRecording();
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Quit", "CTRL+Q"))
+            {
+                state.StopPlaying();
+                state.StopRecording();
+
+                PostQuitMessage(0);
+            }
+
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Edit"))
@@ -707,6 +751,8 @@ int main(
     int argc,
     char **argv)
 {
+    spdlog::set_level(spdlog::level::debug);
+
     (void)argc;
     (void)argv;
 
@@ -729,7 +775,7 @@ int main(
         _showPianoWindow = false;
     }
 
-    window = glfwCreateWindow(1280, 720, L"VstHost", nullptr, nullptr);
+    window = glfwCreateWindow(1280, 720, "VstHost", nullptr, nullptr);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
@@ -755,7 +801,7 @@ int main(
 
     SetupFonts();
 
-    auto bbcSynthTrack = _tracks.AddVstTrack(L"BBC Symphony Orchestra (64 Bit).dll");
+    auto bbcSynthTrack = _tracks.AddVstTrack("BBC Symphony Orchestra (64 Bit).dll");
     bbcSynthTrack->AddRegion(0, Region{});
     bbcSynthTrack->SetReadyForRecording(true);
     _tracks.SetActiveTrack(bbcSynthTrack);

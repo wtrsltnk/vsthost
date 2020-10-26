@@ -63,12 +63,10 @@ void NotesEditor::Render(
             }
             if (ImGui::BeginPopupModal("Arpeggiator", nullptr, ImGuiWindowFlags_NoResize))
             {
-                if (ImGui::Checkbox("Preview", &(_arpeggiatorPreviewService.Enabled)))
+                bool previewEnabled = _arpeggiatorPreviewService.Enabled;
+                if (ImGui::Checkbox("Preview", &previewEnabled))
                 {
-                    if (!_arpeggiatorPreviewService.Enabled)
-                    {
-                        KillAllNotes();
-                    }
+                    _arpeggiatorPreviewService.SetEnabled(previewEnabled);
                 }
 
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 5));
@@ -113,25 +111,22 @@ void NotesEditor::Render(
 
                 ImGui::Separator();
 
-                ImGui::Text("_cursorInNotes: %zu", _arpeggiatorPreviewService._cursorInNotes);
-                ImGui::Text("_localCursor: %zu", _arpeggiatorPreviewService._localCursor);
-
-                ImGui::Separator();
-
                 ImGui::Knob("Length", &(_arpeggiatorPreviewService.CurrentArpeggiator.Length), 0.0f, 1.0f, ImVec2(55, 55));
 
                 ImGui::SameLine();
 
                 ImGui::BeginGroup();
-                static float velocities[16] = {1.0f};
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 5));
                 for (size_t i = 0; i < 16; i++)
                 {
-                    ImGui::PushID(i);
+                    ImGui::PushID(static_cast<int>(i));
                     if (i > 0) ImGui::SameLine();
                     if (i < _arpeggiatorPreviewService.CurrentArpeggiator.Notes.size())
                     {
-                        ImGui::VSliderFloat("##velocity", ImVec2(30, 100), &(velocities[0]), 0.0f, 1.0f, "%.2f");
+                        auto &note = _arpeggiatorPreviewService.CurrentArpeggiator.Notes[i];
+                        ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::HSV(note.Note / float(12 * 3), 0.6f, 0.6f));
+                        ImGui::VSliderInt("##velocity", ImVec2(30, 100), (int *)&(note.Velocity), 0, 128);
+                        ImGui::PopStyleColor();
                     }
                     else
                     {
@@ -145,7 +140,18 @@ void NotesEditor::Render(
                 {
                     sprintf_s(label, 8, "%zu", i + 1);
                     if (i > 0) ImGui::SameLine();
+
+                    if (i < _arpeggiatorPreviewService.CurrentArpeggiator.Notes.size())
+                    {
+                        auto &note = _arpeggiatorPreviewService.CurrentArpeggiator.Notes[i];
+                        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(note.Note / float(12 * 3), 0.6f, 0.6f));
+                    }
+
                     ImGui::Button(label, ImVec2(30, 30));
+                    if (i < _arpeggiatorPreviewService.CurrentArpeggiator.Notes.size())
+                    {
+                        ImGui::PopStyleColor();
+                    }
                 }
                 ImGui::PopStyleVar();
                 ImGui::EndGroup();
@@ -242,7 +248,7 @@ void NotesEditor::Render(
         ImGui::EndChild();
 
         auto track = std::get<ITrack *>(_tracks->GetActiveRegion());
-        auto regionStart = std::get<long>(_tracks->GetActiveRegion());
+        auto regionStart = std::get<std::chrono::milliseconds::rep>(_tracks->GetActiveRegion());
 
         if (track == nullptr || regionStart < 0)
         {

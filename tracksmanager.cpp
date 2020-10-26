@@ -36,7 +36,7 @@ void TracksManager::SetSoloTrack(
 
 void TracksManager::SetActiveRegion(
     ITrack *track,
-    long start)
+    std::chrono::milliseconds::rep start)
 {
     if (track != nullptr && std::find(tracks.begin(), tracks.end(), track) == tracks.end())
     {
@@ -67,7 +67,7 @@ ITrack *TracksManager::AddTrack(
 }
 
 ITrack *TracksManager::AddVstTrack(
-    wchar_t const *plugin)
+    const char *plugin)
 {
     std::stringstream instrumentName;
     instrumentName << "Instrument " << (tracks.size() + 1);
@@ -129,7 +129,7 @@ void TracksManager::RemoveActiveRegion()
         return;
     }
 
-    auto regionStart = std::get<long>(activeRegion);
+    auto regionStart = std::get<std::chrono::milliseconds::rep>(activeRegion);
 
     track->RemoveRegion(regionStart);
 

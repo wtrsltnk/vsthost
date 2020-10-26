@@ -155,7 +155,7 @@ public:
             const auto bytes = sizeof(VstEvents) + sizeof(VstEvent *) * n;
             vstEventBuffer.resize(bytes);
             auto *ve = reinterpret_cast<VstEvents *>(vstEventBuffer.data());
-            ve->numEvents = n;
+            ve->numEvents = static_cast<VstInt32>(n);
             ve->reserved = 0;
             for (size_t i = 0; i < n; ++i)
             {
@@ -502,7 +502,7 @@ private:
             const auto r = WaitForMultipleObjects(_countof(events), events, FALSE, INFINITE);
             if (WAIT_OBJECT_0 == r)
             { // hClose
-                if (flag != flag)
+                if (flag != run)
                     continue;
                 run = false;
             }
@@ -609,7 +609,6 @@ void mainLoop(const std::wstring &dllFilename)
 {
     WNDCLASSEX wc;
     HWND hwnd;
-    MSG Msg;
 
     //Step 1: Registering the Window Class
     wc.cbSize = sizeof(WNDCLASSEX);
@@ -745,7 +744,9 @@ int main()
 
     const auto dllFilename = []() -> std::wstring {
         wchar_t fn[MAX_PATH + 1]{};
-        OPENFILENAME ofn{sizeof(ofn)};
+        OPENFILENAME ofn;
+        memset(&ofn, 0, sizeof(ofn));
+        ofn.lStructSize = sizeof(ofn);
         ofn.lpstrFilter = L"VSTi DLL(*.dll)\0*.dll\0All Files(*.*)\0*.*\0\0";
         ofn.lpstrFile = fn;
         ofn.nMaxFile = _countof(fn);

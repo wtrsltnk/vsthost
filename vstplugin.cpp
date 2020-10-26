@@ -1,5 +1,6 @@
 #include "vstplugin.h"
 #include "common.h"
+#include <filesystem>
 #include <iostream>
 
 VstPlugin::VstPlugin() = default;
@@ -11,13 +12,20 @@ VstPlugin::~VstPlugin()
 
 const char *VstPlugin::Title() const
 {
-    return _title.c_str();
+    return _vstEffectName.c_str();
 }
 
-void VstPlugin::SetTitle(
-    const std::string &title)
+const char *VstPlugin::Vendor() const
 {
-    _title = title;
+    return _vstVendorName.c_str();
+}
+
+std::string VstPlugin::ModulePath() const
+{
+    std::cout << std::filesystem::path(_moduleDirectory) << "/" << std::filesystem::path(_modulePath) << std::endl;
+    auto fullPath = std::filesystem::path(_moduleDirectory) / std::filesystem::path(_modulePath);
+
+    return fullPath.string().c_str();
 }
 
 AEffect *VstPlugin::getEffect()
@@ -174,7 +182,7 @@ void VstPlugin::openEditor(
         wcex.style = 0;
         wcex.lpfnWndProc = VstWindowProc;
         wcex.hInstance = GetModuleHandle(nullptr);
-        wcex.lpszClassName = L"Minimal VST host - Guest VST Window Frame";
+        wcex.lpszClassName = "Minimal VST host - Guest VST Window Frame";
         wcex.lpszMenuName = nullptr;
         RegisterClassEx(&wcex);
 
@@ -183,7 +191,7 @@ void VstPlugin::openEditor(
 
         _editorHwnd = CreateWindow(
             wcex.lpszClassName,
-            L"VST Plugin",
+            "VST Plugin",
             WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
             CW_USEDEFAULT, CW_USEDEFAULT,
             CW_USEDEFAULT, CW_USEDEFAULT,
@@ -232,7 +240,6 @@ void VstPlugin::sendMidiNote(
     bool onOff,
     int velocity)
 {
-    std::cout << noteNumber << (onOff ? " on @ " : " off @ ") << velocity << std::endl;
     VstMidiEvent e{};
     e.type = kVstMidiType;
     e.byteSize = sizeof(e);
@@ -289,20 +296,18 @@ float **VstPlugin::processAudio(
 }
 
 bool VstPlugin::init(
-    const wchar_t *vstModulePath)
+    const char *vstModulePath)
 {
+    _modulePath = vstModulePath;
+
     {
-        wchar_t buf[MAX_PATH + 1];
-        wchar_t *namePtr = nullptr;
+        char buf[MAX_PATH + 1];
+        char *namePtr = nullptr;
         const auto r = GetFullPathName(vstModulePath, _countof(buf), buf, &namePtr);
         if (r && namePtr)
         {
             *namePtr = 0;
-            char mbBuf[_countof(buf) * 4];
-            if (auto s = WideCharToMultiByte(CP_OEMCP, 0, buf, -1, mbBuf, sizeof(mbBuf), nullptr, nullptr))
-            {
-                _directoryMultiByte = mbBuf;
-            }
+            _moduleDirectory = buf;
         }
     }
 
@@ -456,7 +461,7 @@ VstIntPtr VstPlugin::hostCallback(
         }
         case audioMasterGetDirectory:
         {
-            return reinterpret_cast<VstIntPtr>(_directoryMultiByte.c_str());
+            return reinterpret_cast<VstIntPtr>(_moduleDirectory.c_str());
         }
         case audioMasterIdle:
         {

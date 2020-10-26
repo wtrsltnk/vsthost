@@ -25,6 +25,9 @@ public:
     void SendMidiNotesInTimeRange(
         std::chrono::milliseconds::rep diff);
 
+    void SetEnabled(
+        bool enabled);
+
     bool Enabled = false;
 
     Arpeggiator CurrentArpeggiator;

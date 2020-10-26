@@ -13,8 +13,8 @@
 // If you are new to ImGui, see examples/README.txt and documentation at the top of imgui.cpp.
 // https://github.com/ocornut/imgui
 
-#include <windows.h>
 #include <chrono>
+#include <windows.h>
 
 typedef struct
 {
@@ -34,18 +34,18 @@ typedef struct
 
 typedef HANDLE GLFWmonitor;
 
-#define     GLFW_PRESS 1
-#define     GLFW_RELEASE 0
+#define GLFW_PRESS 1
+#define GLFW_RELEASE 0
 
-#define     GLFW_FOCUSED            0x00020001
-#define 	GLFW_CURSOR             0x00033001
-#define 	GLFW_CURSOR_NORMAL      0x00034001
-#define 	GLFW_CURSOR_HIDDEN      0x00034002
-#define 	GLFW_CURSOR_DISABLED    0x00034003
+#define GLFW_FOCUSED 0x00020001
+#define GLFW_CURSOR 0x00033001
+#define GLFW_CURSOR_NORMAL 0x00034001
+#define GLFW_CURSOR_HIDDEN 0x00034002
+#define GLFW_CURSOR_DISABLED 0x00034003
 
 int glfwInit();
 void glfwTerminate();
-GLFWwindow *glfwCreateWindow(int w, int h, wchar_t const *title, GLFWmonitor *monitor, GLFWwindow *share);
+GLFWwindow *glfwCreateWindow(int w, int h, const char *title, GLFWmonitor *monitor, GLFWwindow *share);
 void glfwSwapBuffers(GLFWwindow *window);
 void glfwMakeContextCurrent(GLFWwindow *window);
 void glfwSwapInterval(int interval);
@@ -60,18 +60,18 @@ int glfwGetWindowAttrib(GLFWwindow *window, int attrib);
 int glfwGetInputMode(GLFWwindow *window, int mode);
 void glfwSetInputMode(GLFWwindow *window, int mode, int value);
 
-IMGUI_API bool        ImGui_ImplGlfwGL2_Init(GLFWwindow* window, bool install_callbacks);
-IMGUI_API void        ImGui_ImplGlfwGL2_Shutdown();
-IMGUI_API void        ImGui_ImplGlfwGL2_NewFrame();
-IMGUI_API void        ImGui_ImplGlfwGL2_RenderDrawData(ImDrawData* draw_data);
+IMGUI_API bool ImGui_ImplGlfwGL2_Init(GLFWwindow *window, bool install_callbacks);
+IMGUI_API void ImGui_ImplGlfwGL2_Shutdown();
+IMGUI_API void ImGui_ImplGlfwGL2_NewFrame();
+IMGUI_API void ImGui_ImplGlfwGL2_RenderDrawData(ImDrawData *draw_data);
 
 // Use if you want to reset your rendering device without losing ImGui state.
-IMGUI_API void        ImGui_ImplGlfwGL2_InvalidateDeviceObjects();
-IMGUI_API bool        ImGui_ImplGlfwGL2_CreateDeviceObjects();
+IMGUI_API void ImGui_ImplGlfwGL2_InvalidateDeviceObjects();
+IMGUI_API bool ImGui_ImplGlfwGL2_CreateDeviceObjects();
 
 // GLFW callbacks (registered by default to GLFW if you enable 'install_callbacks' during initialization)
 // Provided here if you want to chain callbacks yourself. You may also handle inputs yourself and use those as a reference.
-IMGUI_API void        ImGui_ImplGlfw_MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
-IMGUI_API void        ImGui_ImplGlfw_ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
-IMGUI_API void        ImGui_ImplGlfw_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-IMGUI_API void        ImGui_ImplGlfw_CharCallback(GLFWwindow* window, unsigned int c);
+IMGUI_API void ImGui_ImplGlfw_MouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
+IMGUI_API void ImGui_ImplGlfw_ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
+IMGUI_API void ImGui_ImplGlfw_KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+IMGUI_API void ImGui_ImplGlfw_CharCallback(GLFWwindow *window, unsigned int c);

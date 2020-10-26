@@ -2,7 +2,6 @@
 #define TRACKSMANAGER_H
 
 #include "track.h"
-#include "trackseditor.h"
 
 #include <vector>
 
@@ -23,10 +22,10 @@ public:
     virtual void SetSoloTrack(
         ITrack *track);
 
-    virtual std::tuple<ITrack *, long> &GetActiveRegion() { return activeRegion; }
+    virtual std::tuple<ITrack *, std::chrono::milliseconds::rep> &GetActiveRegion() { return activeRegion; }
     virtual void SetActiveRegion(
         ITrack *track,
-        long start);
+        std::chrono::milliseconds::rep start);
 
     virtual ITrack *AddTrack(
         const std::string &name,
@@ -45,14 +44,14 @@ public:
 
 public:
     ITrack *AddVstTrack(
-        wchar_t const *plugin = nullptr);
+        const char *plugin = nullptr);
 
 private:
     std::vector<ITrack *> tracks;
     std::vector<Instrument *> instruments;
     ITrack *activeTrack = nullptr;
     ITrack *soloTrack = nullptr;
-    std::tuple<ITrack *, long> activeRegion{nullptr, -1};
+    std::tuple<ITrack *, std::chrono::milliseconds::rep> activeRegion{nullptr, -1};
 };
 
 #endif // TRACKSMANAGER_H

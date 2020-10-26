@@ -231,7 +231,7 @@ void TracksEditor::RenderRegion(
     ImVec2 const &trackScreenOrigin,
     int finalTrackHeight)
 {
-    auto isActiveRegion = std::get<ITrack *>(_tracks->GetActiveRegion()) == track && std::get<long>(_tracks->GetActiveRegion()) == region.first;
+    auto isActiveRegion = std::get<ITrack *>(_tracks->GetActiveRegion()) == track && std::get<std::chrono::milliseconds::rep>(_tracks->GetActiveRegion()) == region.first;
 
     auto regionOrigin = ImVec2(trackOrigin.x + StepsToPixels(region.first), trackOrigin.y + 4);
     auto regionWidth = StepsToPixels(region.second.Length());

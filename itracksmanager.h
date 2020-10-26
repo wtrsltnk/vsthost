@@ -19,10 +19,10 @@ public:
     virtual void SetSoloTrack(
         ITrack *track) = 0;
 
-    virtual std::tuple<ITrack *, long> &GetActiveRegion() = 0;
+    virtual std::tuple<ITrack *, std::chrono::milliseconds::rep> &GetActiveRegion() = 0;
     virtual void SetActiveRegion(
         ITrack *track,
-        long start) = 0;
+        std::chrono::milliseconds::rep start) = 0;
 
     virtual ITrack *AddTrack(
         const std::string &name,

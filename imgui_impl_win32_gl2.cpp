@@ -18,7 +18,7 @@ static bool g_MouseJustPressed[3] = {false, false, false};
 // OpenGL data
 static GLuint g_FontTexture = 0;
 
-wchar_t const szAppName[] = L"ImGuiExample";
+char const szAppName[] = "ImGuiExample";
 
 // OpenGL2 Render function.
 // (this used to be set in io.RenderDrawListsFn and called by ImGui::Render(), but you can now call this directly from your main loop)
@@ -434,7 +434,12 @@ static void getFullWindowSize(DWORD style, DWORD exStyle,
     *fullHeight = rect.bottom - rect.top;
 }
 
-GLFWwindow *glfwCreateWindow(int w, int h, wchar_t const *title, GLFWmonitor *monitor, GLFWwindow *share)
+GLFWwindow *glfwCreateWindow(
+    int w,
+    int h,
+    const char *title,
+    GLFWmonitor *monitor,
+    GLFWwindow *share)
 {
     auto window = new GLFWwindow();
 

@@ -42,14 +42,14 @@ public:
         float b,
         float a = 1.0f);
 
-    virtual std::map<std::chrono::milliseconds::rep, Region> const &Regions() const;
+    virtual RegionCollection const &Regions() const;
 
     virtual Region &GetRegion(
         std::chrono::milliseconds::rep at);
 
     virtual void StartRecording();
 
-    virtual long StartNewRegion(
+    virtual std::chrono::milliseconds::rep StartNewRegion(
         std::chrono::milliseconds::rep start);
 
     virtual void RecordMidiEvent(

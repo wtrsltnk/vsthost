@@ -5,7 +5,7 @@ void Track::StartRecording()
     _activeRegion = _regions.end();
 }
 
-long Track::StartNewRegion(
+std::chrono::milliseconds::rep Track::StartNewRegion(
     std::chrono::milliseconds::rep start)
 {
     if (GetActiveRegionAt(_regions, start, 0) != _regions.end())
@@ -106,7 +106,7 @@ void Track::SetColor(
     _color[3] = a;
 }
 
-std::map<std::chrono::milliseconds::rep, Region> const &Track::Regions() const
+ITrack::RegionCollection const &Track::Regions() const
 {
     return _regions;
 }

@@ -11,6 +11,9 @@ class Instrument;
 class ITrack
 {
 public:
+    typedef std::map<std::chrono::milliseconds::rep, Region> RegionCollection;
+
+public:
     virtual ~ITrack() = default;
 
     virtual const std::string &GetName() = 0;
@@ -40,14 +43,14 @@ public:
         float b,
         float a = 1.0f) = 0;
 
-    virtual std::map<std::chrono::milliseconds::rep, Region> const &Regions() const = 0;
+    virtual RegionCollection const &Regions() const = 0;
 
     virtual Region &GetRegion(
         std::chrono::milliseconds::rep at) = 0;
 
     virtual void StartRecording() = 0;
 
-    virtual long StartNewRegion(
+    virtual std::chrono::milliseconds::rep StartNewRegion(
         std::chrono::milliseconds::rep start) = 0;
 
     virtual void RecordMidiEvent(
