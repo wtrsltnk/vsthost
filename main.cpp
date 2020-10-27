@@ -38,6 +38,8 @@
 #include "vstplugin.h"
 #include "wasapi.h"
 #include "win32vstpluginservice.h"
+#include <ImGuiFileDialog.h>
+#include <ImGuiFileDialog.h>
 
 static std::map<int, bool> _noteStates;
 static std::map<int, struct MidiNoteState> _keyboardToNoteMap{
@@ -379,7 +381,7 @@ void ToolbarWindow(
         ImGui::PopStyleVar();
 
         ImGui::SameLine();
-        ImGui::VerticalSeparator();
+        ImGui::Separator();
         ImGui::SameLine();
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
@@ -439,7 +441,7 @@ void ToolbarWindow(
         ImGui::PopStyleVar();
 
         ImGui::SameLine();
-        ImGui::VerticalSeparator();
+        ImGui::Separator();
         ImGui::SameLine();
 
         ImGui::Text("bpm :");
@@ -450,7 +452,7 @@ void ToolbarWindow(
         ImGui::PopItemWidth();
 
         ImGui::SameLine();
-        ImGui::VerticalSeparator();
+        ImGui::Separator();
         ImGui::SameLine();
 
         if (ImGui::Button(ICON_FK_PLUS))
@@ -536,6 +538,7 @@ void MainMenu()
             {
                 state.StopPlaying();
                 state.StopRecording();
+                igfd::ImGuiFileDialog::Instance()->OpenDialog("OpenFileDlgKey", "Choose File", ".yaml", ".");
 
                 TracksSerializer serializer(_tracks);
 
@@ -611,6 +614,19 @@ void MainMenu()
         }
 
         ImGui::EndMainMenuBar();
+    }
+
+    if (igfd::ImGuiFileDialog::Instance()->FileDialog("OpenFileDlgKey"))
+    {
+        // action if OK
+        if (igfd::ImGuiFileDialog::Instance()->IsOk == true)
+        {
+            std::string filePathName = igfd::ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath = igfd::ImGuiFileDialog::Instance()->GetCurrentPath();
+            // action
+        }
+        // close
+        igfd::ImGuiFileDialog::Instance()->CloseDialog("OpenFileDlgKey");
     }
 }
 

@@ -64,10 +64,16 @@ target_include_directories(glad
 add_library(imgui
     thirdparty/imgui/imgui.cpp
     thirdparty/imgui/imgui_demo.cpp
-    thirdparty/imgui/imgui_draw.cpp)
+    thirdparty/imgui/imgui_draw.cpp
+    thirdparty/imgui/imgui_widgets.cpp
+    thirdparty/ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialog.cpp
+    thirdparty/ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialog.h
+    thirdparty/ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialogConfig.h)
 
 target_include_directories(imgui
-    PUBLIC thirdparty/imgui)
+    PUBLIC thirdparty/imgui
+    PUBLIC thirdparty/ImGuiFileDialog/ImGuiFileDialog
+    PUBLIC thirdparty/dirent/include)
 
 add_executable(minimal-vsthost
     minimal_vst2x_host.cpp

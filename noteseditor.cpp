@@ -41,7 +41,7 @@ void NotesEditor::Render(
             }
 
             ImGui::SameLine();
-            ImGui::VerticalSeparator();
+            ImGui::Separator();
             ImGui::SameLine();
 
             ImGui::PushItemWidth(100);
@@ -51,7 +51,7 @@ void NotesEditor::Render(
             ImGui::PopItemWidth();
 
             ImGui::SameLine();
-            ImGui::VerticalSeparator();
+            ImGui::Separator();
             ImGui::SameLine();
 
             int &selectedArp = (int &)_arpeggiatorPreviewService.CurrentArpeggiator.Mode;

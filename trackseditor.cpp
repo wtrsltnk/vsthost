@@ -60,7 +60,7 @@ void TracksEditor::Render(
             }
 
             ImGui::SameLine();
-            ImGui::VerticalSeparator();
+            ImGui::Separator();
             ImGui::SameLine();
             ImGui::PushItemWidth(100);
             ImGui::Text("zoom V :");
@@ -75,7 +75,7 @@ void TracksEditor::Render(
             ImGui::PopItemWidth();
 
             ImGui::SameLine();
-            ImGui::VerticalSeparator();
+            ImGui::Separator();
             ImGui::SameLine();
 
             static int e = _snapRegionsToSteps == 4000 ? 0 : 1;
