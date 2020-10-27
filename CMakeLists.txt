@@ -68,11 +68,13 @@ add_library(imgui
     thirdparty/imgui/imgui_widgets.cpp
     thirdparty/ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialog.cpp
     thirdparty/ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialog.h
-    thirdparty/ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialogConfig.h)
+    thirdparty/ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialogConfig.h
+    thirdparty/ImGuiFileDialog/CustomFont.cpp)
 
 target_include_directories(imgui
     PUBLIC thirdparty/imgui
     PUBLIC thirdparty/ImGuiFileDialog/ImGuiFileDialog
+    PUBLIC thirdparty/ImGuiFileDialog
     PUBLIC thirdparty/dirent/include)
 
 add_executable(minimal-vsthost

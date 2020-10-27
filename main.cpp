@@ -16,6 +16,7 @@
 #include "imgui.h"
 #include "imgui_impl_win32_gl2.h"
 #include "imgui_internal.h"
+#include <ImGuiFileDialog.h>
 
 #include "IconsFontaudio.h"
 #include "IconsForkAwesome.h"
@@ -38,8 +39,6 @@
 #include "vstplugin.h"
 #include "wasapi.h"
 #include "win32vstpluginservice.h"
-#include <ImGuiFileDialog.h>
-#include <ImGuiFileDialog.h>
 
 static std::map<int, bool> _noteStates;
 static std::map<int, struct MidiNoteState> _keyboardToNoteMap{
@@ -538,11 +537,8 @@ void MainMenu()
             {
                 state.StopPlaying();
                 state.StopRecording();
-                igfd::ImGuiFileDialog::Instance()->OpenDialog("OpenFileDlgKey", "Choose File", ".yaml", ".");
 
-                TracksSerializer serializer(_tracks);
-
-                serializer.Deserialize("c:\\temp\\file.yaml");
+                igfd::ImGuiFileDialog::Instance()->OpenModal("OpenFileDlgKey", "Choose File", ".yaml", ".");
             }
 
             if (ImGui::MenuItem("Save", "CTRL+S"))
@@ -559,6 +555,8 @@ void MainMenu()
             {
                 state.StopPlaying();
                 state.StopRecording();
+
+                igfd::ImGuiFileDialog::Instance()->OpenModal("SaveFileDlgKey", "Choose File", ".yaml", ".");
             }
 
             ImGui::Separator();
@@ -624,9 +622,30 @@ void MainMenu()
             std::string filePathName = igfd::ImGuiFileDialog::Instance()->GetFilePathName();
             std::string filePath = igfd::ImGuiFileDialog::Instance()->GetCurrentPath();
             // action
+
+            TracksSerializer serializer(_tracks);
+
+            serializer.Deserialize(filePathName);
         }
         // close
         igfd::ImGuiFileDialog::Instance()->CloseDialog("OpenFileDlgKey");
+    }
+
+    if (igfd::ImGuiFileDialog::Instance()->FileDialog("SaveFileDlgKey"))
+    {
+        // action if OK
+        if (igfd::ImGuiFileDialog::Instance()->IsOk == true)
+        {
+            std::string filePathName = igfd::ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath = igfd::ImGuiFileDialog::Instance()->GetCurrentPath();
+            // action
+
+            TracksSerializer serializer(_tracks);
+
+            serializer.Serialize(filePathName);
+        }
+        // close
+        igfd::ImGuiFileDialog::Instance()->CloseDialog("SaveFileDlgKey");
     }
 }
 
