@@ -115,6 +115,8 @@ add_executable(imgui-vsthost
     instrument.cpp
     instrument.h
     ivstpluginservice.h
+    historymanager.cpp
+    historymanager.h
     main.cpp
     midicontrollers.h
     midievent.cpp

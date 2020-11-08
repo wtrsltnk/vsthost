@@ -1,6 +1,7 @@
 #include "inspectorwindow.h"
 
 #include "IconsFontaudio.h"
+#include "historymanager.h"
 #include "instrument.h"
 #include "ivstpluginservice.h"
 
@@ -214,6 +215,21 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
                     }
                 }
             }
+        }
+
+        if (ImGui::CollapsingHeader("History", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            auto const *first = _state->_historyManager.FirstEntryInHistoryTrack();
+
+            ImGui::BeginGroup();
+            while (first != nullptr)
+            {
+                char undoTitle[64] = {0};
+                sprintf_s(undoTitle, 64, "Undo %s", first->_title);
+                ImGui::Selectable(undoTitle, first == _state->_historyManager.CurrentEntryInHistoryTrack());
+                first = first->_nextEntry;
+            }
+            ImGui::EndGroup();
         }
 
         if (ImGui::CollapsingHeader("Quick Help", ImGuiTreeNodeFlags_DefaultOpen))

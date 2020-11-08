@@ -120,6 +120,12 @@ ITrack::RegionCollection const &Track::Regions() const
     return _regions;
 }
 
+void Track::SetRegions(
+    RegionCollection const & regions)
+{
+    _regions = regions;
+}
+
 Region &Track::GetRegion(
     std::chrono::milliseconds::rep at)
 {

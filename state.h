@@ -1,6 +1,7 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include "historymanager.h"
 #include <chrono>
 
 extern void KillAllNotes();
@@ -54,6 +55,7 @@ public:
     bool _loop;
     uint32_t _bpm = 48;
     std::chrono::milliseconds::rep _cursor = 0;
+    HistoryManager _historyManager;
 
 private:
     bool _playing = false;

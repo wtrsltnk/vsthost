@@ -46,6 +46,9 @@ public:
 
     virtual RegionCollection const &Regions() const;
 
+    virtual void SetRegions(
+        RegionCollection const & regions);
+
     virtual Region &GetRegion(
         std::chrono::milliseconds::rep at);
 

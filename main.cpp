@@ -576,12 +576,14 @@ void MainMenu()
         }
         if (ImGui::BeginMenu("Edit"))
         {
-            if (ImGui::MenuItem("Undo", "CTRL+Z"))
+            if (ImGui::MenuItem("Undo", "CTRL+Z", false, state._historyManager.HasUndo()))
             {
+                state._historyManager.Undo();
             }
-            if (ImGui::MenuItem("Redo", "CTRL+Y", false, false))
+            if (ImGui::MenuItem("Redo", "CTRL+Y", false, state._historyManager.HasRedo()))
             {
-            } // Disabled item
+                state._historyManager.Redo();
+            }
             ImGui::Separator();
             if (ImGui::MenuItem("Cut", "CTRL+X"))
             {
