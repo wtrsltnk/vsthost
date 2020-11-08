@@ -30,10 +30,15 @@ public:
     void SetTracksManager(
         ITracksManager *tracks);
 
+    void SetInitialState(
+        const char *title,
+        ITrack *track,
+        const ITrack::RegionCollection &regions);
+
     void AddEntry(
         const char *title,
         ITrack *track,
-        ITrack::RegionCollection regions);
+        const ITrack::RegionCollection &regions);
 
     bool HasUndo();
 
