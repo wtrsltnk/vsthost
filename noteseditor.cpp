@@ -5,6 +5,7 @@
 #include "arpeggiatorpreviewservice.h"
 #include "imguiutils.h"
 #include "midinote.h"
+#include "notepreviewservice.h"
 #include "pianowindow.h"
 #include "region.h"
 #include "track.h"
@@ -12,6 +13,7 @@
 #include <algorithm>
 #include <imgui_internal.h>
 #include <iostream>
+#include <spdlog/spdlog.h>
 
 const int midiEventHeight = 12;
 const int minPixelsPerStep = 8;
@@ -470,6 +472,15 @@ void NotesEditor::RenderEditableNote(
             noteStart,
             ImVec2(noteStart.x + noteSize.x, noteStart.y + noteSize.y),
             ImColor(ImGui::GetStyle().Colors[ImGuiCol_PlotHistogram]));
+
+        if (_lastNotePreviewY != diffy)
+        {
+            auto amountToShiftNote = std::floor(diffy / float(midiEventHeight));
+
+            _notePreviewService.PreviewNote(uint32_t(noteNumber - amountToShiftNote), 100, length);
+
+            _lastNotePreviewY = diffy;
+        }
     }
 
     if (ImGui::IsItemHovered() && ImGui::IsMouseDown(0) && !_editingNotes)

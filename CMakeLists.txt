@@ -121,6 +121,8 @@ add_executable(imgui-vsthost
     midievent.h
     midinote.cpp
     midinote.h
+    notepreviewservice.cpp
+    notepreviewservice.h
     noteseditor.cpp
     noteseditor.h
     pianowindow.cpp

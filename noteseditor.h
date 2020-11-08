@@ -22,6 +22,7 @@ private:
     ImVec2 _noteDrawingAndEditingStart;
     bool _drawingNotes = false;
     bool _editingNotes = false;
+    float _lastNotePreviewY = 0;
 
     void HandleNotesEditorShortCuts();
 

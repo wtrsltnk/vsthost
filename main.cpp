@@ -28,6 +28,7 @@
 #include "instrument.h"
 #include "midicontrollers.h"
 #include "midievent.h"
+#include "notepreviewservice.h"
 #include "noteseditor.h"
 #include "pianowindow.h"
 #include "region.h"
@@ -87,6 +88,7 @@ static Win32VstPluginService *_vstPluginService = nullptr;
 static bool _showInspectorWindow = true;
 static bool _showPianoWindow = true;
 ArpeggiatorPreviewService _arpeggiatorPreviewService;
+NotePreviewService _notePreviewService;
 
 void KillAllNotes()
 {
@@ -127,6 +129,7 @@ bool refillCallback(
 
     tracks->SendMidiNotesInSong(start, end);
     _arpeggiatorPreviewService.SendMidiNotesInTimeRange(diff);
+    _notePreviewService.HandleMidiEventsInTimeRange(diff);
 
     const auto nDstChannels = mixFormat->nChannels;
 
@@ -854,6 +857,9 @@ int main(
 
     _arpeggiatorPreviewService.SetState(&state);
     _arpeggiatorPreviewService.SetTracksManager(&_tracks);
+
+    _notePreviewService.SetState(&state);
+    _notePreviewService.SetTracksManager(&_tracks);
 
     MainLoop();
 
