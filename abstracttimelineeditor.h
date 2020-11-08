@@ -55,8 +55,8 @@ protected:
 
     void RenderGrid(
         ImVec2 const &p,
-        int windowWidth,
-        int fullTracksHeight);
+        float windowWidth,
+        float fullTracksHeight);
 };
 
 #endif // ABSTRACTTIMELINEEDITOR_H

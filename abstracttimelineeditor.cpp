@@ -49,13 +49,13 @@ long AbstractTimelineEditor::SnapNotesSteps(
 
 void AbstractTimelineEditor::RenderGrid(
     ImVec2 const &p,
-    int windowWidth,
-    int fullTracksHeight)
+    float windowWidth,
+    float fullTracksHeight)
 {
     int step = 0;
     int gg = 0;
 
-    while (gg < std::max(windowWidth, int(ImGui::GetContentRegionAvailWidth())))
+    while (gg < std::max(windowWidth, ImGui::GetContentRegionAvailWidth()))
     {
         auto cursor = ImVec2(p.x + StepsToPixels(step), p.y);
 

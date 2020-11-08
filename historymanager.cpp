@@ -1,14 +1,21 @@
 #include "historymanager.h"
 
-HistoryManager::HistoryManager() = default;
+void HistoryEntry::ApplyState()
+{
+    this->_track->SetRegions(this->_regions);
+}
+
+HistoryManager::HistoryManager()
+{
+    _firstEntryInHistoryTrack._title = "New Song";
+    _currentEntryInHistoryTrack = &_firstEntryInHistoryTrack;
+}
 
 HistoryManager::~HistoryManager()
 {
-    Cleanup(_firstEntryInHistoryTrack);
+    Cleanup(_firstEntryInHistoryTrack._nextEntry);
 
     _currentEntryInHistoryTrack = nullptr;
-
-    _firstEntryInHistoryTrack = nullptr;
 }
 
 void HistoryManager::Cleanup(
@@ -25,7 +32,7 @@ void HistoryManager::Cleanup(
 
 bool HistoryManager::HasUndo()
 {
-    return _currentEntryInHistoryTrack != nullptr;
+    return _currentEntryInHistoryTrack != &_firstEntryInHistoryTrack;
 }
 
 void HistoryManager::Undo()
@@ -35,17 +42,9 @@ void HistoryManager::Undo()
         return;
     }
 
-    _currentEntryInHistoryTrack->_track->SetRegions(_currentEntryInHistoryTrack->_regions);
-    if (_currentEntryInHistoryTrack->_prevEntry != nullptr)
-    {
-        _currentEntryInHistoryTrack = _currentEntryInHistoryTrack->_prevEntry;
-    }
-    else
-    {
-        Cleanup(_currentEntryInHistoryTrack);
-        _currentEntryInHistoryTrack = nullptr;
-        _firstEntryInHistoryTrack = nullptr;
-    }
+    _currentEntryInHistoryTrack->_regionsUnDone = _currentEntryInHistoryTrack->_track->Regions();
+    _currentEntryInHistoryTrack->ApplyState();
+    _currentEntryInHistoryTrack = _currentEntryInHistoryTrack->_prevEntry;
 }
 
 bool HistoryManager::HasRedo()
@@ -54,7 +53,15 @@ bool HistoryManager::HasRedo()
 }
 
 void HistoryManager::Redo()
-{}
+{
+    if (!HasRedo())
+    {
+        return;
+    }
+
+    _currentEntryInHistoryTrack = _currentEntryInHistoryTrack->_nextEntry;
+    _currentEntryInHistoryTrack->_track->SetRegions(_currentEntryInHistoryTrack->_regionsUnDone);
+}
 
 void HistoryManager::AddEntry(
     const char *title,
@@ -79,9 +86,4 @@ void HistoryManager::AddEntry(
     }
 
     _currentEntryInHistoryTrack = entry;
-
-    if (_firstEntryInHistoryTrack == nullptr)
-    {
-        _firstEntryInHistoryTrack = _currentEntryInHistoryTrack;
-    }
 }

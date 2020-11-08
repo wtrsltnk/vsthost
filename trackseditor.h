@@ -15,7 +15,7 @@ class TracksEditor :
     int _trackHeight = 200;
     int _editTrackName = -1;
     char _editTrackBuffer[128] = {0};
-    int _maxTrackLength = 16000;
+    std::chrono::milliseconds::rep _maxTrackLength = 16000;
 
     ImColor _trackbgcol = ImColor(55, 55, 55, 55);
     ImColor _trackaltbgcol = ImColor(0, 0, 0, 0);
@@ -32,9 +32,20 @@ class TracksEditor :
     void FinishDragRegion(
         long newX);
 
-    void StartDragRegion(
+    void StartRegionResize(
         ITrack *track,
         std::pair<long, Region> region);
+
+    void ResizeRegion(
+        ITrack *track,
+        std::pair<long, Region> region);
+
+    void CreateRegion(
+        ITrack *track,
+        const ImVec2 &pp);
+
+    void MoveRegion(
+        ITrack *track);
 
     long GetNewRegionStart(
         std::pair<long, Region> region);
@@ -42,7 +53,7 @@ class TracksEditor :
     long GetNewRegionLength(
         std::pair<long, Region> region);
 
-    int MaxTracksWidth();
+    std::chrono::milliseconds::rep MaxTracksWidth();
 
     void UpdateRegionLength(
         ITrack *track,
@@ -56,7 +67,7 @@ class TracksEditor :
     void RenderTrack(
         ITrack *track,
         int t,
-        int trackWidth);
+        float trackWidth);
 
     void RenderRegion(
         ITrack *track,

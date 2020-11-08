@@ -9,9 +9,12 @@ public:
     const char *_title;
     ITrack *_track;
     ITrack::RegionCollection _regions;
+    ITrack::RegionCollection _regionsUnDone;
 
     HistoryEntry *_prevEntry = nullptr;
     HistoryEntry *_nextEntry = nullptr;
+
+    void ApplyState();
 };
 
 class HistoryManager
@@ -40,14 +43,14 @@ public:
 
     void Redo();
 
-    const HistoryEntry *FirstEntryInHistoryTrack() const { return _firstEntryInHistoryTrack; }
+    const HistoryEntry *FirstEntryInHistoryTrack() const { return &_firstEntryInHistoryTrack; }
 
     const HistoryEntry *CurrentEntryInHistoryTrack() const { return _currentEntryInHistoryTrack; }
 
 private:
     ITracksManager *_tracks = nullptr;
 
-    HistoryEntry *_firstEntryInHistoryTrack = nullptr;
+    HistoryEntry _firstEntryInHistoryTrack;
     HistoryEntry *_currentEntryInHistoryTrack = nullptr;
 };
 

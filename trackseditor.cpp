@@ -7,6 +7,7 @@
 
 #include <imgui_internal.h>
 #include <iostream>
+#include <spdlog/spdlog.h>
 #include <sstream>
 
 const int regionRounding = 5;
@@ -14,7 +15,7 @@ const int regionResizeHandleWidth = 20;
 
 TracksEditor::TracksEditor() = default;
 
-int TracksEditor::MaxTracksWidth()
+std::chrono::milliseconds::rep TracksEditor::MaxTracksWidth()
 {
     for (auto &track : _tracks->GetTracks())
     {
@@ -48,11 +49,11 @@ void TracksEditor::Render(
         ImGui::SetWindowSize(size);
 
         auto trackWidth = StepsToPixels(MaxTracksWidth());
-        int fullHeight = _tracks->GetTracks().size() * (_trackHeight + ImGui::GetStyle().ItemSpacing.y);
+        auto fullHeight = _tracks->GetTracks().size() * (_trackHeight + ImGui::GetStyle().ItemSpacing.y);
 
         ImGui::BeginChild(
             "TracksTools",
-            ImVec2(0, trackToolsHeight));
+            ImVec2(0, float(trackToolsHeight)));
         {
             if (ImGui::Button(ICON_FAD_PEN))
             {
@@ -96,11 +97,11 @@ void TracksEditor::Render(
 
         auto contentTop = ImGui::GetCursorPosY();
 
-        ImGui::MoveCursorPos(ImVec2(trackHeaderWidth, 0));
+        ImGui::MoveCursorPos(ImVec2(float(trackHeaderWidth), 0));
 
         auto trackScreenOrigin = ImGui::GetCursorScreenPos();
 
-        ImGui::MoveCursorPos(ImVec2(0, timelineHeight));
+        ImGui::MoveCursorPos(ImVec2(0, float(timelineHeight)));
 
         ImGui::BeginChild(
             "TracksContainer",
@@ -198,13 +199,28 @@ long TracksEditor::GetNewRegionLength(
     return newLength;
 }
 
-void TracksEditor::StartDragRegion(
+void TracksEditor::StartRegionResize(
     ITrack *track,
     std::pair<long, Region> region)
 {
     _tracks->SetActiveTrack(track);
     _mouseDragStart = ImGui::GetMousePos();
     _tracks->SetActiveRegion(track, region.first);
+}
+
+void TracksEditor::ResizeRegion(
+    ITrack *track,
+    std::pair<long, Region> region)
+{
+    _state->_historyManager.AddEntry("Resize region", track, track->Regions());
+
+    auto newLength = GetNewRegionLength(region);
+
+    if (newLength > 0 && newLength != region.second.Length())
+    {
+        UpdateRegionLength(track, region.first, newLength);
+        _mouseDragStart = ImGui::GetMousePos();
+    }
 }
 
 void TracksEditor::FinishDragRegion(
@@ -220,8 +236,34 @@ void TracksEditor::UpdateRegionLength(
     long regionAt,
     long length)
 {
-    track->GetRegion(regionAt)
-        .SetLength(length);
+    auto &region = track->GetRegion(regionAt);
+
+    region.SetLength(length);
+}
+
+void RenderRegionRubberband(
+    ImVec2 const &regionOrigin,
+    ImVec2 const &trackScreenOrigin,
+    float length,
+    int finalTrackHeight)
+{
+    auto overlayOrigin = ImVec2(
+        trackScreenOrigin.x + regionOrigin.x,
+        trackScreenOrigin.y + 4);
+
+    auto min = ImVec2(
+        std::max(overlayOrigin.x, trackScreenOrigin.x + ImGui::GetScrollX()),
+        std::max(overlayOrigin.y, trackScreenOrigin.y + ImGui::GetScrollY()));
+
+    auto max = ImVec2(
+        overlayOrigin.x + length,
+        overlayOrigin.y + finalTrackHeight - 8);
+
+    ImGui::GetOverlayDrawList()->AddRectFilled(
+        min,
+        max,
+        ImColor(255, 255, 255, 50),
+        regionRounding);
 }
 
 void TracksEditor::RenderRegion(
@@ -238,31 +280,36 @@ void TracksEditor::RenderRegion(
 
     ImGui::PushID(region.first);
 
-    ImGui::SetCursorPos(
-        ImVec2(
-            regionOrigin.x + regionWidth - regionResizeHandleWidth,
-            regionOrigin.y));
+    // Rendering the resize region handle
+    ImGui::SetCursorPos(ImVec2(
+        regionOrigin.x + regionWidth - regionResizeHandleWidth,
+        regionOrigin.y));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-    ImGui::Button(ICON_FK_ARROWS_H, ImVec2(regionResizeHandleWidth, finalTrackHeight - 8));
+    ImGui::Button(ICON_FK_ARROWS_H, ImVec2(regionResizeHandleWidth, float(finalTrackHeight - 8)));
     ImGui::PopStyleVar();
 
     if (ImGui::IsItemClicked(0))
     {
-        StartDragRegion(track, region);
+        StartRegionResize(track, region);
     }
 
     if (ImGui::IsItemActive())
     {
-        auto newLength = GetNewRegionLength(region);
-
-        if (newLength > 0 && newLength != region.second.Length())
-        {
-            UpdateRegionLength(track, region.first, newLength);
-            _mouseDragStart = ImGui::GetMousePos();
-        }
+        auto newLength = StepsToPixels(GetNewRegionLength(region));
+        RenderRegionRubberband(
+            regionOrigin,
+            trackScreenOrigin,
+            newLength,
+            finalTrackHeight);
     }
 
+    if (ImGui::IsItemDeactivated())
+    {
+        ResizeRegion(track, region);
+    }
+
+    // Rendering the region itself
     ImGui::SetCursorPos(regionOrigin);
 
     if (isActiveRegion)
@@ -272,7 +319,7 @@ void TracksEditor::RenderRegion(
     }
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, regionRounding);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
-    ImGui::Button("##test", ImVec2(regionWidth, finalTrackHeight - 8));
+    ImGui::Button("##test", ImVec2(regionWidth, float(finalTrackHeight - 8)));
     if (isActiveRegion) ImGui::PopStyleColor(2);
 
     if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0) && _tracks->GetActiveTrack() == track)
@@ -301,21 +348,11 @@ void TracksEditor::RenderRegion(
             }
             else
             {
-                auto overlayOrigin = ImVec2(trackScreenOrigin.x + StepsToPixels(newX), trackScreenOrigin.y + 4);
-
-                auto min = ImVec2(
-                    std::max(overlayOrigin.x, trackScreenOrigin.x + ImGui::GetScrollX()),
-                    std::max(overlayOrigin.y, trackScreenOrigin.y + ImGui::GetScrollY()));
-
-                auto max = ImVec2(
-                    overlayOrigin.x + regionWidth,
-                    overlayOrigin.y + finalTrackHeight - 8);
-
-                ImGui::GetOverlayDrawList()->AddRectFilled(
-                    min,
-                    max,
-                    ImColor(255, 255, 255, 50),
-                    regionRounding);
+                RenderRegionRubberband(
+                    ImVec2(StepsToPixels(newX), 0),
+                    trackScreenOrigin,
+                    regionWidth,
+                    finalTrackHeight);
             }
         }
     }
@@ -412,7 +449,7 @@ void TracksEditor::RenderNotes(
 void TracksEditor::RenderTrack(
     ITrack *track,
     int t,
-    int trackWidth)
+    float trackWidth)
 {
     auto finalTrackHeight = _trackHeight;
 
@@ -459,18 +496,7 @@ void TracksEditor::RenderTrack(
 
     if (_doMove && _mouseDragTrack == track)
     {
-        auto r = track->GetRegion(_mouseDragFrom);
-        if (!ImGui::GetIO().KeyShift)
-        {
-            _state->_historyManager.AddEntry("Move region", track, track->Regions());
-
-            track->RemoveRegion(_mouseDragFrom);
-        }
-        else
-        {
-            _state->_historyManager.AddEntry("Duplicate region", track, track->Regions());
-        }
-        track->AddRegion(moveTo, r);
+        MoveRegion(track);
 
         _tracks->SetActiveRegion(track, moveTo);
         _mouseDragFrom = moveTo = -1;
@@ -478,23 +504,47 @@ void TracksEditor::RenderTrack(
     }
 
     ImGui::SetCursorPos(trackOrigin);
-    auto btnSize = ImVec2(std::max(trackWidth, int(ImGui::GetContentRegionAvailWidth())), finalTrackHeight);
+    auto btnSize = ImVec2(std::max(trackWidth, ImGui::GetContentRegionAvailWidth()), finalTrackHeight);
     if (ImGui::InvisibleButton(track->GetName().c_str(), btnSize))
     {
-        _state->_historyManager.AddEntry("Create region", track, track->Regions());
-
-        _tracks->SetActiveTrack(track);
-
-        auto regionStart = PixelsToSteps(ImGui::GetMousePos().x - pp.x);
-        regionStart = track->StartNewRegion(regionStart);
-        if (regionStart >= 0)
-        {
-            _tracks->SetActiveRegion(track, regionStart);
-        }
+        CreateRegion(track, pp);
     }
 
     ImGui::PopID();
     ImGui::PopStyleColor(4);
+}
+
+void TracksEditor::CreateRegion(
+    ITrack *track,
+    const ImVec2 &pp)
+{
+    _state->_historyManager.AddEntry("Create region", track, track->Regions());
+
+    _tracks->SetActiveTrack(track);
+
+    auto regionStart = PixelsToSteps(ImGui::GetMousePos().x - pp.x);
+    regionStart = track->StartNewRegion(regionStart);
+    if (regionStart >= 0)
+    {
+        _tracks->SetActiveRegion(track, regionStart);
+    }
+}
+
+void TracksEditor::MoveRegion(
+    ITrack *track)
+{
+    auto r = track->GetRegion(_mouseDragFrom);
+    if (!ImGui::GetIO().KeyShift)
+    {
+        _state->_historyManager.AddEntry("Move region", track, track->Regions());
+
+        track->RemoveRegion(_mouseDragFrom);
+    }
+    else
+    {
+        _state->_historyManager.AddEntry("Duplicate region", track, track->Regions());
+    }
+    track->AddRegion(moveTo, r);
 }
 
 void TracksEditor::RenderTrackHeader(
