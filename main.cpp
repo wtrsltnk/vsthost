@@ -142,9 +142,9 @@ bool refillCallback(
         }
     }
 
-    for (auto track : tracks->GetTracks())
+    for (auto &track : tracks->GetTracks())
     {
-        auto instrument = track->GetInstrument();
+        auto instrument = track.GetInstrument();
         if (instrument == nullptr)
         {
             continue;
@@ -178,9 +178,9 @@ bool refillCallback(
             {
                 for (size_t iChannel = 0; iChannel < nDstChannels; ++iChannel)
                 {
-                    if (track->IsMuted()) continue;
+                    if (track.IsMuted()) continue;
                     if (data == nullptr) continue;
-                    if (_tracks.GetSoloTrack() != track && _tracks.GetSoloTrack() != nullptr) continue;
+                    if (_tracks.GetSoloTrack() != track.Id() && _tracks.GetSoloTrack() != Track::Null) continue;
 
                     const size_t sChannel = iChannel % nSrcChannels;
                     const size_t vstOutputPage = (iFrame / vstSamplesPerBlock) * sChannel + sChannel;
@@ -219,12 +219,12 @@ void HandleIncomingMidiEvent(
     {
         for (auto &track : _tracks.GetTracks())
         {
-            if (!track->IsReadyForRecoding())
+            if (!track.IsReadyForRecoding())
             {
                 continue;
             }
 
-            track->RecordMidiEvent(
+            track.RecordMidiEvent(
                 state._cursor,
                 noteNumber,
                 onOff,
@@ -425,7 +425,7 @@ void ToolbarWindow(
         {
             for (auto track : _tracks.GetTracks())
             {
-                track->StartRecording();
+                track.StartRecording();
             }
 
             state.StartRecording();
@@ -841,11 +841,14 @@ int main(
 
     SetupFonts();
 
-    auto bbcSynthTrack = _tracks.AddVstTrack("BBC Symphony Orchestra (64 Bit).dll");
-    bbcSynthTrack->AddRegion(0, Region{});
-    bbcSynthTrack->SetReadyForRecording(true);
-    _tracks.SetActiveTrack(bbcSynthTrack);
-
+    auto bbcSynthTrackId = _tracks.AddVstTrack("BBC Symphony Orchestra (64 Bit).dll");
+    if (bbcSynthTrackId != Track::Null)
+    {
+        auto &bbcSynthTrack = _tracks.GetTrack(bbcSynthTrackId);
+        bbcSynthTrack.AddRegion(0, Region{});
+        bbcSynthTrack.SetReadyForRecording(true);
+        _tracks.SetActiveTrack(bbcSynthTrackId);
+    }
     _tracksEditor.SetState(&state);
     _tracksEditor.SetTracksManager(&_tracks);
 

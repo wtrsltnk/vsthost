@@ -249,18 +249,20 @@ void NotesEditor::Render(
         }
         ImGui::EndChild();
 
-        auto track = std::get<ITrack *>(_tracks->GetActiveRegion());
+        auto trackId = std::get<uint32_t>(_tracks->GetActiveRegion());
         auto regionStart = std::get<std::chrono::milliseconds::rep>(_tracks->GetActiveRegion());
 
-        if (track == nullptr || regionStart < 0)
+        if (trackId == Track::Null || regionStart < 0)
         {
             ImGui::Text("No region selected");
         }
         else
         {
+            auto &track = _tracks->GetTrack(trackId);
+
             float _tracksScrollx = 0;
 
-            auto &region = track->GetRegion(regionStart);
+            auto &region = track.GetRegion(regionStart);
             auto notes = MidiNote::ConvertMidiEventsToMidiNotes(region.Events());
 
             auto originContainerScreenPos = ImGui::GetCursorScreenPos();

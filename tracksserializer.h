@@ -1,6 +1,7 @@
 #ifndef TRACKSSERIALIZER_H
 #define TRACKSSERIALIZER_H
 
+#include "track.h"
 #include "tracksmanager.h"
 
 class TracksSerializer

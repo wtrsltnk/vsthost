@@ -21,14 +21,14 @@ void NotePreviewService::SetTracksManager(
 
 VstPlugin *NotePreviewService::GetActivePlugin()
 {
-    auto track = _tracks->GetActiveTrack();
-    if (track == nullptr)
+    auto trackId = _tracks->GetActiveTrackId();
+    if (trackId == Track::Null)
     {
         spdlog::debug("GetActiveTrack is null");
         return nullptr;
     }
 
-    auto instrument = track->GetInstrument();
+    auto instrument = _tracks->GetInstrument(trackId);
     if (instrument == nullptr)
     {
         spdlog::debug("GetInstrument is null");

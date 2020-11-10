@@ -2,14 +2,15 @@
 #define HISTORYMANAGER_H
 
 #include "itracksmanager.h"
+#include "track.h"
 
 class HistoryEntry
 {
 public:
     const char *_title;
-    ITrack *_track;
-    ITrack::RegionCollection _regions;
-    ITrack::RegionCollection _regionsUnDone;
+    Track *_track;
+    Track::RegionCollection _regions;
+    Track::RegionCollection _regionsUnDone;
 
     HistoryEntry *_prevEntry = nullptr;
     HistoryEntry *_nextEntry = nullptr;
@@ -32,13 +33,13 @@ public:
 
     void SetInitialState(
         const char *title,
-        ITrack *track,
-        const ITrack::RegionCollection &regions);
+        Track *track,
+        const Track::RegionCollection &regions);
 
     void AddEntry(
         const char *title,
-        ITrack *track,
-        const ITrack::RegionCollection &regions);
+        Track *track,
+        const Track::RegionCollection &regions);
 
     bool HasUndo();
 

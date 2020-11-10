@@ -1,6 +1,7 @@
 #include "tracksmanager.h"
 
 #include <algorithm>
+#include <exception>
 #include <imgui.h>
 #include <iostream>
 #include <sstream>
@@ -12,65 +13,106 @@ TracksManager::TracksManager()
 {
 }
 
-void TracksManager::SetActiveTrack(
-    ITrack *track)
+Track &TracksManager::GetTrack(
+    uint32_t trackId)
 {
-    if (track != nullptr && std::find(tracks.begin(), tracks.end(), track) == tracks.end())
+    auto found = std::find_if(
+        _tracks.begin(),
+        _tracks.end(),
+        [&](const Track &x) {
+            return x.Id() == trackId;
+        });
+
+    if (found == _tracks.end())
+    {
+        throw std::out_of_range("trackId does not exist");
+    }
+
+    return *found;
+}
+
+void TracksManager::SetActiveTrack(
+    uint32_t trackId)
+{
+    auto found = std::find_if(
+        _tracks.begin(),
+        _tracks.end(),
+        [&](const Track &x) {
+            return x.Id() == trackId;
+        });
+
+    if (found == _tracks.end())
     {
         return;
     }
 
-    activeTrack = track;
+    activeTrack = trackId;
 }
 
 void TracksManager::SetSoloTrack(
-    ITrack *track)
+    uint32_t trackId)
 {
-    if (track != nullptr && std::find(tracks.begin(), tracks.end(), track) == tracks.end())
+    auto found = std::find_if(
+        _tracks.begin(),
+        _tracks.end(),
+        [&](const Track &x) {
+            return x.Id() == trackId;
+        });
+
+    if (found == _tracks.end())
     {
         return;
     }
 
-    soloTrack = track;
+    soloTrack = trackId;
 }
 
 void TracksManager::SetActiveRegion(
-    ITrack *track,
+    uint32_t trackId,
     std::chrono::milliseconds::rep start)
 {
-    if (track != nullptr && std::find(tracks.begin(), tracks.end(), track) == tracks.end())
+    auto found = std::find_if(
+        _tracks.begin(),
+        _tracks.end(),
+        [&](const Track &x) {
+            return x.Id() == trackId;
+        });
+
+    if (found == _tracks.end())
     {
         return;
     }
 
-    activeRegion = std::tuple<ITrack *, long>(track, start);
+    activeRegion = std::tuple<uint32_t, std::chrono::milliseconds::rep>(trackId, start);
 }
 
-ITrack *TracksManager::AddTrack(
+uint32_t TracksManager::AddTrack(
     const std::string &name,
-    Instrument *instrument)
+    std::shared_ptr<Instrument> instrument)
 {
-    auto newTrack = new Track();
-    newTrack->SetInstrument(instrument);
-    newTrack->SetName(name);
+    _instruments.push_back(instrument);
+
+    Track newTrack;
+    newTrack.SetInstrument(instrument);
+    newTrack.SetName(name);
 
     auto c = ImColor::HSV(trackColorIndex++ * 0.05f, 0.6f, 0.6f);
-    newTrack->SetColor(
+    newTrack.SetColor(
         c.Value.x,
         c.Value.y,
         c.Value.z,
         c.Value.w);
 
-    tracks.push_back(newTrack);
+    _tracks.push_back(newTrack);
 
-    return newTrack;
+    return newTrack.Id();
 }
 
-ITrack *TracksManager::AddVstTrack(
+uint32_t TracksManager::AddVstTrack(
     const char *plugin)
 {
     std::stringstream instrumentName;
-    instrumentName << "Instrument " << (tracks.size() + 1);
+    instrumentName << "Instrument " << (_tracks.size() + 1);
 
     auto newi = new Instrument();
     newi->SetName(instrumentName.str());
@@ -88,67 +130,88 @@ ITrack *TracksManager::AddVstTrack(
         }
     }
 
-    instruments.push_back(newi);
+    _instruments.push_back(std::shared_ptr<Instrument>(newi));
 
     std::stringstream trackName;
-    trackName << "Track " << (tracks.size() + 1);
+    trackName << "Track " << (_tracks.size() + 1);
 
-    return AddTrack(trackName.str(), newi);
+    return AddTrack(trackName.str(), _instruments.back());
 }
 
 void TracksManager::RemoveTrack(
-    ITrack *track)
+    uint32_t trackId)
 {
-    if (track == nullptr)
+    if (trackId == Track::Null)
     {
         return;
     }
 
-    if (track == activeTrack)
+    if (trackId == activeTrack)
     {
-        activeTrack = nullptr;
+        activeTrack = Track::Null;
     }
 
-    for (auto t = tracks.begin(); t != tracks.end(); ++t)
+    auto found = std::find_if(
+        _tracks.begin(),
+        _tracks.end(),
+        [&](const Track &x) {
+            return x.Id() == trackId;
+        });
+
+    if (found != _tracks.end())
     {
-        if (*t == track)
-        {
-            tracks.erase(t);
-            delete track;
-            break;
-        }
+        _tracks.erase(found);
     }
+}
+
+std::shared_ptr<Instrument> TracksManager::GetInstrument(
+    uint32_t trackId)
+{
+    auto found = std::find_if(
+        _tracks.begin(),
+        _tracks.end(),
+        [&](const Track &x) {
+            return x.Id() == trackId;
+        });
+
+    if (found == _tracks.end())
+    {
+        return nullptr;
+    }
+
+    return (*found).GetInstrument();
 }
 
 void TracksManager::RemoveActiveRegion()
 {
-    auto track = std::get<ITrack *>(activeRegion);
+    auto trackId = std::get<uint32_t>(activeRegion);
 
-    if (track == nullptr)
+    if (trackId == Track::Null)
     {
         return;
     }
 
+    auto &track = GetTrack(trackId);
+
     auto regionStart = std::get<std::chrono::milliseconds::rep>(activeRegion);
 
-    track->RemoveRegion(regionStart);
+    track.RemoveRegion(regionStart);
 
-    activeRegion = {nullptr, -1};
+    activeRegion = {Track::Null, -1};
 }
 
 void TracksManager::CleanupInstruments()
 {
-    while (!instruments.empty())
+    while (!_instruments.empty())
     {
-        auto item = instruments.back();
+        auto item = _instruments.back();
         if (item->Plugin() != nullptr)
         {
             auto tmp = item->Plugin();
             item->SetPlugin(nullptr);
             delete tmp;
         }
-        instruments.pop_back();
-        delete item;
+        _instruments.pop_back();
     }
 }
 
@@ -156,18 +219,18 @@ void TracksManager::SendMidiNotesInSong(
     std::chrono::milliseconds::rep start,
     std::chrono::milliseconds::rep end)
 {
-    for (auto track : GetTracks())
+    for (auto &track : GetTracks())
     {
-        if (track->GetInstrument() == nullptr)
+        if (track.GetInstrument() == nullptr)
         {
             continue;
         }
-        if (track->GetInstrument()->Plugin() == nullptr)
+        if (track.GetInstrument()->Plugin() == nullptr)
         {
             continue;
         }
 
-        for (auto region : track->Regions())
+        for (auto region : track.Regions())
         {
             if (region.first > end) continue;
             if (region.first + region.second.Length() < start) continue;
@@ -178,7 +241,7 @@ void TracksManager::SendMidiNotesInSong(
                 if ((event.first + region.first) < start) continue;
                 for (auto m : event.second)
                 {
-                    track->GetInstrument()->Plugin()->sendMidiNote(
+                    track.GetInstrument()->Plugin()->sendMidiNote(
                         m.channel,
                         m.num,
                         m.value != 0,

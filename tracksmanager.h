@@ -1,6 +1,7 @@
 #ifndef TRACKSMANAGER_H
 #define TRACKSMANAGER_H
 
+#include "itracksmanager.h"
 #include "track.h"
 
 #include <vector>
@@ -11,28 +12,34 @@ class TracksManager :
 public:
     TracksManager();
 
-    virtual std::vector<ITrack *> GetTracks() { return tracks; }
-    virtual std::vector<Instrument *> GetInstruments() { return instruments; }
+    virtual std::vector<Track> &GetTracks() { return _tracks; }
+    virtual std::vector<std::shared_ptr<Instrument>> &GetInstruments() { return _instruments; }
 
-    virtual ITrack *GetActiveTrack() { return activeTrack; }
+    virtual Track &GetTrack(
+        uint32_t trackId);
+
+    virtual uint32_t GetActiveTrackId() { return activeTrack; }
     virtual void SetActiveTrack(
-        ITrack *track);
+        uint32_t trackId);
 
-    virtual ITrack *GetSoloTrack() { return soloTrack; }
+    virtual uint32_t GetSoloTrack() { return soloTrack; }
     virtual void SetSoloTrack(
-        ITrack *track);
+        uint32_t trackId);
 
-    virtual std::tuple<ITrack *, std::chrono::milliseconds::rep> &GetActiveRegion() { return activeRegion; }
+    virtual std::tuple<uint32_t, std::chrono::milliseconds::rep> &GetActiveRegion() { return activeRegion; }
     virtual void SetActiveRegion(
-        ITrack *track,
+        uint32_t trackId,
         std::chrono::milliseconds::rep start);
 
-    virtual ITrack *AddTrack(
+    virtual uint32_t AddTrack(
         const std::string &name,
-        Instrument *instrument = nullptr);
+        std::shared_ptr<Instrument> instrument);
 
     virtual void RemoveTrack(
-        ITrack *track);
+        uint32_t trackId);
+
+    virtual std::shared_ptr<Instrument> GetInstrument(
+        uint32_t trackId);
 
     virtual void RemoveActiveRegion();
 
@@ -43,15 +50,15 @@ public:
         std::chrono::milliseconds::rep end);
 
 public:
-    ITrack *AddVstTrack(
+    uint32_t AddVstTrack(
         const char *plugin = nullptr);
 
 private:
-    std::vector<ITrack *> tracks;
-    std::vector<Instrument *> instruments;
-    ITrack *activeTrack = nullptr;
-    ITrack *soloTrack = nullptr;
-    std::tuple<ITrack *, std::chrono::milliseconds::rep> activeRegion{nullptr, -1};
+    std::vector<Track> _tracks;
+    std::vector<std::shared_ptr<Instrument>> _instruments;
+    uint32_t activeTrack = 0;
+    uint32_t soloTrack = 0;
+    std::tuple<uint32_t, std::chrono::milliseconds::rep> activeRegion{Track::Null, -1};
 };
 
 #endif // TRACKSMANAGER_H

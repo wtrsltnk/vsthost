@@ -68,14 +68,14 @@ void ArpeggiatorPreviewService::SendMidiNotesInTimeRange(
         return;
     }
 
-    auto track = _tracks->GetActiveTrack();
-    if (track == nullptr)
+    auto track = _tracks->GetActiveTrackId();
+    if (track == Track::Null)
     {
         std::cout << "GetActiveTrack is null\n";
         return;
     }
 
-    auto instrument = track->GetInstrument();
+    auto instrument = _tracks->GetInstrument(track);
     if (instrument == nullptr)
     {
         std::cout << "GetInstrument is null\n";

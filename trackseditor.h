@@ -22,7 +22,7 @@ class TracksEditor :
     ImColor _trackactivebgcol = ImColor(55, 88, 155, 55);
 
     ImVec2 _mouseDragStart;
-    ITrack *_mouseDragTrack = nullptr;
+    Track *_mouseDragTrack = nullptr;
 
     long _mouseDragFrom = -1, moveTo = -1;
     bool _doMove = false;
@@ -33,19 +33,19 @@ class TracksEditor :
         long newX);
 
     void StartRegionResize(
-        ITrack *track,
+        Track &track,
         std::pair<long, Region> region);
 
     void ResizeRegion(
-        ITrack *track,
+        Track &track,
         std::pair<long, Region> region);
 
     void CreateRegion(
-        ITrack *track,
+        Track &track,
         const ImVec2 &pp);
 
     void MoveRegion(
-        ITrack *track);
+        Track &track);
 
     long GetNewRegionStart(
         std::pair<long, Region> region);
@@ -56,21 +56,21 @@ class TracksEditor :
     std::chrono::milliseconds::rep MaxTracksWidth();
 
     void UpdateRegionLength(
-        ITrack *track,
+        Track &track,
         long regionAt,
         long length);
 
     void RenderTrackHeader(
-        ITrack *track,
+        Track &track,
         int t);
 
     void RenderTrack(
-        ITrack *track,
+        Track &track,
         int t,
         float trackWidth);
 
     void RenderRegion(
-        ITrack *track,
+        Track &track,
         std::pair<const long, Region> const &region,
         ImVec2 const &trackOrigin,
         ImVec2 const &trackScreenOrigin,

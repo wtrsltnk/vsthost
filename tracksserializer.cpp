@@ -74,7 +74,7 @@ void SerializePlugin(
 
 void SerializeInstrument(
     YAML::Emitter &out,
-    Instrument *instrument)
+    std::shared_ptr<Instrument> instrument)
 {
     if (instrument == nullptr)
     {
@@ -93,7 +93,7 @@ void SerializeInstrument(
 
 void SerializeTrack(
     YAML::Emitter &out,
-    ITrack *track)
+    Track *track)
 {
     out << YAML::BeginMap; // Track
     out << YAML::Key << "Name" << YAML::Value << track->GetName();
@@ -117,12 +117,7 @@ void TracksSerializer::Serialize(
 
     for (auto track : _tracks.GetTracks())
     {
-        if (track == nullptr)
-        {
-            continue;
-        }
-
-        SerializeTrack(out, track);
+        SerializeTrack(out, &track);
     }
 
     out << YAML::EndSeq;
@@ -223,21 +218,24 @@ bool TracksSerializer::Deserialize(
         auto trackIsMuted = trackData["IsMuted"];
         auto trackIsReadyForRecoding = trackData["IsReadyForRecoding"];
 
-        Instrument *instrument = DeserializeInstrument(trackData);
+        auto trackId = _tracks.AddTrack(trackName, std::shared_ptr<Instrument>(DeserializeInstrument(trackData)));
+        if (trackId == Track::Null)
+        {
+            continue;
+        }
 
-        auto track = _tracks.AddTrack(trackName, instrument);
-
+        auto &track = _tracks.GetTrack(trackId);
         if (trackColor)
         {
-            track->SetColor(trackColor.as<glm::vec4>());
+            track.SetColor(trackColor.as<glm::vec4>());
         }
         if (trackIsMuted)
         {
-            trackIsMuted.as<bool>() ? track->Mute() : track->Unmute();
+            trackIsMuted.as<bool>() ? track.Mute() : track.Unmute();
         }
         if (trackIsReadyForRecoding)
         {
-            track->SetReadyForRecording(trackIsReadyForRecoding.as<bool>());
+            track.SetReadyForRecording(trackIsReadyForRecoding.as<bool>());
         }
     }
 

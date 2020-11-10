@@ -32,8 +32,8 @@ void HistoryManager::Cleanup(
 
 void HistoryManager::SetInitialState(
     const char *title,
-    ITrack *track,
-    const ITrack::RegionCollection &regions)
+    Track *track,
+    const Track::RegionCollection &regions)
 {
     _firstEntryInHistoryTrack._title = title;
     _firstEntryInHistoryTrack._track = track;
@@ -42,8 +42,8 @@ void HistoryManager::SetInitialState(
 
 void HistoryManager::AddEntry(
     const char *title,
-    ITrack *track,
-    const ITrack::RegionCollection &regions)
+    Track *track,
+    const Track::RegionCollection &regions)
 {
     if (_currentEntryInHistoryTrack != nullptr)
     {

@@ -1,35 +1,41 @@
 #ifndef ITRACKSMANAGER_H
 #define ITRACKSMANAGER_H
 
-#include "itrack.h"
+#include "track.h"
 
 class ITracksManager
 {
 public:
     virtual ~ITracksManager() = default;
 
-    virtual std::vector<ITrack *> GetTracks() = 0;
-    virtual std::vector<Instrument *> GetInstruments() = 0;
+    virtual std::vector<Track> &GetTracks() = 0;
+    virtual std::vector<std::shared_ptr<Instrument>> &GetInstruments() = 0;
 
-    virtual ITrack *GetActiveTrack() = 0;
+    virtual Track &GetTrack(
+        uint32_t trackId) = 0;
+
+    virtual uint32_t GetActiveTrackId() = 0;
     virtual void SetActiveTrack(
-        ITrack *track) = 0;
+        uint32_t trackId) = 0;
 
-    virtual ITrack *GetSoloTrack() = 0;
+    virtual uint32_t GetSoloTrack() = 0;
     virtual void SetSoloTrack(
-        ITrack *track) = 0;
+        uint32_t trackId) = 0;
 
-    virtual std::tuple<ITrack *, std::chrono::milliseconds::rep> &GetActiveRegion() = 0;
+    virtual std::tuple<uint32_t, std::chrono::milliseconds::rep> &GetActiveRegion() = 0;
     virtual void SetActiveRegion(
-        ITrack *track,
+        uint32_t trackId,
         std::chrono::milliseconds::rep start) = 0;
 
-    virtual ITrack *AddTrack(
+    virtual uint32_t AddTrack(
         const std::string &name,
-        Instrument *instrument = nullptr) = 0;
+        std::shared_ptr<Instrument> instrument) = 0;
 
     virtual void RemoveTrack(
-        ITrack *track) = 0;
+        uint32_t trackId) = 0;
+
+    virtual std::shared_ptr<Instrument> GetInstrument(
+        uint32_t trackId) = 0;
 
     virtual void RemoveActiveRegion() = 0;
 

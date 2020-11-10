@@ -1,16 +1,32 @@
 #include "track.h"
 
+#include <spdlog/spdlog.h>
+
+static uint32_t s_TrackCounter = 1;
+
+Track::Track(
+    uint32_t id)
+    : _id(id)
+{
+    _color[0] = _color[1] = _color[2] = _color[3] = 0;
+}
+
+Track::Track()
+    : Track(s_TrackCounter++)
+{}
+
 void Track::StartRecording()
 {
-    _activeRegion = _regions.end();
+    _activeRegion = -1;
 }
 
 std::chrono::milliseconds::rep Track::StartNewRegion(
     std::chrono::milliseconds::rep start)
 {
-    if (GetActiveRegionAt(_regions, start, 0) != _regions.end())
+    auto tmp = GetActiveRegionAt(_regions, start, 0);
+    if (tmp != -1)
     {
-        return -1;
+        return tmp;
     }
 
     start = start - (start % 4000);
@@ -29,12 +45,12 @@ void Track::RecordMidiEvent(
     bool onOff,
     int velocity)
 {
-    if (_activeRegion == _regions.end())
+    if (_activeRegion == -1)
     {
         _activeRegion = GetActiveRegionAt(_regions, time);
     }
 
-    if (_activeRegion == _regions.end())
+    if (_activeRegion == -1)
     {
         Region region;
         region.SetLength(4000);
@@ -44,7 +60,7 @@ void Track::RecordMidiEvent(
         _activeRegion = GetActiveRegionAt(_regions, time);
     }
 
-    _activeRegion->second.AddEvent(time - _activeRegion->first, noteNumber, onOff, velocity);
+    _regions[_activeRegion].AddEvent(time - _activeRegion, noteNumber, onOff, velocity);
 }
 
 void Track::SetName(
@@ -54,7 +70,7 @@ void Track::SetName(
 }
 
 void Track::SetInstrument(
-    Instrument *instrument)
+    std::shared_ptr<Instrument> instrument)
 {
     this->_instrument = instrument;
 }
@@ -115,13 +131,13 @@ void Track::SetColor(
     _color[3] = color.a;
 }
 
-ITrack::RegionCollection const &Track::Regions() const
+Track::RegionCollection const &Track::Regions() const
 {
     return _regions;
 }
 
 void Track::SetRegions(
-    RegionCollection const & regions)
+    RegionCollection const &regions)
 {
     _regions = regions;
 }
@@ -145,7 +161,7 @@ void Track::RemoveRegion(
     _regions.erase(startAt);
 }
 
-std::map<std::chrono::milliseconds::rep, Region>::iterator Track::GetActiveRegionAt(
+std::chrono::milliseconds::rep Track::GetActiveRegionAt(
     std::map<std::chrono::milliseconds::rep, Region> &regions,
     std::chrono::milliseconds::rep time,
     std::chrono::milliseconds::rep margin)
@@ -154,9 +170,9 @@ std::map<std::chrono::milliseconds::rep, Region>::iterator Track::GetActiveRegio
     {
         if (i->first <= time && (i->first + i->second.Length() + margin) >= time)
         {
-            return i;
+            return i->first;
         }
     }
 
-    return regions.end();
+    return -1;
 }

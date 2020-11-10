@@ -99,26 +99,28 @@ void InspectorWindow::Render(
             ImGui::EndGroup();
         }
 
-        if (_tracks->GetActiveTrack() != nullptr)
+        if (_tracks->GetActiveTrackId() != Track::Null)
         {
-            if (ImGui::CollapsingHeader((std::string("Track: ") + _tracks->GetActiveTrack()->GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+            auto &track = _tracks->GetTrack(_tracks->GetActiveTrackId());
+
+            if (ImGui::CollapsingHeader((std::string("Track: ") + track.GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
             {
-                if (_tracks->GetActiveTrack()->GetInstrument() != nullptr)
+                if (track.GetInstrument() != nullptr)
                 {
-                    auto vstPlugin = _tracks->GetActiveTrack()->GetInstrument()->Plugin();
+                    auto vstPlugin = track.GetInstrument()->Plugin();
 
                     if (vstPlugin == nullptr)
                     {
                         ImGui::ColorEdit4(
                             "MyColor##track",
-                            _tracks->GetActiveTrack()->GetColor(),
+                            track.GetColor(),
                             ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 
                         ImGui::SameLine();
 
                         if (_vstPluginLoader != nullptr && ImGui::Button("Add plugin"))
                         {
-                            _tracks->GetActiveTrack()->GetInstrument()->SetPlugin(_vstPluginLoader->LoadFromFileDialog());
+                            track.GetInstrument()->SetPlugin(_vstPluginLoader->LoadFromFileDialog());
                         }
                     }
                     else
@@ -134,7 +136,7 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
 
                         ImGui::ColorEdit4(
                             "MyColor##track",
-                            _tracks->GetActiveTrack()->GetColor(),
+                            track.GetColor(),
                             ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 
                         ImGui::SameLine();
@@ -146,7 +148,7 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
                                 auto plugin = _vstPluginLoader->LoadFromFileDialog();
                                 if (plugin != nullptr)
                                 {
-                                    _tracks->GetActiveTrack()->GetInstrument()->SetPlugin(plugin);
+                                    track.GetInstrument()->SetPlugin(plugin);
                                 }
                             }
                             ImGui::SameLine();
@@ -176,13 +178,15 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
             }
         }
 
-        auto track = std::get<ITrack *>(_tracks->GetActiveRegion());
-        if (track != nullptr && track == _tracks->GetActiveTrack())
+        auto trackId = std::get<uint32_t>(_tracks->GetActiveRegion());
+        if (trackId != Track::Null && trackId == _tracks->GetActiveTrackId())
         {
+            auto &track = _tracks->GetTrack(trackId);
+
             auto regionStart = std::get<std::chrono::milliseconds::rep>(_tracks->GetActiveRegion());
-            if (track->Regions().find(regionStart) != track->Regions().end())
+            if (track.Regions().find(regionStart) != track.Regions().end())
             {
-                auto &region = track->GetRegion(regionStart);
+                auto &region = track.GetRegion(regionStart);
 
                 if (ImGui::CollapsingHeader((std::string("Region: ") + region.GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
                 {
