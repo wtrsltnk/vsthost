@@ -1,9 +1,25 @@
 #include "historymanager.h"
 
-void HistoryEntry::ApplyState(
+void HistoryEntry::Undo(
     ITracksManager *tracksManager)
 {
     tracksManager->SetTracks(this->_tracks);
+
+    for (auto &track : tracksManager->GetTracks())
+    {
+        track.UploadInstrumentSettings();
+    }
+}
+
+void HistoryEntry::Redo(
+    ITracksManager *tracksManager)
+{
+    tracksManager->SetTracks(this->_tracksUnDone);
+
+    for (auto &track : tracksManager->GetTracks())
+    {
+        track.UploadInstrumentSettings();
+    }
 }
 
 HistoryManager::HistoryManager()
@@ -80,7 +96,7 @@ void HistoryManager::Undo()
     }
 
     _currentEntryInHistoryTrack->_tracksUnDone = _tracks->GetTracks();
-    _currentEntryInHistoryTrack->ApplyState(_tracks);
+    _currentEntryInHistoryTrack->Undo(_tracks);
     _currentEntryInHistoryTrack = _currentEntryInHistoryTrack->_prevEntry;
 }
 
@@ -97,5 +113,5 @@ void HistoryManager::Redo()
     }
 
     _currentEntryInHistoryTrack = _currentEntryInHistoryTrack->_nextEntry;
-    _tracks->SetTracks(_currentEntryInHistoryTrack->_tracksUnDone);
+    _currentEntryInHistoryTrack->Redo(_tracks);
 }

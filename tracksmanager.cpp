@@ -111,6 +111,7 @@ uint32_t TracksManager::AddTrack(
     Track newTrack;
     newTrack.SetInstrument(instrument);
     newTrack.SetName(name);
+    newTrack.DownloadInstrumentSettings();
 
     auto c = ImColor::HSV(trackColorIndex++ * 0.05f, 0.6f, 0.6f);
     newTrack.SetColor(

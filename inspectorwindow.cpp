@@ -120,20 +120,17 @@ void InspectorWindow::Render(
 
                         if (_vstPluginLoader != nullptr && ImGui::Button("Add plugin"))
                         {
-                            track.GetInstrument()->SetPlugin(_vstPluginLoader->LoadFromFileDialog());
+                            auto plugin = _vstPluginLoader->LoadFromFileDialog();
+
+                            if (plugin != nullptr)
+                            {
+                                _state->_historyManager.AddEntry("Add plugin");
+                                track.GetInstrument()->SetPlugin(plugin);
+                            }
                         }
                     }
                     else
                     {
-                        /* Save plugin data
-void *getLen;
-    int length = plugin->dispatcher(plugin,effGetChunk,0,0,&getLen,0.f);
-*/
-
-                        /* Load plugin data
-plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
-*/
-
                         ImGui::ColorEdit4(
                             "MyColor##track",
                             track.GetColor(),
@@ -148,6 +145,7 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
                                 auto plugin = _vstPluginLoader->LoadFromFileDialog();
                                 if (plugin != nullptr)
                                 {
+                                    _state->_historyManager.AddEntry("Change plugin");
                                     track.GetInstrument()->SetPlugin(plugin);
                                 }
                             }
@@ -165,7 +163,9 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
                         {
                             if (ImGui::Button("Close plugin"))
                             {
+                                _state->_historyManager.AddEntry("Tweak instrument");
                                 vstPlugin->closeEditor();
+                                track.DownloadInstrumentSettings();
                             }
                         }
 
@@ -192,11 +192,11 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
                 {
                     if ((region.Length() % 4000) / 1000 > 0)
                     {
-                        ImGui::Text("Length: %lu bars and %lu steps", (region.Length() / 4000), (region.Length() % 4000) / 1000);
+                        ImGui::Text("Length: %lld bars and %lld steps", (region.Length() / 4000), (region.Length() % 4000) / 1000);
                     }
                     else
                     {
-                        ImGui::Text("Length: %lu bars", (region.Length() / 4000));
+                        ImGui::Text("Length: %lld bars", (region.Length() / 4000));
                     }
 
                     if (_editRegionName)
@@ -204,6 +204,7 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
                         ImGui::SetKeyboardFocusHere();
                         if (ImGui::InputText("##editName", _editRegionNameBuffer, 128, ImGuiInputTextFlags_EnterReturnsTrue))
                         {
+                            _state->_historyManager.AddEntry("Change region name");
                             region.SetName(_editRegionNameBuffer);
                             _editRegionName = false;
                         }

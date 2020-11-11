@@ -14,7 +14,10 @@ public:
     HistoryEntry *_prevEntry = nullptr;
     HistoryEntry *_nextEntry = nullptr;
 
-    void ApplyState(
+    void Undo(
+        ITracksManager *tracksManager);
+
+    void Redo(
         ITracksManager *tracksManager);
 };
 

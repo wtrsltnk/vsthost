@@ -1,5 +1,6 @@
 #include "track.h"
 
+#include "base64.h"
 #include <spdlog/spdlog.h>
 
 static uint32_t s_TrackCounter = 1;
@@ -73,6 +74,47 @@ void Track::SetInstrument(
     std::shared_ptr<Instrument> instrument)
 {
     this->_instrument = instrument;
+}
+
+void Track::DownloadInstrumentSettings()
+{
+    if (_instrument.get() == nullptr)
+    {
+        return;
+    }
+
+    if (_instrument->Plugin() == nullptr)
+    {
+        return;
+    }
+
+    /* Save plugin data*/
+    void *getLen;
+    int length = _instrument->Plugin()->dispatcher(effGetChunk, 0, 0, &getLen, 0.0f);
+    auto data = reinterpret_cast<BYTE *>(getLen);
+    _instrumentDataBase64 = base64_encode(&data[0], length);
+
+    spdlog::debug("downloading instrumentDataBase64: {0}", _instrumentDataBase64);
+}
+
+void Track::UploadInstrumentSettings()
+{
+    if (_instrument.get() == nullptr)
+    {
+        return;
+    }
+
+    if (_instrument->Plugin() == nullptr)
+    {
+        return;
+    }
+
+    spdlog::debug("uploading instrumentDataBase64: {0}", _instrumentDataBase64);
+
+    auto data = base64_decode(_instrumentDataBase64);
+
+    /* Load plugin data*/
+    _instrument->Plugin()->dispatcher(effSetChunk, 0, (VstInt32)data.size(), data.data(), 0);
 }
 
 void Track::Mute()

@@ -192,7 +192,7 @@ void VstPlugin::openEditor(
         _editorHwnd = CreateWindow(
             wcex.lpszClassName,
             "VST Plugin",
-            WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
+            WS_OVERLAPPED | WS_CAPTION,
             CW_USEDEFAULT, CW_USEDEFAULT,
             CW_USEDEFAULT, CW_USEDEFAULT,
             hWndParent, nullptr, nullptr,

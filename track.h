@@ -27,6 +27,9 @@ public:
     void SetInstrument(
         std::shared_ptr<Instrument> instrument);
 
+    void DownloadInstrumentSettings();
+    void UploadInstrumentSettings();
+
     bool IsMuted() { return _muted; }
     void Mute();
     void Unmute();
@@ -87,6 +90,7 @@ private:
 
     uint32_t _id;
     std::string _name = "track";
+    std::string _instrumentDataBase64;
     std::shared_ptr<Instrument> _instrument;
     bool _muted = false;
     bool _readyForRecord = false;
