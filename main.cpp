@@ -459,6 +459,7 @@ void ToolbarWindow(
 
         if (ImGui::Button(ICON_FK_PLUS))
         {
+            state._historyManager.AddEntry("Add Track");
             _tracks.SetActiveTrack(_tracks.AddVstTrack());
         }
         if (ImGui::IsItemHovered())
@@ -865,6 +866,8 @@ int main(
 
     _notePreviewService.SetState(&state);
     _notePreviewService.SetTracksManager(&_tracks);
+
+    state._historyManager.SetTracksManager(&_tracks);
 
     MainLoop();
 

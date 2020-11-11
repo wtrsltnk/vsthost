@@ -229,7 +229,7 @@ plugin->dispatcher(plugin,effSetChunk,0,(VstInt32)tempLength,&buffer,0);
             while (first != nullptr)
             {
                 char undoTitle[64] = {0};
-                sprintf_s(undoTitle, 64, "Undo %s", first->_title);
+                sprintf_s(undoTitle, 64, "%s", first->_title);
                 ImGui::Selectable(undoTitle, first == _state->_historyManager.CurrentEntryInHistoryTrack());
                 first = first->_nextEntry;
             }

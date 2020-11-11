@@ -9,6 +9,8 @@ public:
     virtual ~ITracksManager() = default;
 
     virtual std::vector<Track> &GetTracks() = 0;
+    virtual void SetTracks(
+        const std::vector<Track> &tracks) = 0;
     virtual std::vector<std::shared_ptr<Instrument>> &GetInstruments() = 0;
 
     virtual Track &GetTrack(

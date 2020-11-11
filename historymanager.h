@@ -8,14 +8,14 @@ class HistoryEntry
 {
 public:
     const char *_title;
-    Track *_track;
-    Track::RegionCollection _regions;
-    Track::RegionCollection _regionsUnDone;
+    std::vector<Track> _tracks;
+    std::vector<Track> _tracksUnDone;
 
     HistoryEntry *_prevEntry = nullptr;
     HistoryEntry *_nextEntry = nullptr;
 
-    void ApplyState();
+    void ApplyState(
+        ITracksManager *tracksManager);
 };
 
 class HistoryManager
@@ -29,17 +29,14 @@ public:
         HistoryEntry *from);
 
     void SetTracksManager(
-        ITracksManager *tracks);
+        ITracksManager *tracksManager);
 
     void SetInitialState(
         const char *title,
-        Track *track,
-        const Track::RegionCollection &regions);
+        const std::vector<Track> &tracks);
 
     void AddEntry(
-        const char *title,
-        Track *track,
-        const Track::RegionCollection &regions);
+        const char *title);
 
     bool HasUndo();
 

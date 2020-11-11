@@ -1,8 +1,9 @@
 #include "historymanager.h"
 
-void HistoryEntry::ApplyState()
+void HistoryEntry::ApplyState(
+    ITracksManager *tracksManager)
 {
-    this->_track->SetRegions(this->_regions);
+    tracksManager->SetTracks(this->_tracks);
 }
 
 HistoryManager::HistoryManager()
@@ -16,6 +17,12 @@ HistoryManager::~HistoryManager()
     Cleanup(_firstEntryInHistoryTrack._nextEntry);
 
     _currentEntryInHistoryTrack = nullptr;
+}
+
+void HistoryManager::SetTracksManager(
+    ITracksManager *tracksManager)
+{
+    _tracks = tracksManager;
 }
 
 void HistoryManager::Cleanup(
@@ -32,18 +39,14 @@ void HistoryManager::Cleanup(
 
 void HistoryManager::SetInitialState(
     const char *title,
-    Track *track,
-    const Track::RegionCollection &regions)
+    const std::vector<Track> &tracks)
 {
     _firstEntryInHistoryTrack._title = title;
-    _firstEntryInHistoryTrack._track = track;
-    _firstEntryInHistoryTrack._regions = regions;
+    _firstEntryInHistoryTrack._tracks = tracks;
 }
 
 void HistoryManager::AddEntry(
-    const char *title,
-    Track *track,
-    const Track::RegionCollection &regions)
+    const char *title)
 {
     if (_currentEntryInHistoryTrack != nullptr)
     {
@@ -53,8 +56,7 @@ void HistoryManager::AddEntry(
     auto entry = new HistoryEntry();
 
     entry->_title = title;
-    entry->_track = track;
-    entry->_regions = regions;
+    entry->_tracks = _tracks->GetTracks();
     entry->_prevEntry = _currentEntryInHistoryTrack;
 
     if (_currentEntryInHistoryTrack != nullptr)
@@ -77,8 +79,8 @@ void HistoryManager::Undo()
         return;
     }
 
-    _currentEntryInHistoryTrack->_regionsUnDone = _currentEntryInHistoryTrack->_track->Regions();
-    _currentEntryInHistoryTrack->ApplyState();
+    _currentEntryInHistoryTrack->_tracksUnDone = _tracks->GetTracks();
+    _currentEntryInHistoryTrack->ApplyState(_tracks);
     _currentEntryInHistoryTrack = _currentEntryInHistoryTrack->_prevEntry;
 }
 
@@ -95,5 +97,5 @@ void HistoryManager::Redo()
     }
 
     _currentEntryInHistoryTrack = _currentEntryInHistoryTrack->_nextEntry;
-    _currentEntryInHistoryTrack->_track->SetRegions(_currentEntryInHistoryTrack->_regionsUnDone);
+    _tracks->SetTracks(_currentEntryInHistoryTrack->_tracksUnDone);
 }

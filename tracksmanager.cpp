@@ -4,81 +4,97 @@
 #include <exception>
 #include <imgui.h>
 #include <iostream>
+#include <spdlog/spdlog.h>
 #include <sstream>
 #include <tuple>
 
 static int trackColorIndex = 0;
 
-TracksManager::TracksManager()
+TracksManager::TracksManager() = default;
+
+void TracksManager::SetTracks(
+    const std::vector<Track> &tracks)
 {
+    _tracks = tracks;
+}
+
+bool DoesTrackIdExist(
+    std::vector<Track> &tracks,
+    uint32_t trackId)
+{
+    return std::any_of(
+        tracks.begin(),
+        tracks.end(),
+        [&](const Track &x) {
+            return x.Id() == trackId;
+        });
 }
 
 Track &TracksManager::GetTrack(
     uint32_t trackId)
 {
-    auto found = std::find_if(
+    if (!DoesTrackIdExist(_tracks, trackId))
+    {
+        spdlog::error("trackId {0} does not exist", trackId);
+
+        throw std::out_of_range("trackId does not exist");
+    }
+
+    return *std::find_if(
         _tracks.begin(),
         _tracks.end(),
         [&](const Track &x) {
             return x.Id() == trackId;
         });
+}
 
-    if (found == _tracks.end())
+uint32_t TracksManager::GetActiveTrackId()
+{
+    if (!DoesTrackIdExist(_tracks, _activeTrack))
     {
-        throw std::out_of_range("trackId does not exist");
+        _activeTrack = Track::Null;
     }
 
-    return *found;
+    return _activeTrack;
 }
 
 void TracksManager::SetActiveTrack(
     uint32_t trackId)
 {
-    auto found = std::find_if(
-        _tracks.begin(),
-        _tracks.end(),
-        [&](const Track &x) {
-            return x.Id() == trackId;
-        });
-
-    if (found == _tracks.end())
+    if (!DoesTrackIdExist(_tracks, trackId))
     {
         return;
     }
 
-    activeTrack = trackId;
+    _activeTrack = trackId;
+}
+
+uint32_t TracksManager::GetSoloTrack()
+{
+    if (!DoesTrackIdExist(_tracks, _soloTrack))
+    {
+        _soloTrack = Track::Null;
+    }
+
+    return _soloTrack;
 }
 
 void TracksManager::SetSoloTrack(
     uint32_t trackId)
 {
-    auto found = std::find_if(
-        _tracks.begin(),
-        _tracks.end(),
-        [&](const Track &x) {
-            return x.Id() == trackId;
-        });
-
-    if (found == _tracks.end())
+    if (!DoesTrackIdExist(_tracks, trackId))
     {
         return;
     }
 
-    soloTrack = trackId;
+    _soloTrack = trackId;
 }
 
 void TracksManager::SetActiveRegion(
     uint32_t trackId,
     std::chrono::milliseconds::rep start)
 {
-    auto found = std::find_if(
-        _tracks.begin(),
-        _tracks.end(),
-        [&](const Track &x) {
-            return x.Id() == trackId;
-        });
-
-    if (found == _tracks.end())
+    if (!DoesTrackIdExist(_tracks, trackId))
     {
         return;
     }
@@ -146,9 +162,9 @@ void TracksManager::RemoveTrack(
         return;
     }
 
-    if (trackId == activeTrack)
+    if (trackId == _activeTrack)
     {
-        activeTrack = Track::Null;
+        _activeTrack = Track::Null;
     }
 
     auto found = std::find_if(

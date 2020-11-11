@@ -24,21 +24,18 @@ VstPlugin *NotePreviewService::GetActivePlugin()
     auto trackId = _tracks->GetActiveTrackId();
     if (trackId == Track::Null)
     {
-        spdlog::debug("GetActiveTrack is null");
         return nullptr;
     }
 
     auto instrument = _tracks->GetInstrument(trackId);
     if (instrument == nullptr)
     {
-        spdlog::debug("GetInstrument is null");
         return nullptr;
     }
 
     auto plugin = instrument->Plugin();
     if (plugin == nullptr)
     {
-        spdlog::debug("Plugin is null");
         return nullptr;
     }
 

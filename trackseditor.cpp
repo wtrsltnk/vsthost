@@ -212,7 +212,7 @@ void TracksEditor::ResizeRegion(
     Track &track,
     std::pair<long, Region> region)
 {
-    _state->_historyManager.AddEntry("Resize region", &track, track.Regions());
+    _state->_historyManager.AddEntry("Resize region");
 
     auto newLength = GetNewRegionLength(region);
 
@@ -518,7 +518,7 @@ void TracksEditor::CreateRegion(
     Track &track,
     const ImVec2 &pp)
 {
-    _state->_historyManager.AddEntry("Create region", &track, track.Regions());
+    _state->_historyManager.AddEntry("Create region");
 
     _tracks->SetActiveTrack(track.Id());
 
@@ -536,13 +536,13 @@ void TracksEditor::MoveRegion(
     auto r = track.GetRegion(_mouseDragFrom);
     if (!ImGui::GetIO().KeyShift)
     {
-        _state->_historyManager.AddEntry("Move region", &track, track.Regions());
+        _state->_historyManager.AddEntry("Move region");
 
         track.RemoveRegion(_mouseDragFrom);
     }
     else
     {
-        _state->_historyManager.AddEntry("Duplicate region", &track, track.Regions());
+        _state->_historyManager.AddEntry("Duplicate region");
     }
     track.AddRegion(moveTo, r);
 }
@@ -591,6 +591,7 @@ void TracksEditor::RenderTrackHeader(
     {
         if (ImGui::Button(ICON_FAD_POWERSWITCH))
         {
+            _state->_historyManager.AddEntry("Remove Track");
             _tracks->RemoveTrack(track.Id());
         }
         else
