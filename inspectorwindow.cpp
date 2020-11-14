@@ -156,6 +156,7 @@ void InspectorWindow::Render(
                         {
                             if (ImGui::Button("Open plugin"))
                             {
+                                track.DownloadInstrumentSettings();
                                 vstPlugin->openEditor(nullptr);
                             }
                         }
