@@ -61,8 +61,6 @@ void TracksEditor::Render(
             }
 
             ImGui::SameLine();
-            ImGui::Separator();
-            ImGui::SameLine();
             ImGui::PushItemWidth(100);
             ImGui::Text("zoom V :");
             ImGui::SameLine();
@@ -75,8 +73,6 @@ void TracksEditor::Render(
 
             ImGui::PopItemWidth();
 
-            ImGui::SameLine();
-            ImGui::Separator();
             ImGui::SameLine();
 
             static int e = _snapRegionsToSteps == 4000 ? 0 : 1;
@@ -533,6 +529,11 @@ void TracksEditor::CreateRegion(
 void TracksEditor::MoveRegion(
     Track &track)
 {
+    if (moveTo == _mouseDragFrom)
+    {
+        return;
+    }
+
     auto r = track.GetRegion(_mouseDragFrom);
     if (!ImGui::GetIO().KeyShift)
     {

@@ -43,8 +43,6 @@ void NotesEditor::Render(
             }
 
             ImGui::SameLine();
-            ImGui::Separator();
-            ImGui::SameLine();
 
             ImGui::PushItemWidth(100);
             ImGui::Text("zoom H :");
@@ -52,8 +50,6 @@ void NotesEditor::Render(
             ImGui::SliderInt("##zoom", &(_pixelsPerStep), minPixelsPerStep, maxPixelsPerStep);
             ImGui::PopItemWidth();
 
-            ImGui::SameLine();
-            ImGui::Separator();
             ImGui::SameLine();
 
             int &selectedArp = (int &)_arpeggiatorPreviewService.CurrentArpeggiator.Mode;

@@ -383,8 +383,6 @@ void ToolbarWindow(
         ImGui::PopStyleVar();
 
         ImGui::SameLine();
-        ImGui::Separator();
-        ImGui::SameLine();
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
@@ -443,8 +441,6 @@ void ToolbarWindow(
         ImGui::PopStyleVar();
 
         ImGui::SameLine();
-        ImGui::Separator();
-        ImGui::SameLine();
 
         ImGui::Text("bpm :");
         ImGui::SameLine();
@@ -453,8 +449,6 @@ void ToolbarWindow(
         ImGui::SliderInt("##bpm", (int *)&(state._bpm), 10, 200);
         ImGui::PopItemWidth();
 
-        ImGui::SameLine();
-        ImGui::Separator();
         ImGui::SameLine();
 
         if (ImGui::Button(ICON_FK_PLUS))

@@ -4,6 +4,13 @@
 
 std::set<uint32_t> PianoWindow::downKeys;
 
+const ImColor blackKeyButton = ImColor(50, 50, 60);
+const ImColor blackKeyText = ImColor(250, 250, 250);
+const ImColor whiteKeyButton = ImColor(155, 175, 200);
+const ImColor whiteKeyText = ImColor(20, 20, 20);
+const ImColor downKeyButton = ImColor(50, 150, 50);
+const ImColor downKeyText = ImColor(250, 250, 250);
+
 PianoWindow::PianoWindow() = default;
 
 char const *NoteToString(
@@ -17,8 +24,8 @@ void NoteButton(
 
     if (markAsDown)
     {
-        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(50, 150, 50));
-        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)ImColor(250, 250, 250));
+        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)downKeyButton);
+        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)downKeyText);
     }
     else
     {
@@ -43,8 +50,8 @@ void NoteButtonWithoutColor(
 
     if (markAsDown)
     {
-        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(50, 150, 50));
-        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)ImColor(250, 250, 250));
+        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)downKeyButton);
+        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)downKeyText);
     }
 
     ImGui::Button(NoteToString(note), size);
@@ -70,8 +77,8 @@ void PianoWindow::Render(
 
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 38));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 2));
-        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(50, 50, 50));
-        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)ImColor(250, 250, 250));
+        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)blackKeyButton);
+        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)blackKeyText);
 
         auto drawPos = ImGui::GetCursorScreenPos();
         auto drawHeight = ImGui::GetContentRegionAvail().y;
@@ -121,8 +128,8 @@ void PianoWindow::Render(
 
         ImGui::PopStyleColor(2);
 
-        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(255, 255, 255));
-        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)ImColor(20, 20, 20));
+        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)whiteKeyButton);
+        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)whiteKeyText);
 
         for (int i = 0; i < _octaves; i++)
         {
