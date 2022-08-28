@@ -863,43 +863,10 @@ int main(
 
     SetupFonts();
 
-    {
-        std::ifstream trackstate("c:\\temp\\tracks.state");
+    TracksSerializer serializer(_tracks);
 
-        while (!trackstate.eof())
-        {
-            std::string modulePath;
-            std::string vstInstrumentData;
-            if (!std::getline(trackstate, modulePath) || !std::getline(trackstate, vstInstrumentData))
-            {
-                break;
-            }
+    serializer.Deserialize("c:\\temp\\tracks.state");
 
-            auto plugin = std::make_unique<VstPlugin>();
-            if (!plugin->init(modulePath.c_str()))
-            {
-                continue;
-            }
-
-            auto instrument = std::make_shared<Instrument>();
-            instrument->SetPlugin(std::move(plugin));
-
-            auto track = _tracks.AddTrack("Instrument from saved session", instrument);
-            _tracks.GetTrack(track)._instrumentDataBase64 = vstInstrumentData;
-            _tracks.GetTrack(track).UploadInstrumentSettings();
-        }
-
-        trackstate.close();
-    }
-
-    auto bbcSynthTrackId = _tracks.AddVstTrack("BBC Symphony Orchestra (64 Bit).dll");
-    if (bbcSynthTrackId != Track::Null)
-    {
-        auto &bbcSynthTrack = _tracks.GetTrack(bbcSynthTrackId);
-        bbcSynthTrack.AddRegion(0, Region{});
-        bbcSynthTrack.SetReadyForRecording(true);
-        _tracks.SetActiveTrack(bbcSynthTrackId);
-    }
     _tracksEditor.SetState(&state);
     _tracksEditor.SetTracksManager(&_tracks);
 
@@ -923,17 +890,7 @@ int main(
 
     MainLoop();
 
-    {
-        std::ofstream trackstate("c:\\temp\\tracks.state");
-
-        for (auto &track : _tracks.GetTracks())
-        {
-            track.DownloadInstrumentSettings();
-            trackstate << track.GetInstrument()->Plugin()->ModulePath() << "\n";
-            trackstate << track._instrumentDataBase64 << "\n";
-        }
-        trackstate.close();
-    }
+    serializer.Serialize("c:\\temp\\tracks.state");
 
     _tracks.CleanupInstruments();
 

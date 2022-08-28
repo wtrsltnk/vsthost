@@ -157,7 +157,7 @@ std::unique_ptr<VstPlugin> DeserializePlugin(
     return plugin;
 }
 
-Instrument *DeserializeInstrument(
+std::shared_ptr<Instrument> DeserializeInstrument(
     const YAML::Node &trackData)
 {
     auto instrumentData = trackData["Instrument"];
@@ -171,7 +171,7 @@ Instrument *DeserializeInstrument(
     auto instrumentName = instrumentData["Name"].as<std::string>();
     auto instrumentMidiChannel = instrumentData["MidiChannel"].as<int>();
 
-    auto instrument = new Instrument();
+    auto instrument = std::make_shared<Instrument>();
     instrument->SetName(instrumentName);
     instrument->SetMidiChannel(instrumentMidiChannel);
 
@@ -216,7 +216,7 @@ bool TracksSerializer::Deserialize(
         auto trackIsMuted = trackData["IsMuted"];
         auto trackIsReadyForRecoding = trackData["IsReadyForRecoding"];
 
-        auto trackId = _tracks.AddTrack(trackName, std::shared_ptr<Instrument>(DeserializeInstrument(trackData)));
+        auto trackId = _tracks.AddTrack(trackName, DeserializeInstrument(trackData));
         if (trackId == Track::Null)
         {
             continue;
@@ -235,6 +235,7 @@ bool TracksSerializer::Deserialize(
         {
             track.SetReadyForRecording(trackIsReadyForRecoding.as<bool>());
         }
+
     }
 
     return true;
