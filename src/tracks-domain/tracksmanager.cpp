@@ -190,21 +190,18 @@ uint32_t TracksManager::AddVstTrack(
 
     if (plugin != nullptr)
     {
-        newi->SetPlugin(new VstPlugin());
+        newi->SetPlugin(std::make_unique<VstPlugin>());
+
         if (!newi->Plugin()->init(plugin))
         {
-            auto tmp = newi->Plugin();
             newi->SetPlugin(nullptr);
-            delete tmp;
         }
     }
-
-    _instruments.push_back(std::shared_ptr<Instrument>(newi));
 
     std::stringstream trackName;
     trackName << "Track " << (_tracks.size() + 1);
 
-    return AddTrack(trackName.str(), _instruments.back());
+    return AddTrack(trackName.str(), std::shared_ptr<Instrument>(newi));
 }
 
 void TracksManager::RemoveTrack(
@@ -275,14 +272,10 @@ void TracksManager::CleanupInstruments()
     {
         auto item = _instruments.back();
 
-        item->Lock();
         if (item->Plugin() != nullptr)
         {
-            auto tmp = item->Plugin();
             item->SetPlugin(nullptr);
-            delete tmp;
         }
-        item->Unlock();
 
         _instruments.pop_back();
     }

@@ -77,7 +77,7 @@ void ArpeggiatorPreviewService::SendMidiNotesInTimeRange(
         return;
     }
 
-    auto plugin = instrument->Plugin();
+    auto &plugin = instrument->Plugin();
     if (plugin == nullptr)
     {
         return;

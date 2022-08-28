@@ -8,7 +8,7 @@ Win32VstPluginService::Win32VstPluginService(
 {
 }
 
-VstPlugin *Win32VstPluginService::LoadFromFileDialog()
+std::unique_ptr<VstPlugin> Win32VstPluginService::LoadFromFileDialog()
 {
     char fn[MAX_PATH + 1] = {'\0'};
     OPENFILENAME ofn = {};
@@ -22,8 +22,10 @@ VstPlugin *Win32VstPluginService::LoadFromFileDialog()
 
     if (GetOpenFileName(&ofn) == TRUE)
     {
-        auto result = new VstPlugin();
+        auto result = std::make_unique<VstPlugin>();
+
         result->init(fn);
+
         return result;
     }
 

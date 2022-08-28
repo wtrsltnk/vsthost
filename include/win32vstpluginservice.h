@@ -11,7 +11,7 @@ public:
     Win32VstPluginService(
         HWND owner);
 
-    virtual class VstPlugin *LoadFromFileDialog();
+    virtual std::unique_ptr<class VstPlugin> LoadFromFileDialog();
 
 private:
     HWND _owner;

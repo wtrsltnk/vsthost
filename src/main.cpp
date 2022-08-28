@@ -152,9 +152,11 @@ bool refillCallback(
 
         instrument->Lock();
 
-        auto vstPlugin = instrument->Plugin();
+        auto &vstPlugin = instrument->Plugin();
         if (vstPlugin == nullptr)
         {
+            instrument->Unlock();
+
             continue;
         }
 
@@ -449,18 +451,6 @@ void ToolbarWindow(
         }
 
         ImGui::PopStyleVar();
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("Add Track"))
-        {
-            state._historyManager.AddEntry("Add Track");
-            _tracks.SetActiveTrack(_tracks.AddVstTrack());
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Add Track");
-        }
 
         ImGui::SameLine();
 

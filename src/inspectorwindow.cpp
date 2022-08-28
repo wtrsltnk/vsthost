@@ -107,7 +107,7 @@ void InspectorWindow::Render(
             {
                 if (track.GetInstrument() != nullptr)
                 {
-                    auto vstPlugin = track.GetInstrument()->Plugin();
+                    auto &vstPlugin = track.GetInstrument()->Plugin();
 
                     if (vstPlugin == nullptr)
                     {
@@ -125,7 +125,7 @@ void InspectorWindow::Render(
                             if (plugin != nullptr)
                             {
                                 _state->_historyManager.AddEntry("Add plugin");
-                                track.GetInstrument()->SetPlugin(plugin);
+                                track.GetInstrument()->SetPlugin(std::move(plugin));
                             }
                         }
                     }
@@ -146,7 +146,7 @@ void InspectorWindow::Render(
                                 if (plugin != nullptr)
                                 {
                                     _state->_historyManager.AddEntry("Change plugin");
-                                    track.GetInstrument()->SetPlugin(plugin);
+                                    track.GetInstrument()->SetPlugin(std::move(plugin));
                                 }
                             }
                             ImGui::SameLine();

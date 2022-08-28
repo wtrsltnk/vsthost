@@ -50,7 +50,7 @@ TracksSerializer::TracksSerializer(
 
 void SerializePlugin(
     YAML::Emitter &out,
-    VstPlugin *plugin)
+    const std::unique_ptr<VstPlugin> &plugin)
 {
     if (plugin == nullptr)
     {
@@ -127,7 +127,7 @@ void TracksSerializer::Serialize(
     fout << out.c_str();
 }
 
-VstPlugin *DeserializePlugin(
+std::unique_ptr<VstPlugin> DeserializePlugin(
     const YAML::Node &instrumentData)
 {
     auto pluginData = instrumentData["Plugin"];
@@ -141,12 +141,10 @@ VstPlugin *DeserializePlugin(
     auto pluginModulePath = pluginData["ModulePath"].as<std::string>();
     auto pluginPluginData = pluginData["PluginData"].as<std::string>();
 
-    VstPlugin *plugin = new VstPlugin();
+    auto plugin = std::make_unique<VstPlugin>();
     if (!plugin->init(pluginModulePath.c_str()))
     {
         spdlog::error("failed to load module");
-
-        delete plugin;
 
         return nullptr;
     }
@@ -180,7 +178,7 @@ Instrument *DeserializeInstrument(
     auto plugin = DeserializePlugin(instrumentData);
     if (plugin != nullptr)
     {
-        instrument->SetPlugin(plugin);
+        instrument->SetPlugin(std::move(plugin));
     }
 
     return instrument;
@@ -225,10 +223,10 @@ bool TracksSerializer::Deserialize(
         }
 
         auto &track = _tracks.GetTrack(trackId);
-//        if (trackColor)
-//        {
-//            track.SetColor(trackColor.as<glm::vec4>());
-//        }
+        //        if (trackColor)
+        //        {
+        //            track.SetColor(trackColor.as<glm::vec4>());
+        //        }
         if (trackIsMuted)
         {
             trackIsMuted.as<bool>() ? track.Mute() : track.Unmute();

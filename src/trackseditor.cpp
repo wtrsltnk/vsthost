@@ -61,6 +61,22 @@ void TracksEditor::Render(
             }
 
             ImGui::SameLine();
+
+            if (ImGui::Button(ICON_FK_PLUS))
+            {
+                _state->_historyManager.AddEntry("Add Track");
+
+                auto instrument = std::make_shared<Instrument>();
+                instrument->SetName("New Instrument");
+                auto track = _tracks->AddTrack("New track", instrument);
+                _tracks->SetActiveTrack(track);
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Add Track");
+            }
+
+            ImGui::SameLine();
             ImGui::PushItemWidth(100);
             ImGui::Text("zoom V :");
             ImGui::SameLine();

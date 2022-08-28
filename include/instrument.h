@@ -9,6 +9,7 @@ class Instrument
 {
 public:
     Instrument();
+    virtual ~Instrument();
 
     std::string Name() const;
 
@@ -20,10 +21,10 @@ public:
     void SetMidiChannel(
         int midiChannel);
 
-    VstPlugin *Plugin() const;
+    const std::unique_ptr<VstPlugin> &Plugin() const;
 
     void SetPlugin(
-        VstPlugin *plugin);
+        std::unique_ptr<VstPlugin> plugin);
 
     void Lock();
 
@@ -32,7 +33,7 @@ public:
 private:
     std::string _name;
     int _midiChannel = 0;
-    VstPlugin *_plugin = nullptr;
+    std::unique_ptr<VstPlugin> _plugin = nullptr;
     std::mutex _mutex;
 };
 

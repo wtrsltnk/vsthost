@@ -2,6 +2,8 @@
 
 Instrument::Instrument() = default;
 
+Instrument::~Instrument() = default;
+
 std::string Instrument::Name() const
 {
     return _name;
@@ -24,13 +26,13 @@ void Instrument::SetMidiChannel(
     _midiChannel = midiChannel;
 }
 
-VstPlugin *Instrument::Plugin() const
+const std::unique_ptr<VstPlugin> &Instrument::Plugin() const
 {
     return _plugin;
 }
 
 void Instrument::SetPlugin(
-    VstPlugin *plugin)
+    std::unique_ptr<VstPlugin> plugin)
 {
     Lock();
 
@@ -38,13 +40,9 @@ void Instrument::SetPlugin(
     {
         _plugin->closeEditor();
         _plugin->cleanup();
-
-        // this wil also call cleanup()
-        // TODO : delete this loose end... delete _plugin;
-        _plugin = nullptr;
     }
 
-    _plugin = plugin;
+    _plugin = std::move(plugin);
 
     Unlock();
 }
