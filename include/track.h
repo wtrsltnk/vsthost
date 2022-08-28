@@ -81,13 +81,13 @@ public:
 
     static const uint32_t Null = 0;
 
+    std::string _instrumentDataBase64;
 private:
     Track(
         uint32_t id);
 
     uint32_t _id;
     std::string _name = "track";
-    std::string _instrumentDataBase64;
     std::shared_ptr<Instrument> _instrument;
     bool _muted = false;
     bool _readyForRecord = false;

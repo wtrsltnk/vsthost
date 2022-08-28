@@ -164,7 +164,7 @@ void InspectorWindow::Render(
                         {
                             if (ImGui::Button("Close plugin"))
                             {
-                                _state->_historyManager.AddEntry("Tweak instrument");
+                                _state->_historyManager.AddEntry("Close plugin");
                                 vstPlugin->closeEditor();
                                 track.DownloadInstrumentSettings();
                             }

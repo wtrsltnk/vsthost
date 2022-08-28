@@ -15,7 +15,6 @@ public:
 
 private:
     HWND _owner;
-    std::vector<VstPlugin *> _loadedPlugins;
 };
 
 #endif // WIN32VSTPLUGINSERVICE_H

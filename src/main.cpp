@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <chrono>
 #include <commdlg.h>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <numeric>
@@ -82,7 +83,6 @@ static TracksEditor _tracksEditor;
 static NotesEditor _notesEditor;
 static InspectorWindow _inspectorWindow;
 static PianoWindow _pianoWindow;
-static Win32VstPluginService *_vstPluginService = nullptr;
 static bool _showInspectorWindow = true;
 static bool _showPianoWindow = true;
 ArpeggiatorPreviewService _arpeggiatorPreviewService;
@@ -238,26 +238,27 @@ void HandleIncomingMidiEvent(
         }
     }
 
-    for (auto &instrument : _tracks.GetInstruments())
+    auto activeTrack = _tracks.GetTrack(_tracks.GetActiveTrackId());
+
+    auto instrument = activeTrack.GetInstrument();
+
+    instrument->Lock();
+
+    if (instrument->Plugin() == nullptr)
     {
-        instrument->Lock();
-
-        if (instrument->Plugin() == nullptr)
-        {
-            instrument->Unlock();
-
-            continue;
-        }
-
-        instrument->Plugin()
-            ->sendMidiNote(
-                midiChannel,
-                noteNumber,
-                onOff,
-                velocity);
-
         instrument->Unlock();
+
+        return;
     }
+
+    instrument->Plugin()
+        ->sendMidiNote(
+            midiChannel,
+            noteNumber,
+            onOff,
+            velocity);
+
+    instrument->Unlock();
 }
 
 void HandleKeyUpDown(
@@ -688,9 +689,17 @@ void HandleKeyboardToMidiEvents()
 
 void MainLoop()
 {
-    Wasapi wasapi([&](float *const data, uint32_t availableFrameCount, const WAVEFORMATEX *const mixFormat) {
-        return refillCallback(&_tracks, data, availableFrameCount, mixFormat);
-    });
+    Wasapi wasapi(
+        [&](
+            float *const data,
+            uint32_t availableFrameCount,
+            const WAVEFORMATEX *const mixFormat) {
+            return refillCallback(
+                &_tracks,
+                data,
+                availableFrameCount,
+                mixFormat);
+        });
 
     _inspectorWindow.SetAudioOut(&wasapi);
 
@@ -830,7 +839,7 @@ int main(
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
-    _vstPluginService = new Win32VstPluginService(window->hwnd);
+    auto vstPluginService = std::make_unique<Win32VstPluginService>(window->hwnd);
 
     // Setup ImGui binding
     ImGui::CreateContext();
@@ -854,6 +863,35 @@ int main(
 
     SetupFonts();
 
+    {
+        std::ifstream trackstate("c:\\temp\\tracks.state");
+
+        while (!trackstate.eof())
+        {
+            std::string modulePath;
+            std::string vstInstrumentData;
+            if (!std::getline(trackstate, modulePath) || !std::getline(trackstate, vstInstrumentData))
+            {
+                break;
+            }
+
+            auto plugin = std::make_unique<VstPlugin>();
+            if (!plugin->init(modulePath.c_str()))
+            {
+                continue;
+            }
+
+            auto instrument = std::make_shared<Instrument>();
+            instrument->SetPlugin(std::move(plugin));
+
+            auto track = _tracks.AddTrack("Instrument from saved session", instrument);
+            _tracks.GetTrack(track)._instrumentDataBase64 = vstInstrumentData;
+            _tracks.GetTrack(track).UploadInstrumentSettings();
+        }
+
+        trackstate.close();
+    }
+
     auto bbcSynthTrackId = _tracks.AddVstTrack("BBC Symphony Orchestra (64 Bit).dll");
     if (bbcSynthTrackId != Track::Null)
     {
@@ -871,7 +909,7 @@ int main(
     _inspectorWindow.SetState(&state);
     _inspectorWindow.SetTracksManager(&_tracks);
     _inspectorWindow.SetMidiIn(midiIn);
-    _inspectorWindow.SetVstPluginLoader(_vstPluginService);
+    _inspectorWindow.SetVstPluginLoader(vstPluginService.get());
 
     _arpeggiatorPreviewService.SetState(&state);
     _arpeggiatorPreviewService.SetTracksManager(&_tracks);
@@ -885,9 +923,19 @@ int main(
 
     MainLoop();
 
-    _tracks.CleanupInstruments();
+    {
+        std::ofstream trackstate("c:\\temp\\tracks.state");
 
-    delete _vstPluginService;
+        for (auto &track : _tracks.GetTracks())
+        {
+            track.DownloadInstrumentSettings();
+            trackstate << track.GetInstrument()->Plugin()->ModulePath() << "\n";
+            trackstate << track._instrumentDataBase64 << "\n";
+        }
+        trackstate.close();
+    }
+
+    _tracks.CleanupInstruments();
 
     // Cleanup
     ImGui_ImplGlfwGL2_Shutdown();
