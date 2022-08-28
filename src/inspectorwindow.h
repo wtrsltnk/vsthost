@@ -1,10 +1,10 @@
 #ifndef INSPECTORWINDOW_H
 #define INSPECTORWINDOW_H
 
-#include "itracksmanager.h"
-#include "ivstpluginservice.h"
 #include "state.h"
 #include "wasapi.h"
+#include <itracksmanager.h>
+#include <ivstpluginservice.h>
 
 #include <RtMidi.h>
 #include <imgui.h>

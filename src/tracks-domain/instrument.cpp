@@ -1,8 +1,6 @@
 #include "instrument.h"
 
-Instrument::Instrument()
-{
-}
+Instrument::Instrument() = default;
 
 std::string Instrument::Name() const
 {
@@ -34,5 +32,29 @@ VstPlugin *Instrument::Plugin() const
 void Instrument::SetPlugin(
     VstPlugin *plugin)
 {
+    Lock();
+
+    if (_plugin != nullptr)
+    {
+        _plugin->closeEditor();
+        _plugin->cleanup();
+
+        // this wil also call cleanup()
+        // TODO : delete this loose end... delete _plugin;
+        _plugin = nullptr;
+    }
+
     _plugin = plugin;
+
+    Unlock();
+}
+
+void Instrument::Lock()
+{
+    _mutex.lock();
+}
+
+void Instrument::Unlock()
+{
+    _mutex.unlock();
 }

@@ -65,7 +65,7 @@ void Track::RecordMidiEvent(
 }
 
 void Track::SetName(
-    std::string const &name)
+    const std::string &name)
 {
     _name = name;
 }
@@ -83,8 +83,11 @@ void Track::DownloadInstrumentSettings()
         return;
     }
 
+    _instrument->Lock();
+
     if (_instrument->Plugin() == nullptr)
     {
+        _instrument->Unlock();
         return;
     }
 
@@ -95,6 +98,8 @@ void Track::DownloadInstrumentSettings()
     _instrumentDataBase64 = base64_encode(&data[0], length);
 
     spdlog::debug("downloading instrumentDataBase64: {0}", _instrumentDataBase64);
+
+    _instrument->Unlock();
 }
 
 void Track::UploadInstrumentSettings()
@@ -104,8 +109,11 @@ void Track::UploadInstrumentSettings()
         return;
     }
 
+    _instrument->Lock();
+
     if (_instrument->Plugin() == nullptr)
     {
+        _instrument->Unlock();
         return;
     }
 
@@ -115,6 +123,8 @@ void Track::UploadInstrumentSettings()
 
     /* Load plugin data*/
     _instrument->Plugin()->dispatcher(effSetChunk, 0, (VstInt32)data.size(), data.data(), 0);
+
+    _instrument->Unlock();
 }
 
 void Track::Mute()
@@ -162,15 +172,6 @@ void Track::SetColor(
     _color[1] = g;
     _color[2] = b;
     _color[3] = a;
-}
-
-void Track::SetColor(
-    const glm::vec4 &color)
-{
-    _color[0] = color.r;
-    _color[1] = color.g;
-    _color[2] = color.b;
-    _color[3] = color.a;
 }
 
 Track::RegionCollection const &Track::Regions() const

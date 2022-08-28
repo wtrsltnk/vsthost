@@ -29,8 +29,3 @@ VstPlugin *Win32VstPluginService::LoadFromFileDialog()
 
     return nullptr;
 }
-
-const std::vector<VstPlugin *> &Win32VstPluginService::LoadedPlugins() const
-{
-    return _loadedPlugins;
-}

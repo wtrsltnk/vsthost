@@ -223,7 +223,7 @@ void InspectorWindow::Render(
             }
         }
 
-        if (ImGui::CollapsingHeader("History", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader("History"))
         {
             auto const *first = _state->_historyManager.FirstEntryInHistoryTrack();
 

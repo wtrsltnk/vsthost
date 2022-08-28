@@ -13,8 +13,6 @@ public:
 
     virtual class VstPlugin *LoadFromFileDialog();
 
-    virtual const std::vector<VstPlugin *> &LoadedPlugins() const;
-
 private:
     HWND _owner;
     std::vector<VstPlugin *> _loadedPlugins;

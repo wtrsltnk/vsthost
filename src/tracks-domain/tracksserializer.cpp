@@ -2,8 +2,6 @@
 
 #include "base64.h"
 #include <fstream>
-#include <glm/glm.hpp>
-#include <glm/gtx/string_cast.hpp>
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
 
@@ -12,43 +10,43 @@ TracksSerializer::TracksSerializer(
     : _tracks(tracks)
 {}
 
-namespace YAML
-{
+//namespace YAML
+//{
 
-    template <>
-    struct convert<glm::vec4>
-    {
-        static Node encode(const glm::vec4 &rhs)
-        {
-            Node node;
-            node.push_back(rhs.x);
-            node.push_back(rhs.y);
-            node.push_back(rhs.z);
-            node.push_back(rhs.w);
-            return node;
-        }
+//    template <>
+//    struct convert<glm::vec4>
+//    {
+//        static Node encode(const glm::vec4 &rhs)
+//        {
+//            Node node;
+//            node.push_back(rhs.x);
+//            node.push_back(rhs.y);
+//            node.push_back(rhs.z);
+//            node.push_back(rhs.w);
+//            return node;
+//        }
 
-        static bool decode(const Node &node, glm::vec4 &rhs)
-        {
-            if (!node.IsSequence() || node.size() != 4)
-                return false;
+//        static bool decode(const Node &node, glm::vec4 &rhs)
+//        {
+//            if (!node.IsSequence() || node.size() != 4)
+//                return false;
 
-            rhs.x = node[0].as<float>();
-            rhs.y = node[1].as<float>();
-            rhs.z = node[2].as<float>();
-            rhs.w = node[3].as<float>();
-            return true;
-        }
-    };
+//            rhs.x = node[0].as<float>();
+//            rhs.y = node[1].as<float>();
+//            rhs.z = node[2].as<float>();
+//            rhs.w = node[3].as<float>();
+//            return true;
+//        }
+//    };
 
-} // namespace YAML
+//} // namespace YAML
 
-YAML::Emitter &operator<<(YAML::Emitter &out, const glm::vec4 &v)
-{
-    out << YAML::Flow;
-    out << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
-    return out;
-}
+//YAML::Emitter &operator<<(YAML::Emitter &out, const glm::vec4 &v)
+//{
+//    out << YAML::Flow;
+//    out << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
+//    return out;
+//}
 
 void SerializePlugin(
     YAML::Emitter &out,
@@ -86,7 +84,9 @@ void SerializeInstrument(
     out << YAML::Key << "Name" << YAML::Value << instrument->Name();
     out << YAML::Key << "MidiChannel" << YAML::Value << instrument->MidiChannel();
 
+    instrument->Lock();
     SerializePlugin(out, instrument->Plugin());
+    instrument->Unlock();
 
     out << YAML::EndMap; // Instrument
 }
@@ -97,7 +97,7 @@ void SerializeTrack(
 {
     out << YAML::BeginMap; // Track
     out << YAML::Key << "Name" << YAML::Value << track->GetName();
-    out << YAML::Key << "Color" << YAML::Value << glm::vec4(track->GetColor()[0], track->GetColor()[1], track->GetColor()[2], track->GetColor()[3]);
+    //out << YAML::Key << "Color" << YAML::Value << glm::vec4(track->GetColor()[0], track->GetColor()[1], track->GetColor()[2], track->GetColor()[3]);
     out << YAML::Key << "IsMuted" << YAML::Value << track->IsMuted();
     out << YAML::Key << "IsReadyForRecoding" << YAML::Value << track->IsReadyForRecoding();
 
@@ -225,10 +225,10 @@ bool TracksSerializer::Deserialize(
         }
 
         auto &track = _tracks.GetTrack(trackId);
-        if (trackColor)
-        {
-            track.SetColor(trackColor.as<glm::vec4>());
-        }
+//        if (trackColor)
+//        {
+//            track.SetColor(trackColor.as<glm::vec4>());
+//        }
         if (trackIsMuted)
         {
             trackIsMuted.as<bool>() ? track.Mute() : track.Unmute();

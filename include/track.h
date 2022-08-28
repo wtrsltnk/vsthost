@@ -4,7 +4,6 @@
 #include "instrument.h"
 #include "region.h"
 
-#include <glm/glm.hpp>
 #include <map>
 #include <string>
 
@@ -48,8 +47,6 @@ public:
         float g,
         float b,
         float a = 1.0f);
-    void SetColor(
-        const glm::vec4 &color);
 
     RegionCollection const &Regions() const;
 

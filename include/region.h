@@ -51,7 +51,7 @@ private:
     MidiEvent::CollectionInTime _events; // the long key of the map is the relaive start of the event from the beginning of the region
     MidiEvent::CollectionInTime _selection;
 
-    uint32_t _minNote = std::numeric_limits<uint32_t>::max();
+    uint32_t _minNote = (std::numeric_limits<uint32_t>::max)();
     uint32_t _maxNote = 0;
 
     void UpdateLength(

@@ -3,9 +3,8 @@
 
 #include "itracksmanager.h"
 #include "state.h"
-#include "vstplugin.h"
-
 #include <chrono>
+#include <memory>
 
 class NotePreviewService
 {
@@ -32,7 +31,7 @@ private:
     uint32_t _activePreviewNote;
     std::chrono::milliseconds::rep _activePreviewNoteTimeLeft;
 
-    VstPlugin *GetActivePlugin();
+    std::shared_ptr<Instrument> GetActiveInstrument();
 };
 
 extern NotePreviewService _notePreviewService;

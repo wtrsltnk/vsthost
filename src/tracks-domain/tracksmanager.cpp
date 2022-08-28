@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <exception>
-#include <imgui.h>
 #include <iostream>
 #include <spdlog/spdlog.h>
 #include <sstream>
@@ -102,6 +101,58 @@ void TracksManager::SetActiveRegion(
     activeRegion = std::tuple<uint32_t, std::chrono::milliseconds::rep>(trackId, start);
 }
 
+void ColorConvertHSVtoRGB(float h, float s, float v, float &out_r, float &out_g, float &out_b)
+{
+    if (s == 0.0f)
+    {
+        // gray
+        out_r = out_g = out_b = v;
+        return;
+    }
+
+    h = fmodf(h, 1.0f) / (60.0f / 360.0f);
+    int i = (int)h;
+    float f = h - (float)i;
+    float p = v * (1.0f - s);
+    float q = v * (1.0f - s * f);
+    float t = v * (1.0f - s * (1.0f - f));
+
+    switch (i)
+    {
+        case 0:
+            out_r = v;
+            out_g = t;
+            out_b = p;
+            break;
+        case 1:
+            out_r = q;
+            out_g = v;
+            out_b = p;
+            break;
+        case 2:
+            out_r = p;
+            out_g = v;
+            out_b = t;
+            break;
+        case 3:
+            out_r = p;
+            out_g = q;
+            out_b = v;
+            break;
+        case 4:
+            out_r = t;
+            out_g = p;
+            out_b = v;
+            break;
+        case 5:
+        default:
+            out_r = v;
+            out_g = p;
+            out_b = q;
+            break;
+    }
+}
+
 uint32_t TracksManager::AddTrack(
     const std::string &name,
     std::shared_ptr<Instrument> instrument)
@@ -113,12 +164,13 @@ uint32_t TracksManager::AddTrack(
     newTrack.SetName(name);
     newTrack.DownloadInstrumentSettings();
 
-    auto c = ImColor::HSV(trackColorIndex++ * 0.05f, 0.6f, 0.6f);
+    float c[3]; // = ImColor::HSV(trackColorIndex++ * 0.05f, 0.6f, 0.6f);
+    ColorConvertHSVtoRGB(trackColorIndex++ * 0.05f, 0.6f, 0.6f, c[0], c[1], c[2]);
     newTrack.SetColor(
-        c.Value.x,
-        c.Value.y,
-        c.Value.z,
-        c.Value.w);
+        c[0],
+        c[1],
+        c[2],
+        1.0f);
 
     _tracks.push_back(newTrack);
 
@@ -222,12 +274,16 @@ void TracksManager::CleanupInstruments()
     while (!_instruments.empty())
     {
         auto item = _instruments.back();
+
+        item->Lock();
         if (item->Plugin() != nullptr)
         {
             auto tmp = item->Plugin();
             item->SetPlugin(nullptr);
             delete tmp;
         }
+        item->Unlock();
+
         _instruments.pop_back();
     }
 }
@@ -242,8 +298,13 @@ void TracksManager::SendMidiNotesInSong(
         {
             continue;
         }
+
+        track.GetInstrument()->Lock();
+
         if (track.GetInstrument()->Plugin() == nullptr)
         {
+            track.GetInstrument()->Unlock();
+
             continue;
         }
 
@@ -266,5 +327,7 @@ void TracksManager::SendMidiNotesInSong(
                 }
             }
         }
+
+        track.GetInstrument()->Unlock();
     }
 }

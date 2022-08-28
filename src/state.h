@@ -56,6 +56,7 @@ public:
     uint32_t _bpm = 48;
     std::chrono::milliseconds::rep _cursor = 0;
     HistoryManager _historyManager;
+    int _octaveShift = 0;
 
 private:
     bool _playing = false;

@@ -1,7 +1,7 @@
 #ifndef ARPEGGIATOR_H
 #define ARPEGGIATOR_H
 
-#include "midievent.h"
+#include <itracksmanager.h>
 
 enum class ArpeggiatorModes
 {

@@ -1,5 +1,25 @@
-#include "vstplugin.h"
-#include "common.h"
+#include <vstplugin.h>
+
+#include <stdexcept>
+
+#define ASSERT_THROW(c, e)           \
+    if (!(c))                        \
+    {                                \
+        throw std::runtime_error(e); \
+    }
+#define CLOSE_HANDLE(x) \
+    if ((x))            \
+    {                   \
+        CloseHandle(x); \
+        x = nullptr;    \
+    }
+#define RELEASE(x)      \
+    if ((x))            \
+    {                   \
+        (x)->Release(); \
+        x = nullptr;    \
+    }
+
 #include <filesystem>
 #include <iostream>
 
@@ -7,7 +27,10 @@ VstPlugin::VstPlugin() = default;
 
 VstPlugin::~VstPlugin()
 {
-    cleanup();
+    if (_vstLibraryHandle != NULL)
+    {
+        cleanup();
+    }
 }
 
 const char *VstPlugin::Title() const
@@ -364,9 +387,9 @@ void VstPlugin::cleanup()
         dispatcher(effEditClose);
         _editorHwnd = nullptr;
     }
-    dispatcher(effStopProcess);
-    dispatcher(effMainsChanged, 0, 0);
-    dispatcher(effClose);
+    //dispatcher(effStopProcess);
+    // dispatcher(effMainsChanged, 0, 0);
+    //dispatcher(effClose);
     if (_vstLibraryHandle)
     {
         FreeLibrary(_vstLibraryHandle);

@@ -15,12 +15,10 @@
 
 #include "imgui.h"
 #include "imgui_impl_win32_gl2.h"
-#include "imgui_internal.h"
 #include <ImGuiFileDialog.h>
 
 #include "IconsFontaudio.h"
 #include "IconsForkAwesome.h"
-#include "RtError.h"
 #include "RtMidi.h"
 #include "arpeggiatorpreviewservice.h"
 #include "imguiutils.h"
@@ -79,7 +77,7 @@ static RtMidiIn *midiIn = nullptr;
 static State state;
 static TracksManager _tracks;
 static GLFWwindow *window = nullptr;
-static ImVec4 clear_color = ImVec4(0.3f, 0.3f, 0.3f, 1.00f);
+static ImVec4 clear_color = ImVec4(0.9f, 0.9f, 0.9f, 1.00f); //ImVec4(0.3f, 0.3f, 0.3f, 1.00f);
 static TracksEditor _tracksEditor;
 static NotesEditor _notesEditor;
 static InspectorWindow _inspectorWindow;
@@ -94,6 +92,7 @@ void KillAllNotes()
 {
     for (auto &instrument : _tracks.GetInstruments())
     {
+        instrument->Lock();
         for (int channel = 0; channel < 16; channel++)
         {
             for (int note = 0; note < 128; note++)
@@ -106,6 +105,7 @@ void KillAllNotes()
                         0);
             }
         }
+        instrument->Unlock();
     }
 }
 
@@ -149,6 +149,8 @@ bool refillCallback(
         {
             continue;
         }
+
+        instrument->Lock();
 
         auto vstPlugin = instrument->Plugin();
         if (vstPlugin == nullptr)
@@ -194,6 +196,8 @@ bool refillCallback(
             tmpsampleCount -= nFrame;
             ofs += nFrame * nDstChannels;
         }
+
+        instrument->Unlock();
     }
 
     return true;
@@ -234,8 +238,12 @@ void HandleIncomingMidiEvent(
 
     for (auto &instrument : _tracks.GetInstruments())
     {
+        instrument->Lock();
+
         if (instrument->Plugin() == nullptr)
         {
+            instrument->Unlock();
+
             continue;
         }
 
@@ -245,6 +253,8 @@ void HandleIncomingMidiEvent(
                 noteNumber,
                 onOff,
                 velocity);
+
+        instrument->Unlock();
     }
 }
 
@@ -442,6 +452,18 @@ void ToolbarWindow(
 
         ImGui::SameLine();
 
+        if (ImGui::Button("Add Track"))
+        {
+            state._historyManager.AddEntry("Add Track");
+            _tracks.SetActiveTrack(_tracks.AddVstTrack());
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Add Track");
+        }
+
+        ImGui::SameLine();
+
         ImGui::Text("bpm :");
         ImGui::SameLine();
 
@@ -451,21 +473,26 @@ void ToolbarWindow(
 
         ImGui::SameLine();
 
-        if (ImGui::Button(ICON_FK_PLUS))
+        ImGui::PushID("ChangeOctaveShift");
+        ImGui::AlignTextToFramePadding();
+        if (ImGui::Button("-"))
         {
-            state._historyManager.AddEntry("Add Track");
-            _tracks.SetActiveTrack(_tracks.AddVstTrack());
+            state._octaveShift -= 1;
         }
-        if (ImGui::IsItemHovered())
+        ImGui::SameLine();
+        ImGui::Text("Octave shift: %d", state._octaveShift);
+        ImGui::SameLine();
+        if (ImGui::Button("+"))
         {
-            ImGui::SetTooltip("Add Track");
+            state._octaveShift += 1;
         }
+        ImGui::PopID();
     }
     ImGui::End();
 }
 
 static int toolbarHeight = 62;
-const int pianoHeight = 180;
+const int pianoHeight = 150;
 const int inspectorWidth = 350;
 
 void StyleColorsCustomDark(ImGuiStyle *dst = nullptr)
@@ -595,16 +622,19 @@ void MainMenu()
         {
             if (ImGui::MenuItem("Dark-mode"))
             {
+                clear_color = ImVec4(0.3f, 0.3f, 0.3f, 1.00f);
                 StyleColorsCustomDark();
             }
 
             if (ImGui::MenuItem("Light-mode"))
             {
+                clear_color = ImVec4(0.9f, 0.9f, 0.9f, 1.00f);
                 ImGui::StyleColorsLight();
             }
 
             if (ImGui::MenuItem("Classic-mode"))
             {
+                clear_color = ImVec4(0.6f, 0.6f, 0.6f, 1.00f);
                 ImGui::StyleColorsClassic();
             }
 
@@ -660,7 +690,7 @@ void HandleKeyboardToMidiEvents()
             if (key.status != on)
             {
                 key.status = on;
-                HandleIncomingMidiEvent(0, key.midiNote, on, 100);
+                HandleIncomingMidiEvent(0, key.midiNote + (state._octaveShift * 12), on, 100);
             }
         }
     }
@@ -692,24 +722,20 @@ void MainLoop()
         glfwGetWindowSize(window, &(state.ui._width), &(state.ui._height));
 
         int currentInspectorWidth = _showInspectorWindow ? inspectorWidth : 0;
-        int currentPianoHeight = _showPianoWindow ? pianoHeight : 0;
+        int currentPianoHeight = _showPianoWindow ? float(pianoHeight + ImGui::GetTextLineHeightWithSpacing()) : 0;
 
         auto &style = ImGui::GetStyle();
         ImVec2 currentPos;
 
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyle().Colors[ImGuiCol_MenuBarBg]);
-        {
-            MainMenu();
+        MainMenu();
 
-            toolbarHeight = (style.FramePadding.y * 2) + style.WindowPadding.y + ImGui::GetFont()->FontSize;
+        toolbarHeight = int((style.FramePadding.y * 2) + style.WindowPadding.y + ImGui::GetFont()->FontSize);
 
-            currentPos = ImGui::GetCursorPos();
+        currentPos = ImGui::GetCursorPos();
 
-            ToolbarWindow(
-                ImVec2(0, currentPos.y - style.WindowPadding.y),
-                ImVec2(state.ui._width, toolbarHeight + style.WindowPadding.y));
-        }
-        ImGui::PopStyleColor();
+        ToolbarWindow(
+            ImVec2(0, currentPos.y - style.WindowPadding.y),
+            ImVec2(state.ui._width, toolbarHeight + style.WindowPadding.y));
 
         if (_showInspectorWindow)
         {
@@ -721,21 +747,21 @@ void MainLoop()
         if (state.ui._activeCenterScreen == 0)
         {
             _tracksEditor.Render(
-                ImVec2(currentInspectorWidth, currentPos.y + toolbarHeight),
-                ImVec2(state.ui._width - currentInspectorWidth, state.ui._height - currentPos.y - toolbarHeight - currentPianoHeight));
+                ImVec2(float(currentInspectorWidth), float(currentPos.y + toolbarHeight)),
+                ImVec2(float(state.ui._width - currentInspectorWidth), float(state.ui._height - currentPos.y - toolbarHeight - currentPianoHeight)));
         }
         else
         {
             _notesEditor.Render(
-                ImVec2(currentInspectorWidth, currentPos.y + toolbarHeight),
-                ImVec2(state.ui._width - currentInspectorWidth, state.ui._height - currentPos.y - toolbarHeight - currentPianoHeight));
+                ImVec2(float(currentInspectorWidth), float(currentPos.y + toolbarHeight)),
+                ImVec2(float(state.ui._width - currentInspectorWidth), float(state.ui._height - currentPos.y - toolbarHeight - currentPianoHeight)));
         }
 
         if (_showPianoWindow)
         {
             _pianoWindow.Render(
-                ImVec2(currentInspectorWidth, state.ui._height - pianoHeight),
-                ImVec2(state.ui._width - currentInspectorWidth, pianoHeight));
+                ImVec2(float(currentInspectorWidth), float(state.ui._height - (pianoHeight + ImGui::GetTextLineHeightWithSpacing()))),
+                ImVec2(float(state.ui._width - currentInspectorWidth), float(pianoHeight + ImGui::GetTextLineHeightWithSpacing())));
         }
 
         ImGui::ShowDemoWindow();
@@ -823,6 +849,8 @@ int main(
 
     // Setup style
     StyleColorsCustomDark();
+    ImGui::StyleColorsLight();
+
     auto &style = ImGui::GetStyle();
 
     style.WindowRounding = 0;
@@ -860,6 +888,8 @@ int main(
 
     _notePreviewService.SetState(&state);
     _notePreviewService.SetTracksManager(&_tracks);
+
+    _pianoWindow.SetState(&state);
 
     state._historyManager.SetTracksManager(&_tracks);
 

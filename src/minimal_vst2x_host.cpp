@@ -39,7 +39,7 @@
 
 #pragma warning(push)
 #pragma warning(disable : 4996)
-#include "VST3 SDK/pluginterfaces/vst2.x/aeffectx.h"
+#include "../VST3 SDK/pluginterfaces/vst2.x/aeffectx.h"
 #pragma warning(pop)
 
 #define ASSERT_THROW(c, e)           \
@@ -262,6 +262,8 @@ private:
     {
         if (editorHwnd)
         {
+            DestroyWindow(editorHwnd);
+
             dispatcher(effEditClose);
             editorHwnd = nullptr;
         }

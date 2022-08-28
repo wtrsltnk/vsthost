@@ -143,7 +143,7 @@ void TracksEditor::Render(
                 ImGuiWindowFlags_NoScrollbar);
             {
                 int trackIndex = 0;
-                for (auto track : _tracks->GetTracks())
+                for (auto &track : _tracks->GetTracks())
                 {
                     RenderTrackHeader(
                         track,

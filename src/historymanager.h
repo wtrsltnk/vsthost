@@ -1,8 +1,8 @@
 #ifndef HISTORYMANAGER_H
 #define HISTORYMANAGER_H
 
-#include "itracksmanager.h"
-#include "track.h"
+#include <itracksmanager.h>
+#include <track.h>
 
 class HistoryEntry
 {

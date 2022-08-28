@@ -1,10 +1,10 @@
 #ifndef ABSTRACTTIMELINEEDITOR_H
 #define ABSTRACTTIMELINEEDITOR_H
 
-#include "itracksmanager.h"
-#include "region.h"
 #include "state.h"
-#include "track.h"
+#include <itracksmanager.h>
+#include <region.h>
+#include <track.h>
 
 #include <imgui.h>
 
