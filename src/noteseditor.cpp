@@ -417,7 +417,7 @@ void NotesEditor::Render(
                 _tracksScrollx);
 
             RenderCursor(
-                ImVec2(originContainerScreenPos.x, originContainerScreenPos.y),
+                ImVec2(originContainerScreenPos.x - StepsToPixels(regionStart), originContainerScreenPos.y),
                 size,
                 _tracksScrollx,
                 0);

@@ -58,6 +58,7 @@ void TracksEditor::Render(
             if (ImGui::Button(ICON_FAD_PEN))
             {
                 _state->ui._activeCenterScreen = 1;
+                _state->_cursor = std::get<std::chrono::milliseconds::rep>(_tracks->GetActiveRegion());
             }
 
             ImGui::SameLine();

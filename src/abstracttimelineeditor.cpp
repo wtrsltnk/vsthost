@@ -122,4 +122,13 @@ void AbstractTimelineEditor::RenderTimeline(
                 ss.str().c_str());
         }
     }
+
+    auto cursor = ImVec2(screenOrigin.x - scrollX + windowWidth, screenOrigin.y);
+    if (cursor.x >= screenOrigin.x)
+    {
+        ImGui::GetWindowDrawList()->AddLine(
+            ImVec2(cursor.x, cursor.y),
+            ImVec2(cursor.x, cursor.y + timelineHeight),
+            accentColor);
+    }
 }
