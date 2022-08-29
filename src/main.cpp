@@ -127,6 +127,8 @@ bool refillCallback(
     state.UpdateByDiff(diff);
     auto end = state._cursor;
 
+    // TODO: find a way to wrap this cursor back to the start of a song or region
+
     tracks->SendMidiNotesInSong(start, end);
     _arpeggiatorPreviewService.SendMidiNotesInTimeRange(diff);
     _notePreviewService.HandleMidiEventsInTimeRange(diff);
@@ -415,6 +417,15 @@ void ToolbarWindow(
         {
             state.StopPlaying();
             state._recording = false;
+
+            if (state.ui._activeCenterScreen == 1)
+            {
+                auto activeRegionStart = std::get<std::chrono::milliseconds::rep>(_tracks.GetActiveRegion());
+                if (activeRegionStart != 0)
+                {
+                    state._cursor = activeRegionStart;
+                }
+            }
         }
 
         ImGui::SameLine();

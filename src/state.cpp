@@ -79,10 +79,8 @@ void State::StopPlaying()
 
         KillAllNotes();
     }
-    else
-    {
-        _cursor = 0;
-    }
+
+    _cursor = 0;
 }
 
 bool State::IsPlaying() const
