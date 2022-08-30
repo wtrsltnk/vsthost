@@ -17,7 +17,7 @@ TracksEditor::TracksEditor() = default;
 
 std::chrono::milliseconds::rep TracksEditor::MaxTracksWidth()
 {
-    for (auto &track : _tracks->GetTracks())
+    for (auto &track : _state->_tracks->GetTracks())
     {
         for (auto &region : track.Regions())
         {
@@ -49,7 +49,7 @@ void TracksEditor::Render(
         ImGui::SetWindowSize(size);
 
         auto trackWidth = StepsToPixels(MaxTracksWidth());
-        auto fullHeight = _tracks->GetTracks().size() * (_trackHeight + ImGui::GetStyle().ItemSpacing.y);
+        auto fullHeight = _state->_tracks->GetTracks().size() * (_trackHeight + ImGui::GetStyle().ItemSpacing.y);
 
         ImGui::BeginChild(
             "TracksTools",
@@ -57,8 +57,7 @@ void TracksEditor::Render(
         {
             if (ImGui::Button(ICON_FAD_PEN))
             {
-                _state->ui._activeCenterScreen = 1;
-                _state->_cursor = std::get<std::chrono::milliseconds::rep>(_tracks->GetActiveRegion());
+                _state->OpenRegion(_state->_tracks->GetActiveRegion());
             }
 
             ImGui::SameLine();
@@ -69,8 +68,8 @@ void TracksEditor::Render(
 
                 auto instrument = std::make_shared<Instrument>();
                 instrument->SetName("New Instrument");
-                auto track = _tracks->AddTrack("New track", instrument);
-                _tracks->SetActiveTrack(track);
+                auto track = _state->_tracks->AddTrack("New track", instrument);
+                _state->_tracks->SetActiveTrack(track);
             }
             if (ImGui::IsItemHovered())
             {
@@ -129,7 +128,7 @@ void TracksEditor::Render(
             ImGui::BeginGroup();
             {
                 int trackIndex = 0;
-                for (auto &track : _tracks->GetTracks())
+                for (auto &track : _state->_tracks->GetTracks())
                 {
                     RenderTrack(
                         track,
@@ -160,7 +159,7 @@ void TracksEditor::Render(
                 ImGuiWindowFlags_NoScrollbar);
             {
                 int trackIndex = 0;
-                for (auto &track : _tracks->GetTracks())
+                for (auto &track : _state->_tracks->GetTracks())
                 {
                     RenderTrackHeader(
                         track,
@@ -187,7 +186,7 @@ void TracksEditor::HandleTracksEditorShortCuts()
 {
     if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete), false))
     {
-        _tracks->RemoveActiveRegion();
+        _state->_tracks->RemoveActiveRegion();
     }
 }
 
@@ -216,9 +215,9 @@ void TracksEditor::StartRegionResize(
     Track &track,
     std::pair<long, Region> region)
 {
-    _tracks->SetActiveTrack(track.Id());
+    _state->_tracks->SetActiveTrack(track.Id());
     _mouseDragStart = ImGui::GetMousePos();
-    _tracks->SetActiveRegion(track.Id(), region.first);
+    _state->_tracks->SetActiveRegion(track.Id(), region.first);
 }
 
 void TracksEditor::ResizeRegion(
@@ -286,7 +285,7 @@ void TracksEditor::RenderRegion(
     ImVec2 const &trackScreenOrigin,
     int finalTrackHeight)
 {
-    auto isActiveRegion = std::get<uint32_t>(_tracks->GetActiveRegion()) == track.Id() && std::get<std::chrono::milliseconds::rep>(_tracks->GetActiveRegion()) == region.first;
+    auto isActiveRegion = std::get<uint32_t>(_state->_tracks->GetActiveRegion()) == track.Id() && std::get<std::chrono::milliseconds::rep>(_state->_tracks->GetActiveRegion()) == region.first;
 
     auto regionOrigin = ImVec2(trackOrigin.x + StepsToPixels(region.first), trackOrigin.y + 4);
     auto regionWidth = StepsToPixels(region.second.Length());
@@ -335,9 +334,9 @@ void TracksEditor::RenderRegion(
     ImGui::Button("##test", ImVec2(regionWidth, float(finalTrackHeight - 8)));
     if (isActiveRegion) ImGui::PopStyleColor(2);
 
-    if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0) && _tracks->GetActiveTrackId() == track.Id())
+    if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0) && _state->_tracks->GetActiveTrackId() == track.Id())
     {
-        _state->ui._activeCenterScreen = 1;
+        _state->OpenRegion(_state->_tracks->GetActiveRegion());
     }
     else if (ImGui::IsItemClicked(0))
     {
@@ -345,8 +344,8 @@ void TracksEditor::RenderRegion(
         _mouseDragTrack = &track;
         _mouseDragFrom = region.first;
 
-        _tracks->SetActiveTrack(track.Id());
-        _tracks->SetActiveRegion(track.Id(), region.first);
+        _state->_tracks->SetActiveTrack(track.Id());
+        _state->_tracks->SetActiveRegion(track.Id(), region.first);
     }
 
     if (_mouseDragTrack == &track)
@@ -475,7 +474,7 @@ void TracksEditor::RenderTrack(
 
     auto pp = ImGui::GetCursorScreenPos();
     auto ppNotScrolled = ImVec2(pp.x + ImGui::GetScrollX(), pp.y);
-    if (track.Id() == _tracks->GetActiveTrackId())
+    if (track.Id() == _state->_tracks->GetActiveTrackId())
     {
         drawList->AddRectFilled(
             ppNotScrolled,
@@ -511,7 +510,7 @@ void TracksEditor::RenderTrack(
     {
         MoveRegion(track);
 
-        _tracks->SetActiveRegion(track.Id(), moveTo);
+        _state->_tracks->SetActiveRegion(track.Id(), moveTo);
         _mouseDragFrom = moveTo = -1;
         _doMove = false;
     }
@@ -533,13 +532,13 @@ void TracksEditor::CreateRegion(
 {
     _state->_historyManager.AddEntry("Create region");
 
-    _tracks->SetActiveTrack(track.Id());
+    _state->_tracks->SetActiveTrack(track.Id());
 
     auto regionStart = PixelsToSteps(ImGui::GetMousePos().x - pp.x);
     regionStart = track.StartNewRegion(regionStart);
     if (regionStart >= 0)
     {
-        _tracks->SetActiveRegion(track.Id(), regionStart);
+        _state->_tracks->SetActiveRegion(track.Id(), regionStart);
     }
 }
 
@@ -573,7 +572,7 @@ void TracksEditor::RenderTrackHeader(
 
     auto drawList = ImGui::GetWindowDrawList();
     auto cursorScreenPos = ImGui::GetCursorScreenPos();
-    if (track.Id() == _tracks->GetActiveTrackId())
+    if (track.Id() == _state->_tracks->GetActiveTrackId())
     {
         drawList->AddRectFilled(cursorScreenPos, ImVec2(cursorScreenPos.x + trackHeaderWidth, cursorScreenPos.y + finalTrackHeight), _trackactivebgcol);
     }
@@ -591,13 +590,13 @@ void TracksEditor::RenderTrackHeader(
     auto cursorPos = ImGui::GetCursorPos();
 
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[(_tracks->GetActiveTrackId() == track.Id() ? ImGuiCol_ButtonActive : ImGuiCol_Button)]);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[(_state->_tracks->GetActiveTrackId() == track.Id() ? ImGuiCol_ButtonActive : ImGuiCol_Button)]);
     {
         std::stringstream ss;
         ss << (t + 1);
         if (ImGui::Button(ss.str().c_str(), ImVec2(20, finalTrackHeight)))
         {
-            _tracks->SetActiveTrack(track.Id());
+            _state->_tracks->SetActiveTrack(track.Id());
         }
     }
     ImGui::PopStyleColor();
@@ -610,7 +609,7 @@ void TracksEditor::RenderTrackHeader(
         if (ImGui::Button(ICON_FAD_POWERSWITCH))
         {
             _state->_historyManager.AddEntry("Remove Track");
-            _tracks->RemoveTrack(track.Id());
+            _state->_tracks->RemoveTrack(track.Id());
         }
         else
         {
@@ -626,11 +625,11 @@ void TracksEditor::RenderTrackHeader(
                 if (ImGui::ActiveButton(ICON_FAD_MUTE, track.IsMuted()))
                 {
                     track.ToggleMuted();
-                    if (track.IsMuted() && _tracks->GetSoloTrack() == track.Id())
+                    if (track.IsMuted() && _state->_tracks->GetSoloTrack() == track.Id())
                     {
-                        _tracks->SetSoloTrack(Track::Null);
+                        _state->_tracks->SetSoloTrack(Track::Null);
                     }
-                    _tracks->SetActiveTrack(track.Id());
+                    _state->_tracks->SetActiveTrack(track.Id());
                 }
                 if (ImGui::IsItemHovered())
                 {
@@ -639,22 +638,22 @@ void TracksEditor::RenderTrackHeader(
 
                 ImGui::SameLine();
 
-                if (ImGui::ActiveButton(ICON_FAD_SOLO, _tracks->GetSoloTrack() == track.Id()))
+                if (ImGui::ActiveButton(ICON_FAD_SOLO, _state->_tracks->GetSoloTrack() == track.Id()))
                 {
-                    if (_tracks->GetSoloTrack() != track.Id())
+                    if (_state->_tracks->GetSoloTrack() != track.Id())
                     {
-                        _tracks->SetSoloTrack(track.Id());
+                        _state->_tracks->SetSoloTrack(track.Id());
                         track.Unmute();
                     }
                     else
                     {
-                        _tracks->SetSoloTrack(Track::Null);
+                        _state->_tracks->SetSoloTrack(Track::Null);
                     }
-                    _tracks->SetActiveTrack(track.Id());
+                    _state->_tracks->SetActiveTrack(track.Id());
                 }
                 if (ImGui::IsItemHovered())
                 {
-                    ImGui::SetTooltip(_tracks->GetSoloTrack() == track.Id() ? "Unsolo this Track" : "Solo this Track");
+                    ImGui::SetTooltip(_state->_tracks->GetSoloTrack() == track.Id() ? "Unsolo this Track" : "Solo this Track");
                 }
 
                 ImGui::SameLine();
@@ -709,7 +708,7 @@ void TracksEditor::RenderTrackHeader(
                 {
                     _editTrackName = t;
                     strcpy_s(_editTrackBuffer, 128, track.GetName().c_str());
-                    _tracks->SetActiveTrack(track.Id());
+                    _state->_tracks->SetActiveTrack(track.Id());
                 }
             }
         }
@@ -720,7 +719,7 @@ void TracksEditor::RenderTrackHeader(
     {
         if (ImGui::MenuItem("Remove track"))
         {
-            _tracks->RemoveTrack(track.Id());
+            _state->_tracks->RemoveTrack(track.Id());
         }
 
         ImGui::EndPopup();

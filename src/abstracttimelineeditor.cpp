@@ -20,7 +20,7 @@ void AbstractTimelineEditor::SetState(
 void AbstractTimelineEditor::SetTracksManager(
     ITracksManager *tracks)
 {
-    _tracks = tracks;
+    _state->_tracks = tracks;
 }
 
 std::chrono::milliseconds::rep AbstractTimelineEditor::PixelsToSteps(

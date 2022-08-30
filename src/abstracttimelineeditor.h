@@ -2,7 +2,6 @@
 #define ABSTRACTTIMELINEEDITOR_H
 
 #include "state.h"
-#include <itracksmanager.h>
 #include <region.h>
 #include <track.h>
 
@@ -21,7 +20,6 @@ public:
 
 protected:
     State *_state = nullptr;
-    ITracksManager *_tracks = nullptr;
     int _pixelsPerStep = 20;
     int _snapRegionsToSteps = 1000;
     int _snapNotesToSteps = 100;

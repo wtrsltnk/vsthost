@@ -245,8 +245,8 @@ void NotesEditor::Render(
         }
         ImGui::EndChild();
 
-        auto trackId = std::get<uint32_t>(_tracks->GetActiveRegion());
-        auto regionStart = std::get<std::chrono::milliseconds::rep>(_tracks->GetActiveRegion());
+        auto trackId = std::get<uint32_t>(_state->_tracks->GetActiveRegion());
+        auto regionStart = std::get<std::chrono::milliseconds::rep>(_state->_tracks->GetActiveRegion());
 
         if (trackId == Track::Null || regionStart < 0)
         {
@@ -254,7 +254,7 @@ void NotesEditor::Render(
         }
         else
         {
-            auto &track = _tracks->GetTrack(trackId);
+            auto &track = _state->_tracks->GetTrack(trackId);
 
             float _tracksScrollx = 0;
 

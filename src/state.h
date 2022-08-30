@@ -3,6 +3,7 @@
 
 #include "historymanager.h"
 #include <chrono>
+#include <itracksmanager.h>
 
 extern void KillAllNotes();
 
@@ -43,6 +44,9 @@ public:
     std::chrono::milliseconds::rep StepsToMs(
         long diff);
 
+    void OpenRegion(
+        std::tuple<uint32_t, std::chrono::milliseconds::rep> region);
+
     struct
     {
         int _width;
@@ -57,6 +61,7 @@ public:
     std::chrono::milliseconds::rep _cursor = 0;
     HistoryManager _historyManager;
     int _octaveShift = 0;
+    ITracksManager *_tracks = nullptr;
 
 private:
     bool _playing = false;
