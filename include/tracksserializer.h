@@ -2,13 +2,13 @@
 #define TRACKSSERIALIZER_H
 
 #include "track.h"
-#include "tracksmanager.h"
+#include <ITracksManager.h>
 
 class TracksSerializer
 {
 public:
     TracksSerializer(
-        TracksManager &tracks);
+        ITracksManager *tracks);
 
     void Serialize(
         const std::string &filepath);
@@ -17,7 +17,7 @@ public:
         const std::string &filepath);
 
 private:
-    TracksManager &_tracks;
+    ITracksManager *_tracks;
 };
 
 #endif // TRACKSSERIALIZER_H

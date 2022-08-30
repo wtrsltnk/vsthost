@@ -530,6 +530,11 @@ void TracksEditor::CreateRegion(
     Track &track,
     const ImVec2 &pp)
 {
+    if (_state->IsPlaying())
+    {
+        return;
+    }
+
     _state->_historyManager.AddEntry("Create region");
 
     _state->_tracks->SetActiveTrack(track.Id());

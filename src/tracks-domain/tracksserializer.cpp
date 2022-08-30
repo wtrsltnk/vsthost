@@ -6,7 +6,7 @@
 #include <yaml-cpp/yaml.h>
 
 TracksSerializer::TracksSerializer(
-    TracksManager &tracks)
+    ITracksManager *tracks)
     : _tracks(tracks)
 {}
 
@@ -115,7 +115,7 @@ void TracksSerializer::Serialize(
     out << YAML::Key << "Song" << YAML::Value << "Untitled";
     out << YAML::Key << "Tracks" << YAML::Value << YAML::BeginSeq;
 
-    for (auto track : _tracks.GetTracks())
+    for (auto track : _tracks->GetTracks())
     {
         SerializeTrack(out, &track);
     }
@@ -216,13 +216,13 @@ bool TracksSerializer::Deserialize(
         auto trackIsMuted = trackData["IsMuted"];
         auto trackIsReadyForRecoding = trackData["IsReadyForRecoding"];
 
-        auto trackId = _tracks.AddTrack(trackName, DeserializeInstrument(trackData));
+        auto trackId = _tracks->AddTrack(trackName, DeserializeInstrument(trackData));
         if (trackId == Track::Null)
         {
             continue;
         }
 
-        auto &track = _tracks.GetTrack(trackId);
+        auto &track = _tracks->GetTrack(trackId);
         //        if (trackColor)
         //        {
         //            track.SetColor(trackColor.as<glm::vec4>());
@@ -235,7 +235,6 @@ bool TracksSerializer::Deserialize(
         {
             track.SetReadyForRecording(trackIsReadyForRecoding.as<bool>());
         }
-
     }
 
     return true;

@@ -76,7 +76,6 @@ static std::map<int, struct MidiNoteState> _keyboardToNoteMap{
 };
 static RtMidiIn *midiIn = nullptr;
 static State state;
-static TracksManager _tracks;
 static GLFWwindow *window = nullptr;
 static ImVec4 clear_color = ImVec4(0.9f, 0.9f, 0.9f, 1.00f); //ImVec4(0.3f, 0.3f, 0.3f, 1.00f);
 static TracksEditor _tracksEditor;
@@ -90,7 +89,7 @@ NotePreviewService _notePreviewService;
 
 void KillAllNotes()
 {
-    for (auto &instrument : _tracks.GetInstruments())
+    for (auto &instrument : state._tracks->GetInstruments())
     {
         instrument->Lock();
         for (int channel = 0; channel < 16; channel++)
@@ -117,7 +116,6 @@ void HandleIncomingMidiEvent(
 
 // This function is called from Wasapi::threadFunc() which is running in audio thread.
 bool refillCallback(
-    ITracksManager *tracks,
     float *const data,
     uint32_t sampleCount,
     const WAVEFORMATEX *const mixFormat)
@@ -127,21 +125,29 @@ bool refillCallback(
     state.UpdateByDiff(diff);
     auto end = state._cursor;
 
-    if (state.ui._activeCenterScreen == 1)
+    if (state.ui._activeCenterScreen == 1 && state._tracks->GetActiveTrackId() > 0)
     {
-        auto &activeTrack = tracks->GetTrack(tracks->GetActiveTrackId());
-        auto regionStart = std::get<std::chrono::milliseconds::rep>(tracks->GetActiveRegion());
+        auto &activeTrack = state._tracks->GetTrack(state._tracks->GetActiveTrackId());
+        auto regionStart = std::get<std::chrono::milliseconds::rep>(state._tracks->GetActiveRegion());
         auto &region = activeTrack.GetRegion(regionStart);
 
         if (end > (regionStart + region.Length()))
         {
-            tracks->SendMidiNotesInSong(start, regionStart + region.Length());
+            state._tracks->SendMidiNotesInSong(start, regionStart + region.Length());
             state._cursor = regionStart + (end - (regionStart + region.Length()));
-            tracks->SendMidiNotesInSong(regionStart, state._cursor);
+            if (state._loop)
+            {
+                state._tracks->SendMidiNotesInSong(regionStart, state._cursor);
+            }
+            else
+            {
+                state.StopPlaying();
+                state._cursor = regionStart;
+            }
         }
     }
 
-    tracks->SendMidiNotesInSong(start, end);
+    state._tracks->SendMidiNotesInSong(start, end);
 
     _arpeggiatorPreviewService.SendMidiNotesInTimeRange(diff);
     _notePreviewService.HandleMidiEventsInTimeRange(diff);
@@ -157,7 +163,7 @@ bool refillCallback(
         }
     }
 
-    for (auto &track : tracks->GetTracks())
+    for (auto &track : state._tracks->GetTracks())
     {
         auto instrument = track.GetInstrument();
         if (instrument == nullptr)
@@ -199,7 +205,7 @@ bool refillCallback(
                 {
                     if (track.IsMuted()) continue;
                     if (data == nullptr) continue;
-                    if (_tracks.GetSoloTrack() != track.Id() && _tracks.GetSoloTrack() != Track::Null) continue;
+                    if (state._tracks->GetSoloTrack() != track.Id() && state._tracks->GetSoloTrack() != Track::Null) continue;
 
                     const size_t sChannel = iChannel % nSrcChannels;
                     const size_t vstOutputPage = (iFrame / vstSamplesPerBlock) * sChannel + sChannel;
@@ -238,7 +244,7 @@ void HandleIncomingMidiEvent(
 
     if (state.IsRecording())
     {
-        for (auto &track : _tracks.GetTracks())
+        for (auto &track : state._tracks->GetTracks())
         {
             if (!track.IsReadyForRecoding())
             {
@@ -253,7 +259,7 @@ void HandleIncomingMidiEvent(
         }
     }
 
-    auto activeTrack = _tracks.GetTrack(_tracks.GetActiveTrackId());
+    auto activeTrack = state._tracks->GetTrack(state._tracks->GetActiveTrackId());
 
     auto instrument = activeTrack.GetInstrument();
 
@@ -433,7 +439,7 @@ void ToolbarWindow(
 
             if (state.ui._activeCenterScreen == 1)
             {
-                auto activeRegionStart = std::get<std::chrono::milliseconds::rep>(_tracks.GetActiveRegion());
+                auto activeRegionStart = std::get<std::chrono::milliseconds::rep>(state._tracks->GetActiveRegion());
                 if (activeRegionStart != 0)
                 {
                     state._cursor = activeRegionStart;
@@ -458,7 +464,7 @@ void ToolbarWindow(
 
         if (ImGui::Button(ICON_FAD_RECORD) && !state.IsRecording())
         {
-            for (auto track : _tracks.GetTracks())
+            for (auto track : state._tracks->GetTracks())
             {
                 track.StartRecording();
             }
@@ -586,7 +592,7 @@ void MainMenu()
                 state.StopPlaying();
                 state.StopRecording();
 
-                TracksSerializer serializer(_tracks);
+                TracksSerializer serializer(state._tracks);
 
                 serializer.Serialize("c:\\temp\\file.yaml");
             }
@@ -668,7 +674,7 @@ void MainMenu()
             std::string filePath = igfd::ImGuiFileDialog::Instance()->GetCurrentPath();
             // action
 
-            TracksSerializer serializer(_tracks);
+            TracksSerializer serializer(state._tracks);
 
             serializer.Deserialize(filePathName);
         }
@@ -685,7 +691,7 @@ void MainMenu()
             std::string filePath = igfd::ImGuiFileDialog::Instance()->GetCurrentPath();
             // action
 
-            TracksSerializer serializer(_tracks);
+            TracksSerializer serializer(state._tracks);
 
             serializer.Serialize(filePathName);
         }
@@ -696,7 +702,7 @@ void MainMenu()
 
 void HandleKeyboardToMidiEvents()
 {
-    if (_tracks.GetInstruments().size() > 0 && _tracksEditor.EditTrackName() < 0)
+    if (state._tracks->GetInstruments().size() > 0 && _tracksEditor.EditTrackName() < 0)
     {
         for (auto &e : _keyboardToNoteMap)
         {
@@ -719,7 +725,6 @@ void MainLoop()
             uint32_t availableFrameCount,
             const WAVEFORMATEX *const mixFormat) {
             return refillCallback(
-                &_tracks,
                 data,
                 availableFrameCount,
                 mixFormat);
@@ -849,6 +854,9 @@ int main(
         return 1;
     }
 
+    TracksManager _tracks;
+    state._tracks = &_tracks;
+
     RtMidiIn localMidiIn;
     midiIn = &localMidiIn;
     midiIn->setCallback(callback);
@@ -887,7 +895,7 @@ int main(
 
     SetupFonts();
 
-    TracksSerializer serializer(_tracks);
+    TracksSerializer serializer(state._tracks);
 
     serializer.Deserialize("c:\\temp\\tracks.state");
 
@@ -916,7 +924,7 @@ int main(
 
     serializer.Serialize("c:\\temp\\tracks.state");
 
-    _tracks.CleanupInstruments();
+    state._tracks->CleanupInstruments();
 
     // Cleanup
     ImGui_ImplGlfwGL2_Shutdown();
