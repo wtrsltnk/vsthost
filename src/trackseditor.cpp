@@ -68,8 +68,7 @@ void TracksEditor::Render(
 
                 auto instrument = std::make_shared<Instrument>();
                 instrument->SetName("New Instrument");
-                auto track = _state->_tracks->AddTrack("New track", instrument);
-                _state->_tracks->SetActiveTrack(track);
+                _state->_tracks->AddTrack("New track", instrument);
             }
             if (ImGui::IsItemHovered())
             {
@@ -392,7 +391,7 @@ void TracksEditor::RenderNotes(
     };
 
     std::map<uint32_t, ActiveNote> activeNotes;
-    for (auto event : region.second.Events())
+    for (auto &event : region.second.Events())
     {
         const int noteHeight = 5;
         auto h = (finalTrackHeight - ((regionRounding + noteHeight) * 3));

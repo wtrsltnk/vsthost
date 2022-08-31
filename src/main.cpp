@@ -259,7 +259,12 @@ void HandleIncomingMidiEvent(
         }
     }
 
-    auto activeTrack = state._tracks->GetTrack(state._tracks->GetActiveTrackId());
+    auto activeTrackId = state._tracks->GetActiveTrackId();
+    if (activeTrackId == 0)
+    {
+        return;
+    }
+    auto activeTrack = state._tracks->GetTrack(activeTrackId);
 
     auto instrument = activeTrack.GetInstrument();
 

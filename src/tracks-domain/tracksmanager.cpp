@@ -174,6 +174,8 @@ uint32_t TracksManager::AddTrack(
 
     _tracks.push_back(newTrack);
 
+    _activeTrack = newTrack.Id();
+
     return newTrack.Id();
 }
 
