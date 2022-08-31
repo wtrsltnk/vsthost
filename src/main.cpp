@@ -624,11 +624,17 @@ void MainMenu()
         }
         if (ImGui::BeginMenu("Edit"))
         {
-            if (ImGui::MenuItem("Undo", "CTRL+Z", false, state._historyManager.HasUndo()))
+            std::string title;
+            auto undo = state._historyManager.HasUndo(title);
+            title = "Undo " + title;
+            if (ImGui::MenuItem(title.c_str(), "CTRL+Z", false, undo))
             {
                 state._historyManager.Undo();
             }
-            if (ImGui::MenuItem("Redo", "CTRL+Y", false, state._historyManager.HasRedo()))
+
+            auto redo = state._historyManager.HasRedo(title);
+            title = "Redo " + title;
+            if (ImGui::MenuItem(title.c_str(), "CTRL+Y", false, redo))
             {
                 state._historyManager.Redo();
             }

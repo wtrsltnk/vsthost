@@ -83,14 +83,19 @@ void HistoryManager::AddEntry(
     _currentEntryInHistoryTrack = entry;
 }
 
-bool HistoryManager::HasUndo()
+bool HistoryManager::HasUndo(
+    std::string &titleOfUndoAction)
 {
+    titleOfUndoAction = _currentEntryInHistoryTrack->_title;
+
     return _currentEntryInHistoryTrack != &_firstEntryInHistoryTrack;
 }
 
 void HistoryManager::Undo()
 {
-    if (!HasUndo())
+    std::string title;
+
+    if (!HasUndo(title))
     {
         return;
     }
@@ -100,14 +105,26 @@ void HistoryManager::Undo()
     _currentEntryInHistoryTrack = _currentEntryInHistoryTrack->_prevEntry;
 }
 
-bool HistoryManager::HasRedo()
+bool HistoryManager::HasRedo(
+    std::string &titleOfRedoAction)
 {
+    if (_currentEntryInHistoryTrack->_nextEntry != nullptr)
+    {
+        titleOfRedoAction = _currentEntryInHistoryTrack->_nextEntry->_title;
+    }
+    else
+    {
+        titleOfRedoAction = "";
+    }
+
     return _currentEntryInHistoryTrack != nullptr && _currentEntryInHistoryTrack->_nextEntry != nullptr;
 }
 
 void HistoryManager::Redo()
 {
-    if (!HasRedo())
+    std::string title;
+
+    if (!HasRedo(title))
     {
         return;
     }

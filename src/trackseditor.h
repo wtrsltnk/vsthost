@@ -12,7 +12,7 @@
 class TracksEditor :
     public AbstractTimelineEditor
 {
-    int _trackHeight = 200;
+    int _trackHeight = 100;
     int _editTrackName = -1;
     char _editTrackBuffer[128] = {0};
     std::chrono::milliseconds::rep _maxTrackLength = 16000;

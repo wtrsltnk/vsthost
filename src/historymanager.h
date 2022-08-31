@@ -41,11 +41,13 @@ public:
     void AddEntry(
         const char *title);
 
-    bool HasUndo();
+    bool HasUndo(
+        std::string&titleOfUndoAction);
 
     void Undo();
 
-    bool HasRedo();
+    bool HasRedo(
+        std::string&titleOfRedoAction);
 
     void Redo();
 
