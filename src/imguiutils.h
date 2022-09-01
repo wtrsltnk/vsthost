@@ -2,6 +2,7 @@
 #define IMGUIUTILS_H
 
 #include <imgui.h>
+#include <vector>
 
 namespace ImGui
 {
@@ -33,6 +34,12 @@ namespace ImGui
         unsigned char v_max,
         ImVec2 const &size,
         char const *tooltip = nullptr);
+
+    void PushDisabled(
+        bool disabled = true);
+
+    void PopDisabled(
+        int num = 1);
 
 } // namespace ImGui
 
