@@ -55,11 +55,20 @@ void TracksEditor::Render(
             "TracksTools",
             ImVec2(0, float(trackToolsHeight)));
         {
-            if (ImGui::Button(ICON_FAD_PEN))
+            auto trackId = std::get<uint32_t>(_state->_tracks->GetActiveRegion());
+            auto regionStart = std::get<std::chrono::milliseconds::rep>(_state->_tracks->GetActiveRegion());
+
+            ImGui::PushDisabled(trackId == Track::Null || regionStart < 0);
+            if (ImGui::Button(ICON_FAD_PEN) && !(trackId == Track::Null || regionStart < 0))
             {
                 _state->OpenRegion(_state->_tracks->GetActiveRegion());
             }
+            ImGui::PopDisabled();
 
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Edit selected region");
+            }
             ImGui::SameLine();
 
             if (ImGui::Button(ICON_FK_PLUS))

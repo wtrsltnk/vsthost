@@ -118,13 +118,13 @@ void InspectorWindow::Render(
 
                         ImGui::SameLine();
 
-                        if (_vstPluginLoader != nullptr && ImGui::Button("Add plugin"))
+                        if (_vstPluginLoader != nullptr && ImGui::Button("Load plugin"))
                         {
                             auto plugin = _vstPluginLoader->LoadFromFileDialog();
 
                             if (plugin != nullptr)
                             {
-                                _state->_historyManager.AddEntry("Add plugin");
+                                _state->_historyManager.AddEntry("Load plugin");
                                 track.GetInstrument()->SetPlugin(std::move(plugin));
                             }
                         }
@@ -140,12 +140,12 @@ void InspectorWindow::Render(
 
                         if (_vstPluginLoader != nullptr)
                         {
-                            if (ImGui::Button("Change plugin"))
+                            if (ImGui::Button("Load different plugin"))
                             {
                                 auto plugin = _vstPluginLoader->LoadFromFileDialog();
                                 if (plugin != nullptr)
                                 {
-                                    _state->_historyManager.AddEntry("Change plugin");
+                                    _state->_historyManager.AddEntry("Load different plugin");
                                     track.GetInstrument()->SetPlugin(std::move(plugin));
                                 }
                             }
@@ -154,7 +154,7 @@ void InspectorWindow::Render(
 
                         if (!vstPlugin->isEditorOpen())
                         {
-                            if (ImGui::Button("Open plugin"))
+                            if (ImGui::Button("Open plugin editor"))
                             {
                                 track.DownloadInstrumentSettings();
                                 vstPlugin->openEditor(nullptr);
@@ -162,9 +162,9 @@ void InspectorWindow::Render(
                         }
                         else
                         {
-                            if (ImGui::Button("Close plugin"))
+                            if (ImGui::Button("Close plugin editor"))
                             {
-                                _state->_historyManager.AddEntry("Close plugin");
+                                _state->_historyManager.AddEntry("Close plugin editor");
                                 vstPlugin->closeEditor();
                                 track.DownloadInstrumentSettings();
                             }
