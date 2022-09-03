@@ -111,14 +111,15 @@ target_include_directories(glad
     PUBLIC thirdparty/glad/include)
 
 add_library(imgui
-    "thirdparty/imgui/imgui.cpp"
-    "thirdparty/imgui/imgui_demo.cpp"
-    "thirdparty/imgui/imgui_draw.cpp"
-    "thirdparty/imgui/imgui_widgets.cpp"
+    "thirdparty/ImGuiFileDialog/CustomFont.cpp"
     "thirdparty/ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialog.cpp"
     "thirdparty/ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialog.h"
     "thirdparty/ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialogConfig.h"
-    "thirdparty/ImGuiFileDialog/CustomFont.cpp"
+    "thirdparty/imgui/imgui.cpp"
+    "thirdparty/imgui/imgui_demo.cpp"
+    "thirdparty/imgui/imgui_draw.cpp"
+    "thirdparty/imgui/imgui_tables.cpp"
+    "thirdparty/imgui/imgui_widgets.cpp"
 )
 
 target_include_directories(imgui

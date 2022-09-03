@@ -55,7 +55,7 @@ void AbstractTimelineEditor::RenderGrid(
     int step = 0;
     int gg = 0;
 
-    while (gg < std::max(windowWidth, ImGui::GetContentRegionAvailWidth()))
+    while (gg < std::max(windowWidth, ImGui::GetContentRegionAvail().x))
     {
         auto cursor = ImVec2(p.x + StepsToPixels(step), p.y);
 

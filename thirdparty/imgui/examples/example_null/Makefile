@@ -13,11 +13,11 @@ WITH_FREETYPE ?= 0
 EXE = example_null
 IMGUI_DIR = ../..
 SOURCES = main.cpp
-SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_widgets.cpp
+SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
 OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 UNAME_S := $(shell uname -s)
 
-CXXFLAGS += -I$(IMGUI_DIR)
+CXXFLAGS += -std=c++11 -I$(IMGUI_DIR)
 CXXFLAGS += -g -Wall -Wformat
 LIBS =
 
@@ -40,7 +40,7 @@ endif
 
 ifeq ($(UNAME_S), Linux) #LINUX
 	ECHO_MESSAGE = "Linux"
-	ifneq ($(WITH_EXTRA_WARNINGS), 0)
+	ifeq ($(WITH_EXTRA_WARNINGS), 1)
 		CXXFLAGS += -Wextra -Wpedantic
 		ifeq ($(shell $(CXX) -v 2>&1 | grep -c "clang version"), 1)
 			CXXFLAGS += -Wshadow -Wsign-conversion
@@ -51,17 +51,18 @@ endif
 
 ifeq ($(UNAME_S), Darwin) #APPLE
 	ECHO_MESSAGE = "Mac OS X"
-	ifneq ($(WITH_EXTRA_WARNINGS), 0)
-		CXXFLAGS += -Weverything -Wno-reserved-id-macro -Wno-c++98-compat-pedantic -Wno-padded -Wno-c++11-long-long
+	ifeq ($(WITH_EXTRA_WARNINGS), 1)
+		CXXFLAGS += -Weverything -Wno-reserved-id-macro -Wno-c++98-compat-pedantic -Wno-padded -Wno-poison-system-directories
 	endif
 	CFLAGS = $(CXXFLAGS)
 endif
 
-ifeq ($(findstring MINGW,$(UNAME_S)),MINGW)
+ifeq ($(OS), Windows_NT)
 	ECHO_MESSAGE = "MinGW"
-	ifneq ($(WITH_EXTRA_WARNINGS), 0)
+	ifeq ($(WITH_EXTRA_WARNINGS), 1)
 		CXXFLAGS += -Wextra -Wpedantic
 	endif
+	LIBS += -limm32
 	CFLAGS = $(CXXFLAGS)
 endif
 

@@ -44,13 +44,16 @@
     <ClCompile Include="..\..\backends\imgui_impl_win32.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\imgui_tables.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\imgui_widgets.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />
-    <None Include="..\..\misc\natvis\imgui.natvis">
+    <None Include="..\..\misc\debuggers\imgui.natvis">
       <Filter>sources</Filter>
     </None>
   </ItemGroup>

@@ -278,7 +278,7 @@ void RenderRegionRubberband(
         overlayOrigin.x + length,
         overlayOrigin.y + finalTrackHeight - 8);
 
-    ImGui::GetOverlayDrawList()->AddRectFilled(
+    ImGui::GetForegroundDrawList()->AddRectFilled(
         min,
         max,
         ImColor(255, 255, 255, 50),
@@ -485,22 +485,25 @@ void TracksEditor::RenderTrack(
     {
         drawList->AddRectFilled(
             ppNotScrolled,
-            ImVec2(ppNotScrolled.x + ImGui::GetContentRegionAvailWidth(), ppNotScrolled.y + finalTrackHeight),
-            _trackactivebgcol);
+            ImVec2(ppNotScrolled.x + ImGui::GetContentRegionAvail().x, ppNotScrolled.y + finalTrackHeight),
+            _trackactivebgcol,
+            0);
     }
     else if (t % 2 == 0)
     {
         drawList->AddRectFilled(
             ppNotScrolled,
-            ImVec2(ppNotScrolled.x + ImGui::GetContentRegionAvailWidth(), ppNotScrolled.y + finalTrackHeight),
-            _trackbgcol);
+            ImVec2(ppNotScrolled.x + ImGui::GetContentRegionAvail().x, ppNotScrolled.y + finalTrackHeight),
+            _trackbgcol,
+            0);
     }
     else
     {
         drawList->AddRectFilled(
             ppNotScrolled,
-            ImVec2(ppNotScrolled.x + ImGui::GetContentRegionAvailWidth(), ppNotScrolled.y + finalTrackHeight),
-            _trackaltbgcol);
+            ImVec2(ppNotScrolled.x + ImGui::GetContentRegionAvail().x, ppNotScrolled.y + finalTrackHeight),
+            _trackaltbgcol,
+            0);
     }
 
     ImGui::PushID(t);
@@ -523,7 +526,7 @@ void TracksEditor::RenderTrack(
     }
 
     ImGui::SetCursorPos(trackOrigin);
-    auto btnSize = ImVec2(std::max(trackWidth, ImGui::GetContentRegionAvailWidth()), finalTrackHeight);
+    auto btnSize = ImVec2(std::max(trackWidth, ImGui::GetContentRegionAvail().x), float(finalTrackHeight));
     if (ImGui::InvisibleButton(track.GetName().c_str(), btnSize))
     {
         CreateRegion(track, pp);
