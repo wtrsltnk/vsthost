@@ -704,6 +704,10 @@ void TracksEditor::RenderTrackHeader(
             {
                 ImGui::SameLine();
             }
+            else if (finalTrackHeight < 75)
+            {
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 10.0f);
+            }
 
             if (_editTrackName == t)
             {
