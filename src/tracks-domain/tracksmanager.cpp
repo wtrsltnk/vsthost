@@ -83,6 +83,7 @@ void TracksManager::SetSoloTrack(
 {
     if (!DoesTrackIdExist(_tracks, trackId))
     {
+        _soloTrack = 0;
         return;
     }
 
@@ -101,7 +102,13 @@ void TracksManager::SetActiveRegion(
     activeRegion = std::tuple<uint32_t, std::chrono::milliseconds::rep>(trackId, start);
 }
 
-void ColorConvertHSVtoRGB(float h, float s, float v, float &out_r, float &out_g, float &out_b)
+void ColorConvertHSVtoRGB(
+    float h,
+    float s,
+    float v,
+    float &out_r,
+    float &out_g,
+    float &out_b)
 {
     if (s == 0.0f)
     {
@@ -303,16 +310,16 @@ void TracksManager::SendMidiNotesInSong(
             continue;
         }
 
-        for (auto region : track.Regions())
+        for (const auto &region : track.Regions())
         {
             if (region.first > end) continue;
             if (region.first + region.second.Length() < start) continue;
 
-            for (auto event : region.second.Events())
+            for (const auto &event : region.second.Events())
             {
                 if ((event.first + region.first) > end) continue;
                 if ((event.first + region.first) < start) continue;
-                for (auto m : event.second)
+                for (const auto &m : event.second)
                 {
                     track.GetInstrument()->Plugin()->sendMidiNote(
                         m.channel,

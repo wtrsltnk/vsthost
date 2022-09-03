@@ -81,6 +81,7 @@ target_link_libraries(tracks-domain
     spdlog
     yaml-cpp
     fmt
+    glm
 )
 
 add_library(RtMidi

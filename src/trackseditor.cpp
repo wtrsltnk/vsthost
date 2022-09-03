@@ -3,7 +3,6 @@
 #include "IconsFontaudio.h"
 #include "IconsForkAwesome.h"
 #include "imguiutils.h"
-#include "midinote.h"
 
 #include <imgui_internal.h>
 #include <iostream>
