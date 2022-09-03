@@ -4,6 +4,7 @@
 #include "instrument.h"
 #include "region.h"
 
+#include <glm/glm.hpp>
 #include <map>
 #include <string>
 
@@ -40,8 +41,13 @@ public:
     void ToggleReadyForRecording();
 
     float *GetColor() { return _color; }
+
+    void SetColor(
+        const glm::vec4 &color);
+
     void SetColor(
         float color[]);
+
     void SetColor(
         float r,
         float g,
@@ -82,6 +88,7 @@ public:
     static const uint32_t Null = 0;
 
     std::string _instrumentDataBase64;
+
 private:
     Track(
         uint32_t id);

@@ -93,7 +93,7 @@ void Track::DownloadInstrumentSettings()
 
     /* Save plugin data*/
     void *getLen;
-    int length = _instrument->Plugin()->dispatcher(effGetChunk, 0, 0, &getLen, 0.0f);
+    auto length = _instrument->Plugin()->dispatcher(effGetChunk, 0, 0, &getLen, 0.0f);
     auto data = reinterpret_cast<BYTE *>(getLen);
     _instrumentDataBase64 = base64_encode(&data[0], length);
 
@@ -151,6 +151,15 @@ void Track::SetReadyForRecording(
 void Track::ToggleReadyForRecording()
 {
     _readyForRecord = !_readyForRecord;
+}
+
+void Track::SetColor(
+    const glm::vec4 &color)
+{
+    _color[0] = color[0];
+    _color[1] = color[1];
+    _color[2] = color[2];
+    _color[3] = color[3];
 }
 
 void Track::SetColor(
