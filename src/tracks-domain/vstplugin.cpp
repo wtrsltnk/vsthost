@@ -45,7 +45,6 @@ const char *VstPlugin::Vendor() const
 
 std::string VstPlugin::ModulePath() const
 {
-    std::cout << std::filesystem::path(_moduleDirectory) << "/" << std::filesystem::path(_modulePath) << std::endl;
     auto fullPath = std::filesystem::path(_moduleDirectory) / std::filesystem::path(_modulePath);
 
     return fullPath.string().c_str();

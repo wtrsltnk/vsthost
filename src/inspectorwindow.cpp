@@ -48,6 +48,11 @@ void InspectorWindow::Render(
         ImGui::SetWindowPos(pos);
         ImGui::SetWindowSize(size);
 
+        if (ImGui::CollapsingHeader("Quick Help", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Text("Help!");
+        }
+
         bool midiPortsAvailable = _midiIn != nullptr && _midiIn->getPortCount() > 0;
 
         if (ImGui::CollapsingHeader("Midi in", midiPortsAvailable ? ImGuiTreeNodeFlags_DefaultOpen : 0))
@@ -97,6 +102,50 @@ void InspectorWindow::Render(
                 ImGui::BulletText("%s", s.c_str());
             }
             ImGui::EndGroup();
+        }
+
+        auto trackId = std::get<uint32_t>(_tracks->GetActiveRegion());
+        if (trackId != Track::Null && trackId == _tracks->GetActiveTrackId())
+        {
+            auto &track = _tracks->GetTrack(trackId);
+
+            auto regionStart = std::get<std::chrono::milliseconds::rep>(_tracks->GetActiveRegion());
+            if (track.Regions().find(regionStart) != track.Regions().end())
+            {
+                auto &region = track.GetRegion(regionStart);
+
+                if (ImGui::CollapsingHeader((std::string("Region: ") + region.GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    if ((region.Length() % 4000) / 1000 > 0)
+                    {
+                        ImGui::Text("Length: %lld bars and %lld steps", (region.Length() / 4000), (region.Length() % 4000) / 1000);
+                    }
+                    else
+                    {
+                        ImGui::Text("Length: %lld bars", (region.Length() / 4000));
+                    }
+
+                    if (_editRegionName)
+                    {
+                        ImGui::SetKeyboardFocusHere();
+                        if (ImGui::InputText("##editName", _editRegionNameBuffer, 128, ImGuiInputTextFlags_EnterReturnsTrue))
+                        {
+                            _state->_historyManager.AddEntry("Change region name");
+                            region.SetName(_editRegionNameBuffer);
+                            _editRegionName = false;
+                        }
+                    }
+                    else
+                    {
+                        ImGui::Text("%s", region.GetName().c_str());
+                        if (ImGui::IsItemClicked())
+                        {
+                            _editRegionName = true;
+                            strcpy_s(_editRegionNameBuffer, 128, region.GetName().c_str());
+                        }
+                    }
+                }
+            }
         }
 
         if (_tracks->GetActiveTrackId() != Track::Null)
@@ -177,70 +226,23 @@ void InspectorWindow::Render(
                     }
                 }
             }
-        }
 
-        auto trackId = std::get<uint32_t>(_tracks->GetActiveRegion());
-        if (trackId != Track::Null && trackId == _tracks->GetActiveTrackId())
-        {
-            auto &track = _tracks->GetTrack(trackId);
+            auto stripWidth = ImGui::GetContentRegionAvail().x / 2;
+            auto stripHeight = ImGui::GetContentRegionAvail().y - (2 * ImGui::GetStyle().FramePadding.y) - (2 * ImGui::GetStyle().ItemSpacing.y);
 
-            auto regionStart = std::get<std::chrono::milliseconds::rep>(_tracks->GetActiveRegion());
-            if (track.Regions().find(regionStart) != track.Regions().end())
-            {
-                auto &region = track.GetRegion(regionStart);
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0.1f));
+            ImGui::BeginChild("##trackStrip", ImVec2(stripWidth, stripHeight));
+            ImGui::SetCursorPos(ImVec2(0, stripHeight - 30));
+            ImGui::Button(track.GetName().c_str(), ImVec2(stripWidth, 0));
+            ImGui::EndChild();
 
-                if (ImGui::CollapsingHeader((std::string("Region: ") + region.GetName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
-                {
-                    if ((region.Length() % 4000) / 1000 > 0)
-                    {
-                        ImGui::Text("Length: %lld bars and %lld steps", (region.Length() / 4000), (region.Length() % 4000) / 1000);
-                    }
-                    else
-                    {
-                        ImGui::Text("Length: %lld bars", (region.Length() / 4000));
-                    }
+            ImGui::SameLine();
 
-                    if (_editRegionName)
-                    {
-                        ImGui::SetKeyboardFocusHere();
-                        if (ImGui::InputText("##editName", _editRegionNameBuffer, 128, ImGuiInputTextFlags_EnterReturnsTrue))
-                        {
-                            _state->_historyManager.AddEntry("Change region name");
-                            region.SetName(_editRegionNameBuffer);
-                            _editRegionName = false;
-                        }
-                    }
-                    else
-                    {
-                        ImGui::Text("%s", region.GetName().c_str());
-                        if (ImGui::IsItemClicked())
-                        {
-                            _editRegionName = true;
-                            strcpy_s(_editRegionNameBuffer, 128, region.GetName().c_str());
-                        }
-                    }
-                }
-            }
-        }
-
-        if (ImGui::CollapsingHeader("History"))
-        {
-            auto const *first = _state->_historyManager.FirstEntryInHistoryTrack();
-
-            ImGui::BeginGroup();
-            while (first != nullptr)
-            {
-                char undoTitle[64] = {0};
-                sprintf_s(undoTitle, 64, "%s", first->_title);
-                ImGui::Selectable(undoTitle, first == _state->_historyManager.CurrentEntryInHistoryTrack());
-                first = first->_nextEntry;
-            }
-            ImGui::EndGroup();
-        }
-
-        if (ImGui::CollapsingHeader("Quick Help", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            ImGui::Text("Help!");
+            ImGui::BeginChild("##mainStrip", ImVec2(stripWidth, stripHeight));
+            ImGui::SetCursorPos(ImVec2(0, stripHeight - 30));
+            ImGui::Button("Stereo Out", ImVec2(stripWidth, 0));
+            ImGui::EndChild();
+            ImGui::PopStyleColor();
         }
     }
 
