@@ -717,6 +717,10 @@ void TracksEditor::RenderTrackHeader(
                     track.SetName(_editTrackBuffer);
                     _editTrackName = -1;
                 }
+                if (ImGui::IsKeyReleased(ImGui::GetKeyIndex(ImGuiKey_Escape)))
+                {
+                    _editTrackName = -1;
+                }
             }
             else
             {
