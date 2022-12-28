@@ -5,6 +5,7 @@
 #include <functional>
 #include <mmdeviceapi.h>
 #include <windows.h>
+#include <string>
 
 struct Wasapi
 {

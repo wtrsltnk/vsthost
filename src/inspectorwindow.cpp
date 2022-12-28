@@ -227,7 +227,7 @@ void InspectorWindow::Render(
                 }
             }
 
-            auto stripWidth = ImGui::GetContentRegionAvail().x / 2;
+            auto stripWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.y) / 2;
             auto stripHeight = ImGui::GetContentRegionAvail().y - (2 * ImGui::GetStyle().FramePadding.y) - (2 * ImGui::GetStyle().ItemSpacing.y);
 
             ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0.1f));

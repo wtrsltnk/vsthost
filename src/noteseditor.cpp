@@ -278,9 +278,9 @@ void NotesEditor::Render(
                 ImGui::BeginGroup();
                 long eindex = 0;
                 static ImGuiID movingEventId;
-                for (auto t : region.Events())
+                for (const auto &t : region.Events())
                 {
-                    for (auto e : t.second)
+                    for (const auto &e : t.second)
                     {
                         ImGui::PushID(eindex++);
 
@@ -373,9 +373,9 @@ void NotesEditor::Render(
                         ImColor(0.7f, 0.7f, 0.7f, 0.2f));
 
                     ImGui::PushID(noteNumber);
-                    for (auto notesInTime : notes[noteNumber])
+                    for (const auto &notesInTime : notes[noteNumber])
                     {
-                        for (auto note : notesInTime.second)
+                        for (const auto &note : notesInTime.second)
                         {
                             ImGui::PushID(note.length);
 
