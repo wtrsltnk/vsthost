@@ -12,6 +12,16 @@
 class TracksEditor :
     public AbstractTimelineEditor
 {
+public:
+    TracksEditor();
+
+    int EditTrackName() const;
+
+    void Render(
+        ImVec2 const &pos,
+        ImVec2 const &size);
+
+private:
     int _trackHeight = 100;
     int _editTrackName = -1;
     char _editTrackBuffer[128] = {0};
@@ -80,15 +90,6 @@ class TracksEditor :
         std::pair<const long, Region> const &region,
         ImVec2 const &trackScreenOrigin,
         int finalTrackHeight);
-
-public:
-    TracksEditor();
-
-    int EditTrackName() const;
-
-    void Render(
-        ImVec2 const &pos,
-        ImVec2 const &size);
 };
 
 #endif // TRACKSEDITOR_H

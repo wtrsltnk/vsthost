@@ -1,5 +1,7 @@
 #include <vstplugin.h>
 
+#include <filesystem>
+#include <iostream>
 #include <stdexcept>
 
 #define ASSERT_THROW(c, e)           \
@@ -19,9 +21,6 @@
         (x)->Release(); \
         x = nullptr;    \
     }
-
-#include <filesystem>
-#include <iostream>
 
 VstPlugin::VstPlugin() = default;
 
@@ -169,8 +168,16 @@ LRESULT CALLBACK VstWindowProc(
         case WM_CREATE:
         {
             auto createStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
-            vstPlugin = reinterpret_cast<VstPlugin *>(createStruct->lpCreateParams);
             SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(createStruct->lpCreateParams));
+            break;
+        }
+        case WM_KEYDOWN:
+        {
+            if (wParam == VK_ESCAPE)
+            {
+                vstPlugin->closingEditorWindow();
+                DestroyWindow(hwnd);
+            }
             break;
         }
         case WM_CLOSE:
@@ -503,7 +510,7 @@ VstIntPtr VstPlugin::hostCallback(
                 rc.right = rc.left + static_cast<int>(index);
                 rc.bottom = rc.top + static_cast<int>(value);
 
-                resizeEditor(rc);
+                // resizeEditor(rc);
             }
             break;
         }

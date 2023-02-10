@@ -2,9 +2,23 @@
 
 #include <stdexcept>
 
-#define ASSERT_THROW(c,e)   if(!(c)) { throw std::runtime_error(e); }
-#define CLOSE_HANDLE(x)     if((x)) { CloseHandle(x); x = nullptr; }
-#define RELEASE(x)          if((x)) { (x)->Release(); x = nullptr; }
+#define ASSERT_THROW(c, e)           \
+    if (!(c))                        \
+    {                                \
+        throw std::runtime_error(e); \
+    }
+#define CLOSE_HANDLE(x) \
+    if ((x))            \
+    {                   \
+        CloseHandle(x); \
+        x = nullptr;    \
+    }
+#define RELEASE(x)      \
+    if ((x))            \
+    {                   \
+        (x)->Release(); \
+        x = nullptr;    \
+    }
 
 #include <audioclient.h>
 #include <mmdeviceapi.h>
@@ -276,7 +290,11 @@ unsigned __stdcall Wasapi::tmpThreadFunc(
 
 uint32_t Wasapi::threadFunc()
 {
-    const HANDLE events[2] = {_hClose, _hRefillEvent};
+    const HANDLE events[2] = {
+        _hClose,
+        _hRefillEvent,
+    };
+
     for (bool run = true; run;)
     {
         const auto r = WaitForMultipleObjects(_countof(events), events, FALSE, INFINITE);

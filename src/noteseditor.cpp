@@ -439,6 +439,11 @@ void NotesEditor::RenderEditableNote(
 {
     static ImGuiID movingNoteId;
 
+    if (noteSize.x <= 0)
+    {
+        return;
+    }
+
     auto buttonPos = ImGui::GetCursorScreenPos();
     if (ImGui::ButtonEx("note", noteSize, ImGuiButtonFlags_PressedOnClick))
     {
@@ -529,6 +534,9 @@ void NotesEditor::RenderNotesCanvas(
     {
         _drawingNotes = true;
         _noteDrawingAndEditingStart = ImGui::GetMousePos();
+
+        auto noteNumber = 127 - std::floor((_noteDrawingAndEditingStart.y - origin.y - timelineHeight + ImGui::GetScrollY()) / midiEventHeight);
+        _notePreviewService.PreviewNote(uint32_t(noteNumber), 100, 10);
     }
     else if (_drawingNotes && ImGui::IsMouseReleased(0))
     {
@@ -542,6 +550,11 @@ void NotesEditor::RenderNotesCanvas(
             auto tmp = noteStart;
             noteStart = noteEnd;
             noteEnd = tmp;
+        }
+
+        if ((noteEnd - noteStart) < 1000)
+        {
+            noteEnd = noteStart + std::chrono::milliseconds::rep(1000);
         }
         region.AddEvent(noteStart, noteToCreate, true, 100);
         region.AddEvent(noteEnd, noteToCreate, false, 0);
