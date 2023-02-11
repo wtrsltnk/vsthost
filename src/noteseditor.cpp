@@ -282,13 +282,14 @@ void NotesEditor::Render(
             {
                 auto resetTo = ImGui::GetCursorPos();
 
+                // Render the note names in front of a note "line" in the editor
                 ImGui::PushFont(_monofont);
                 for (int noteNumber = 127; noteNumber >= 21; noteNumber--)
                 {
                     auto originNoteScreenPos = ImGui::GetCursorScreenPos();
                     ImGui::GetWindowDrawList()->AddText(
                         ImVec2(originNoteScreenPos.x, originNoteScreenPos.y),
-                        ImColor(0.0f, 0.0f, 0.0f, 0.6f),
+                        ImColor(ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]),
                         NoteToString(noteNumber));
                     ImGui::SetCursorScreenPos(ImVec2(originNoteScreenPos.x, originNoteScreenPos.y + midiEventHeight));
                 }
@@ -302,6 +303,7 @@ void NotesEditor::Render(
 
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 1));
 
+                // Render the events with a square button and an orange dot
                 ImGui::BeginGroup();
                 long eindex = 0;
                 static ImGuiID movingEventId;
@@ -375,6 +377,7 @@ void NotesEditor::Render(
 
                 ImGui::SetCursorPos(origin);
 
+                // Render the time between events as a whole note
                 for (int noteNumber = 127; noteNumber >= 21; noteNumber--)
                 {
                     auto originNotePos = ImGui::GetCursorPos();
