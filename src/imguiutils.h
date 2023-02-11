@@ -4,6 +4,9 @@
 #include <imgui.h>
 #include <vector>
 
+char const *NoteToString(
+    uint32_t note);
+
 namespace ImGui
 {
     void MoveCursorPos(

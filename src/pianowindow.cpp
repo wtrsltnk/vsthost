@@ -1,15 +1,16 @@
 #include "pianowindow.h"
 
+#include "imguiutils.h"
 #include "midinote.h"
 
-std::set<uint32_t> PianoWindow::downKeys;
+const ImColor PianoWindow::blackKeyButton = ImColor(50, 50, 60);
+const ImColor PianoWindow::blackKeyText = ImColor(250, 250, 250);
+const ImColor PianoWindow::whiteKeyButton = ImColor(155, 175, 200);
+const ImColor PianoWindow::whiteKeyText = ImColor(20, 20, 20);
+const ImColor PianoWindow::downKeyButton = ImColor(50, 150, 50);
+const ImColor PianoWindow::downKeyText = ImColor(250, 250, 250);
 
-const ImColor blackKeyButton = ImColor(50, 50, 60);
-const ImColor blackKeyText = ImColor(250, 250, 250);
-const ImColor whiteKeyButton = ImColor(155, 175, 200);
-const ImColor whiteKeyText = ImColor(20, 20, 20);
-const ImColor downKeyButton = ImColor(50, 150, 50);
-const ImColor downKeyText = ImColor(250, 250, 250);
+std::set<uint32_t> PianoWindow::downKeys;
 
 PianoWindow::PianoWindow() = default;
 
@@ -19,9 +20,6 @@ void PianoWindow::SetState(
     _state = state;
 }
 
-char const *NoteToString(
-    uint32_t note);
-
 void NoteButton(
     int note,
     const ImVec2 &size)
@@ -30,8 +28,8 @@ void NoteButton(
 
     if (markAsDown)
     {
-        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)downKeyButton);
-        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)downKeyText);
+        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)PianoWindow::downKeyButton);
+        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)PianoWindow::downKeyText);
     }
     else
     {
@@ -56,8 +54,8 @@ void NoteButtonWithoutColor(
 
     if (markAsDown)
     {
-        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)downKeyButton);
-        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)downKeyText);
+        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)PianoWindow::downKeyButton);
+        ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)PianoWindow::downKeyText);
     }
 
     ImGui::Button(NoteToString(note), size);
@@ -99,35 +97,47 @@ void PianoWindow::Render(
             ImGui::PushID(i);
             if (i == 0)
             {
-                ImGui::InvisibleButton("HalfSpace", ImVec2((keyWidth / 2) - (ImGui::GetStyle().ItemSpacing.x / 2), keyHeight));
+                ImGui::InvisibleButton("HalfSpace", ImVec2((keyWidth / 2) - (ImGui::GetStyle().ItemSpacing.x / 2), keyHeight * 1.1f));
             }
 
             ImGui::SameLine();
 
+            ImGui::MoveCursorPos(ImVec2(keyWidth * 0.1f, 0.0f));
+
             n = firstKeyNoteNumber + ((i + _state->_octaveShift) * 12) + Note_CSharp_OffsetFromC;
-            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight));
+            NoteButtonWithoutColor(n, ImVec2(keyWidth * 0.8f, keyHeight * 1.1f));
             ImGui::SameLine();
+
+            ImGui::MoveCursorPos(ImVec2(keyWidth * 0.2f, 0.0f));
 
             n = firstKeyNoteNumber + ((i + _state->_octaveShift) * 12) + Note_DSharp_OffsetFromC;
-            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight));
+            NoteButtonWithoutColor(n, ImVec2(keyWidth * 0.8f, keyHeight * 1.1f));
             ImGui::SameLine();
 
-            ImGui::InvisibleButton("SpaceE", ImVec2(keyWidth, keyHeight));
+            ImGui::MoveCursorPos(ImVec2(keyWidth * 0.2f, 0.0f));
+
+            ImGui::InvisibleButton("SpaceE", ImVec2(keyWidth, keyHeight * 1.1f));
             ImGui::SameLine();
 
             n = firstKeyNoteNumber + ((i + _state->_octaveShift) * 12) + Note_FSharp_OffsetFromC;
-            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight));
+            NoteButtonWithoutColor(n, ImVec2(keyWidth * 0.8f, keyHeight * 1.1f));
             ImGui::SameLine();
+
+            ImGui::MoveCursorPos(ImVec2(keyWidth * 0.2f, 0.0f));
 
             n = firstKeyNoteNumber + ((i + _state->_octaveShift) * 12) + Note_GSharp_OffsetFromC;
-            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight));
+            NoteButtonWithoutColor(n, ImVec2(keyWidth * 0.8f, keyHeight * 1.1f));
             ImGui::SameLine();
+
+            ImGui::MoveCursorPos(ImVec2(keyWidth * 0.2f, 0.0f));
 
             n = firstKeyNoteNumber + ((i + _state->_octaveShift) * 12) + Note_ASharp_OffsetFromC;
-            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight));
+            NoteButtonWithoutColor(n, ImVec2(keyWidth * 0.8f, keyHeight * 1.1f));
             ImGui::SameLine();
 
-            ImGui::InvisibleButton("HalfSpace", ImVec2(keyWidth, keyHeight));
+            ImGui::MoveCursorPos(ImVec2(keyWidth * 0.1f, 0.0f));
+
+            ImGui::InvisibleButton("HalfSpace", ImVec2(keyWidth, keyHeight * 1.1f));
 
             ImGui::PopID();
         }
@@ -147,31 +157,31 @@ void PianoWindow::Render(
             }
 
             n = firstKeyNoteNumber + ((i + _state->_octaveShift) * 12) + Note_C_OffsetFromC;
-            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight));
+            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight * 0.9f));
             ImGui::SameLine();
 
             n = firstKeyNoteNumber + ((i + _state->_octaveShift) * 12) + Note_D_OffsetFromC;
-            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight));
+            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight * 0.9f));
             ImGui::SameLine();
 
             n = firstKeyNoteNumber + ((i + _state->_octaveShift) * 12) + Note_E_OffsetFromC;
-            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight));
+            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight * 0.9f));
             ImGui::SameLine();
 
             n = firstKeyNoteNumber + ((i + _state->_octaveShift) * 12) + Note_F_OffsetFromC;
-            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight));
+            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight * 0.9f));
             ImGui::SameLine();
 
             n = firstKeyNoteNumber + ((i + _state->_octaveShift) * 12) + Note_G_OffsetFromC;
-            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight));
+            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight * 0.9f));
             ImGui::SameLine();
 
             n = firstKeyNoteNumber + ((i + _state->_octaveShift) * 12) + Note_A_OffsetFromC;
-            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight));
+            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight * 0.9f));
             ImGui::SameLine();
 
             n = firstKeyNoteNumber + ((i + _state->_octaveShift) * 12) + Note_B_OffsetFromC;
-            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight));
+            NoteButtonWithoutColor(n, ImVec2(keyWidth, keyHeight * 0.9f));
             HandleKeyUpDown(n);
 
             ImGui::PopID();

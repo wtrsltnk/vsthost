@@ -121,7 +121,7 @@ bool refillCallback(
     const WAVEFORMATEX *const mixFormat)
 {
     auto start = state._cursor;
-    auto diff = sampleCount * (1000.0 / mixFormat->nSamplesPerSec);
+    long long diff = (long long)(sampleCount * (1000.0 / mixFormat->nSamplesPerSec));
     state.UpdateByDiff(diff);
     auto end = state._cursor;
 
@@ -761,7 +761,7 @@ void MainLoop()
         glfwGetWindowSize(window, &(state.ui._width), &(state.ui._height));
 
         int currentInspectorWidth = _showInspectorWindow ? inspectorWidth : 0;
-        int currentPianoHeight = _showPianoWindow ? float(pianoHeight + ImGui::GetTextLineHeightWithSpacing()) : 0;
+        int currentPianoHeight = _showPianoWindow ? int(pianoHeight + ImGui::GetTextLineHeightWithSpacing()) : 0;
 
         auto &style = ImGui::GetStyle();
         ImVec2 currentPos;
@@ -774,13 +774,13 @@ void MainLoop()
 
         ToolbarWindow(
             ImVec2(0, currentPos.y - style.WindowPadding.y),
-            ImVec2(state.ui._width, toolbarHeight + style.WindowPadding.y));
+            ImVec2(float(state.ui._width), toolbarHeight + style.WindowPadding.y));
 
         if (_showInspectorWindow)
         {
             _inspectorWindow.Render(
                 ImVec2(0, currentPos.y + toolbarHeight),
-                ImVec2(currentInspectorWidth, state.ui._height - toolbarHeight));
+                ImVec2(float(currentInspectorWidth), float(state.ui._height - toolbarHeight)));
         }
 
         if (state.ui._activeCenterScreen == 0)
@@ -915,6 +915,7 @@ int main(
 
     _notesEditor.SetState(&state);
     _notesEditor.SetTracksManager(&_tracks);
+    _notesEditor.Init();
 
     _inspectorWindow.SetState(&state);
     _inspectorWindow.SetTracksManager(&_tracks);

@@ -29,6 +29,14 @@ public:
 private:
     State *_state = nullptr;
     int _octaves = 8;
+
+public:
+    static const ImColor blackKeyButton;
+    static const ImColor blackKeyText;
+    static const ImColor whiteKeyButton;
+    static const ImColor whiteKeyText;
+    static const ImColor downKeyButton;
+    static const ImColor downKeyText;
 };
 
 #endif // PIANOWINDOW_H

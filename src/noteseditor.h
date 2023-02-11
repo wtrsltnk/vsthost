@@ -14,11 +14,14 @@ class NotesEditor :
 public:
     NotesEditor();
 
+    void Init();
+
     void Render(
         const ImVec2 &pos,
         const ImVec2 &size);
 
 private:
+    ImFont *_monofont = nullptr;
     ImVec2 _noteDrawingAndEditingStart;
     bool _drawingNotes = false;
     bool _editingNotes = false;

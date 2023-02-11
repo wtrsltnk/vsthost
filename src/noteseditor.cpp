@@ -21,6 +21,11 @@ const int maxPixelsPerStep = 200;
 
 NotesEditor::NotesEditor() = default;
 
+void NotesEditor::Init()
+{
+    _monofont = ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\lucon.ttf", 12.0f);
+}
+
 void NotesEditor::Render(
     const ImVec2 &pos,
     const ImVec2 &size)
@@ -51,7 +56,7 @@ void NotesEditor::Render(
             ImGui::PopItemWidth();
 
             ImGui::SameLine();
-
+            /*
             int &selectedArp = (int &)_arpeggiatorPreviewService.CurrentArpeggiator.Mode;
             int &rate = (int &)_arpeggiatorPreviewService.CurrentArpeggiator.Rate;
 
@@ -242,6 +247,8 @@ void NotesEditor::Render(
                 }
                 ImGui::EndPopup();
             }
+
+        */
         }
         ImGui::EndChild();
 
@@ -265,12 +272,32 @@ void NotesEditor::Render(
 
             ImGui::MoveCursorPos(ImVec2(0.0f, float(timelineHeight)));
 
+            auto offset = 25.0f;
+
             ImGui::BeginChild(
                 "NotesContainer",
                 ImVec2(0, 0),
                 false,
                 ImGuiWindowFlags_HorizontalScrollbar);
             {
+                auto resetTo = ImGui::GetCursorPos();
+
+                ImGui::PushFont(_monofont);
+                for (int noteNumber = 127; noteNumber >= 21; noteNumber--)
+                {
+                    auto originNoteScreenPos = ImGui::GetCursorScreenPos();
+                    ImGui::GetWindowDrawList()->AddText(
+                        ImVec2(originNoteScreenPos.x, originNoteScreenPos.y),
+                        ImColor(0.0f, 0.0f, 0.0f, 0.6f),
+                        NoteToString(noteNumber));
+                    ImGui::SetCursorScreenPos(ImVec2(originNoteScreenPos.x, originNoteScreenPos.y + midiEventHeight));
+                }
+                ImGui::PopFont();
+
+                ImGui::SetCursorPos(resetTo);
+
+                ImGui::MoveCursorPos(ImVec2(offset, 0.0f));
+
                 auto origin = ImGui::GetCursorPos();
 
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 1));
@@ -306,7 +333,7 @@ void NotesEditor::Render(
                         }
 
                         auto center = ImVec2(
-                            originContainerScreenPos.x + x,
+                            originContainerScreenPos.x + offset + x,
                             originContainerScreenPos.y + y + timelineHeight);
 
                         if (ImGui::IsItemActive())
@@ -348,7 +375,7 @@ void NotesEditor::Render(
 
                 ImGui::SetCursorPos(origin);
 
-                for (int noteNumber = 127; noteNumber >= 0; noteNumber--)
+                for (int noteNumber = 127; noteNumber >= 21; noteNumber--)
                 {
                     auto originNotePos = ImGui::GetCursorPos();
                     auto originNoteScreenPos = ImGui::GetCursorScreenPos();
@@ -380,7 +407,7 @@ void NotesEditor::Render(
                             ImGui::PushID(note.length);
 
                             ImGui::SetCursorPos(
-                                ImVec2(StepsToPixels(notesInTime.first) + (midiEventHeight * 0.5f), originNotePos.y + 1));
+                                ImVec2(StepsToPixels(notesInTime.first) + offset + (midiEventHeight * 0.5f), originNotePos.y + 1));
 
                             RenderEditableNote(
                                 region,
@@ -412,12 +439,12 @@ void NotesEditor::Render(
             ImGui::EndChild();
 
             RenderTimeline(
-                ImVec2(originContainerScreenPos.x, originContainerScreenPos.y),
+                ImVec2(originContainerScreenPos.x + offset, originContainerScreenPos.y),
                 StepsToPixels(region.Length()),
                 _tracksScrollx);
 
             RenderCursor(
-                ImVec2(originContainerScreenPos.x - StepsToPixels(regionStart), originContainerScreenPos.y),
+                ImVec2(originContainerScreenPos.x + offset - StepsToPixels(regionStart), originContainerScreenPos.y),
                 size,
                 _tracksScrollx,
                 0);
@@ -480,7 +507,7 @@ void NotesEditor::RenderEditableNote(
         {
             auto amountToShiftNote = std::floor(diffy / float(midiEventHeight));
 
-            _notePreviewService.PreviewNote(uint32_t(noteNumber - amountToShiftNote), 100, length);
+            _notePreviewService.PreviewNote(uint32_t(noteNumber - amountToShiftNote), 100, 100);
 
             _lastNotePreviewY = diffy;
         }
@@ -528,7 +555,7 @@ void NotesEditor::RenderNotesCanvas(
 
     ImGui::InvisibleButton(
         "##NotesCanvas",
-        ImVec2(StepsToPixels(region.Length()), midiEventHeight * 127));
+        ImVec2(StepsToPixels(region.Length()), midiEventHeight * (127 - 21)));
 
     if (ImGui::IsItemHovered() && ImGui::IsMouseDown(0) && !_drawingNotes)
     {
