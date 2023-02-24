@@ -286,11 +286,12 @@ void NotesEditor::Render(
                 ImGui::PushFont(_monofont);
                 for (int noteNumber = 127; noteNumber >= 21; noteNumber--)
                 {
+                    auto noteName = NoteToString(noteNumber);
                     auto originNoteScreenPos = ImGui::GetCursorScreenPos();
                     ImGui::GetWindowDrawList()->AddText(
                         ImVec2(originNoteScreenPos.x, originNoteScreenPos.y),
                         ImColor(ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]),
-                        NoteToString(noteNumber));
+                        noteName);
                     ImGui::SetCursorScreenPos(ImVec2(originNoteScreenPos.x, originNoteScreenPos.y + midiEventHeight));
                 }
                 ImGui::PopFont();
@@ -303,132 +304,134 @@ void NotesEditor::Render(
 
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 1));
 
-                // Render the events with a square button and an orange dot
                 ImGui::BeginGroup();
-                long eindex = 0;
-                static ImGuiID movingEventId;
-                for (const auto &t : region.Events())
                 {
-                    for (const auto &e : t.second)
+                    long eindex = 0;
+                    static ImGuiID movingEventId;
+
+                    // Render the events with a square button and an orange dot
+                    for (const auto &t : region.Events())
                     {
-                        ImGui::PushID(eindex++);
-
-                        auto x = StepsToPixels(t.first);
-                        auto y = (127 - e.num) * midiEventHeight + 1;
-                        ImGui::SetCursorPos(ImVec2(origin.x + x - (midiEventHeight / 2), origin.y + y));
-
-                        if (ImGui::ButtonEx("event", ImVec2(midiEventHeight, midiEventHeight - 1), ImGuiButtonFlags_PressedOnClick))
+                        for (const auto &e : t.second)
                         {
-                            movingEventId = ImGui::GetID("event");
-                        }
+                            ImGui::PushID(eindex++);
 
-                        if (ImGui::IsItemHovered())
-                        {
-                            if (e.type == MidiEventTypes::M_NOTE && e.value > 0)
+                            auto x = StepsToPixels(t.first);
+                            auto y = (127 - e.num) * midiEventHeight + 1;
+                            ImGui::SetCursorPos(ImVec2(origin.x + x - (midiEventHeight / 2), origin.y + y));
+
+                            if (ImGui::ButtonEx("event", ImVec2(midiEventHeight, midiEventHeight - 1), ImGuiButtonFlags_PressedOnClick))
                             {
-                                ImGui::SetTooltip("Move Note Down event");
+                                movingEventId = ImGui::GetID("event");
                             }
-                            if (e.type == MidiEventTypes::M_NOTE && e.value <= 0)
+
+                            if (ImGui::IsItemHovered())
                             {
-                                ImGui::SetTooltip("Move Note Release event");
+                                if (e.type == MidiEventTypes::M_NOTE && e.value > 0)
+                                {
+                                    ImGui::SetTooltip("Move Note Down event");
+                                }
+                                if (e.type == MidiEventTypes::M_NOTE && e.value <= 0)
+                                {
+                                    ImGui::SetTooltip("Move Note Release event");
+                                }
                             }
-                        }
 
-                        auto center = ImVec2(
-                            originContainerScreenPos.x + offset + x,
-                            originContainerScreenPos.y + y + timelineHeight);
+                            auto center = ImVec2(
+                                originContainerScreenPos.x + offset + x,
+                                originContainerScreenPos.y + y + timelineHeight);
 
-                        if (ImGui::IsItemActive())
-                        {
-                            ImGui::GetWindowDrawList()->AddLine(
+                            if (ImGui::IsItemActive())
+                            {
+                                ImGui::GetWindowDrawList()->AddLine(
+                                    ImVec2(
+                                        ImGui::GetIO().MouseClickedPos[0].x - ImGui::GetScrollX(),
+                                        center.y + (midiEventHeight * 0.5f) - ImGui::GetScrollY()),
+                                    ImVec2(
+                                        ImGui::GetIO().MousePos.x - ImGui::GetScrollX(),
+                                        center.y + (midiEventHeight * 0.5f) - ImGui::GetScrollY()),
+                                    ImGui::GetColorU32(ImGuiCol_PlotLines),
+                                    2.0f);
+                            }
+
+                            if (movingEventId == ImGui::GetID("event") && ImGui::IsMouseReleased(0))
+                            {
+                                auto move = ImGui::GetIO().MousePos.x - ImGui::GetIO().MouseClickedPos[0].x;
+                                region.MoveEvent(
+                                    e,
+                                    t.first,
+                                    t.first + PixelsToSteps(move));
+                                movingEventId = 0;
+                            }
+
+                            ImGui::GetWindowDrawList()->AddRectFilled(
                                 ImVec2(
-                                    ImGui::GetIO().MouseClickedPos[0].x - ImGui::GetScrollX(),
-                                    center.y + (midiEventHeight * 0.5f) - ImGui::GetScrollY()),
+                                    center.x - (midiEventHeight * 0.125f) - ImGui::GetScrollX(),
+                                    center.y + midiEventHeight * 0.375f - ImGui::GetScrollY()),
                                 ImVec2(
-                                    ImGui::GetIO().MousePos.x - ImGui::GetScrollX(),
-                                    center.y + (midiEventHeight * 0.5f) - ImGui::GetScrollY()),
-                                ImGui::GetColorU32(ImGuiCol_PlotLines),
-                                2.0f);
-                        }
-
-                        if (movingEventId == ImGui::GetID("event") && ImGui::IsMouseReleased(0))
-                        {
-                            auto move = ImGui::GetIO().MousePos.x - ImGui::GetIO().MouseClickedPos[0].x;
-                            region.MoveEvent(
-                                e,
-                                t.first,
-                                t.first + PixelsToSteps(move));
-                            movingEventId = 0;
-                        }
-
-                        ImGui::GetWindowDrawList()->AddRectFilled(
-                            ImVec2(
-                                center.x - (midiEventHeight * 0.125f) - ImGui::GetScrollX(),
-                                center.y + midiEventHeight * 0.375f - ImGui::GetScrollY()),
-                            ImVec2(
-                                center.x + (midiEventHeight * 0.125f) - ImGui::GetScrollX(),
-                                center.y + midiEventHeight * 0.625f - ImGui::GetScrollY()),
-                            ImColor(ImGui::GetStyle().Colors[ImGuiCol_PlotLinesHovered]),
-                            midiEventHeight / 3.0f);
-
-                        ImGui::PopID();
-                    }
-                }
-
-                ImGui::SetCursorPos(origin);
-
-                // Render the time between events as a whole note
-                for (int noteNumber = 127; noteNumber >= 21; noteNumber--)
-                {
-                    auto originNotePos = ImGui::GetCursorPos();
-                    auto originNoteScreenPos = ImGui::GetCursorScreenPos();
-
-                    auto gridWidth = std::max(StepsToPixels(region.Length()), ImGui::GetWindowWidth());
-                    auto noteInOctave = noteNumber % 12;
-                    if (noteInOctave == Note_C_OffsetFromC || noteInOctave == Note_D_OffsetFromC || noteInOctave == Note_E_OffsetFromC || noteInOctave == Note_F_OffsetFromC || noteInOctave == Note_G_OffsetFromC || noteInOctave == Note_A_OffsetFromC || noteInOctave == Note_B_OffsetFromC)
-                    {
-                        ImGui::GetWindowDrawList()->AddRectFilled(
-                            ImVec2(
-                                originNoteScreenPos.x,
-                                originNoteScreenPos.y + 1),
-                            ImVec2(
-                                originNoteScreenPos.x + gridWidth,
-                                originNoteScreenPos.y + midiEventHeight),
-                            ImColor(1.0f, 1.0f, 1.0f, 0.1f));
-                    }
-
-                    ImGui::GetWindowDrawList()->AddLine(
-                        originNoteScreenPos,
-                        ImVec2(originNoteScreenPos.x + gridWidth, originNoteScreenPos.y),
-                        ImColor(0.7f, 0.7f, 0.7f, 0.2f));
-
-                    ImGui::PushID(noteNumber);
-                    for (const auto &notesInTime : notes[noteNumber])
-                    {
-                        for (const auto &note : notesInTime.second)
-                        {
-                            ImGui::PushID(note.length);
-
-                            ImGui::SetCursorPos(
-                                ImVec2(StepsToPixels(notesInTime.first) + offset + (midiEventHeight * 0.5f), originNotePos.y + 1));
-
-                            RenderEditableNote(
-                                region,
-                                noteNumber,
-                                notesInTime.first,
-                                note.length,
-                                note.velocity,
-                                ImVec2(StepsToPixels(note.length) - midiEventHeight, midiEventHeight - 1),
-                                originContainerScreenPos);
+                                    center.x + (midiEventHeight * 0.125f) - ImGui::GetScrollX(),
+                                    center.y + midiEventHeight * 0.625f - ImGui::GetScrollY()),
+                                ImColor(ImGui::GetStyle().Colors[ImGuiCol_PlotLinesHovered]),
+                                midiEventHeight / 3.0f);
 
                             ImGui::PopID();
                         }
                     }
-                    ImGui::PopID();
 
-                    ImGui::SetCursorPos(ImVec2(originNotePos.x, originNotePos.y + midiEventHeight));
+                    ImGui::SetCursorPos(origin);
+
+                    // Render the time between events as a whole note
+                    for (int noteNumber = 127; noteNumber >= 21; noteNumber--)
+                    {
+                        auto originNotePos = ImGui::GetCursorPos();
+                        auto originNoteScreenPos = ImGui::GetCursorScreenPos();
+
+                        auto gridWidth = std::max(StepsToPixels(region.Length()), ImGui::GetWindowWidth());
+                        auto noteInOctave = noteNumber % 12;
+                        if (noteInOctave == Note_C_OffsetFromC || noteInOctave == Note_D_OffsetFromC || noteInOctave == Note_E_OffsetFromC || noteInOctave == Note_F_OffsetFromC || noteInOctave == Note_G_OffsetFromC || noteInOctave == Note_A_OffsetFromC || noteInOctave == Note_B_OffsetFromC)
+                        {
+                            ImGui::GetWindowDrawList()->AddRectFilled(
+                                ImVec2(
+                                    originNoteScreenPos.x,
+                                    originNoteScreenPos.y + 1),
+                                ImVec2(
+                                    originNoteScreenPos.x + gridWidth,
+                                    originNoteScreenPos.y + midiEventHeight),
+                                ImColor(1.0f, 1.0f, 1.0f, 0.1f));
+                        }
+
+                        ImGui::GetWindowDrawList()->AddLine(
+                            originNoteScreenPos,
+                            ImVec2(originNoteScreenPos.x + gridWidth, originNoteScreenPos.y),
+                            ImColor(0.7f, 0.7f, 0.7f, 0.2f));
+
+                        ImGui::PushID(noteNumber);
+                        for (const auto &notesInTime : notes[noteNumber])
+                        {
+                            for (const auto &note : notesInTime.second)
+                            {
+                                ImGui::PushID(note.length);
+
+                                ImGui::SetCursorPos(
+                                    ImVec2(StepsToPixels(notesInTime.first) + offset + (midiEventHeight * 0.5f), originNotePos.y + 1));
+
+                                RenderEditableNote(
+                                    region,
+                                    noteNumber,
+                                    notesInTime.first,
+                                    note.length,
+                                    note.velocity,
+                                    ImVec2(StepsToPixels(note.length) - midiEventHeight, midiEventHeight - 1),
+                                    originContainerScreenPos);
+
+                                ImGui::PopID();
+                            }
+                        }
+                        ImGui::PopID();
+
+                        ImGui::SetCursorPos(ImVec2(originNotePos.x, originNotePos.y + midiEventHeight));
+                    }
                 }
-
                 ImGui::EndGroup();
 
                 ImGui::PopStyleVar();

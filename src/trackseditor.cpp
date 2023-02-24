@@ -9,7 +9,7 @@
 #include <spdlog/spdlog.h>
 #include <sstream>
 
-const int regionRounding = 5;
+const int regionRounding = 2;
 const int regionResizeHandleWidth = 20;
 
 TracksEditor::TracksEditor() = default;
@@ -278,11 +278,11 @@ void RenderRegionRubberband(
         overlayOrigin.x + length,
         overlayOrigin.y + finalTrackHeight - 8);
 
-    ImGui::GetForegroundDrawList()->AddRectFilled(
+    ImGui::GetForegroundDrawList()->AddRect(
         min,
         max,
-        ImColor(255, 255, 255, 50),
-        regionRounding);
+        ImColor(255, 155, 155, 250),
+        regionRounding, 0, 5.0f);
 }
 
 void TracksEditor::RenderRegion(
@@ -336,9 +336,12 @@ void TracksEditor::RenderRegion(
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(track.GetColor()[0] * 2.0f, track.GetColor()[1] * 2.0f, track.GetColor()[2] * 2.0f, track.GetColor()[3] * 0.5f));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(track.GetColor()[0] * 2.0f, track.GetColor()[1] * 2.0f, track.GetColor()[2] * 2.0f, track.GetColor()[3] * 0.7f));
     }
+
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, regionRounding);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImGui::GetStyle().Colors[ImGuiCol_Button]);
     ImGui::Button("##test", ImVec2(regionWidth, float(finalTrackHeight - 8)));
+    ImGui::PopStyleColor();
     if (isActiveRegion) ImGui::PopStyleColor(2);
 
     if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0) && _state->_tracks->GetActiveTrackId() == track.Id())
