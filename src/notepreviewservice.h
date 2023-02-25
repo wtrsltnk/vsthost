@@ -28,8 +28,8 @@ public:
 private:
     State *_state = nullptr;
     ITracksManager *_tracks = nullptr;
-    uint32_t _activePreviewNote;
-    std::chrono::milliseconds::rep _activePreviewNoteTimeLeft;
+    uint32_t _activePreviewNote = 0;
+    std::chrono::milliseconds::rep _activePreviewNoteTimeLeft = 0;
 
     std::shared_ptr<Instrument> GetActiveInstrument();
 };

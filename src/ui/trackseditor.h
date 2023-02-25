@@ -74,12 +74,12 @@ private:
         Track &track,
         int t);
 
-    void RenderTrack(
+    void RenderTrackWithRegionsAndNotes(
         Track &track,
         int t,
         float trackWidth);
 
-    void RenderRegion(
+    void RenderRegionWithNotes(
         Track &track,
         std::pair<const long, Region> const &region,
         ImVec2 const &trackOrigin,

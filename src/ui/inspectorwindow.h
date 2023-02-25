@@ -1,8 +1,8 @@
 #ifndef INSPECTORWINDOW_H
 #define INSPECTORWINDOW_H
 
-#include "state.h"
-#include "wasapi.h"
+#include "../state.h"
+#include "../wasapi.h"
 #include <itracksmanager.h>
 #include <ivstpluginservice.h>
 
@@ -12,8 +12,6 @@
 class InspectorWindow
 {
 public:
-    InspectorWindow();
-
     void SetState(
         State *state);
 

@@ -2,6 +2,100 @@
 
 #include <cmath>
 
+void PushPopStyleVar(
+    ImGuiStyleVar idx,
+    const ImVec2 &val,
+    std::function<void()> scope)
+{
+    ImGui::PushStyleVar(idx, val);
+
+    scope();
+
+    ImGui::PopStyleVar();
+}
+
+void PushPopStyleVar(
+    ImGuiStyleVar idx,
+    float val,
+    std::function<void()> scope)
+{
+    ImGui::PushStyleVar(idx, val);
+
+    scope();
+
+    ImGui::PopStyleVar();
+}
+
+void PushPopStyleColor(
+    ImGuiCol idx,
+    const ImVec4 &col,
+    std::function<void()> scope)
+{
+    ImGui::PushStyleColor(idx, col);
+
+    scope();
+
+    ImGui::PopStyleColor();
+}
+
+void PushPopStyleColor(
+    std::map<ImGuiCol, const ImVec4 &> colors,
+    std::function<void()> scope)
+{
+    for (auto const &color : colors)
+    {
+        ImGui::PushStyleColor(color.first, color.second);
+    }
+
+    scope();
+
+    ImGui::PopStyleColor(colors.size());
+}
+
+void PushPopID(
+    int int_id,
+    std::function<void()> scope)
+{
+    ImGui::PushID(int_id);
+
+    scope();
+
+    ImGui::PopID();
+}
+
+void PushPopFont(
+    ImFont *font,
+    std::function<void()> scope)
+{
+    ImGui::PushFont(font);
+
+    scope();
+
+    ImGui::PopFont();
+}
+
+void PushPopItemWidth(
+    float item_width,
+    std::function<void()> scope)
+{
+    ImGui::PushItemWidth(item_width);
+
+    scope();
+
+    ImGui::PopItemWidth();
+}
+
+void PushPopDisabled(
+    bool disabled,
+    std::function<void()> scope)
+{
+    ImGui::PushDisabled(disabled);
+    
+    scope();
+
+    ImGui::PopDisabled();
+}
+
 namespace ImGui
 {
     void MoveCursorPos(

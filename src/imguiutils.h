@@ -1,11 +1,48 @@
 #ifndef IMGUIUTILS_H
 #define IMGUIUTILS_H
 
+#include <functional>
 #include <imgui.h>
+#include <map>
 #include <vector>
 
 char const *NoteToString(
     uint32_t note);
+
+void PushPopStyleVar(
+    ImGuiStyleVar idx,
+    const ImVec2 &val,
+    std::function<void()> scope);
+
+void PushPopStyleVar(
+    ImGuiStyleVar idx,
+    float val,
+    std::function<void()> scope);
+
+void PushPopStyleColor(
+    ImGuiCol idx,
+    const ImVec4 &col,
+    std::function<void()> scope);
+
+void PushPopStyleColor(
+    std::map<ImGuiCol, const ImVec4 &> colors,
+    std::function<void()> scope);
+
+void PushPopID(
+    int int_id,
+    std::function<void()> scope);
+
+void PushPopFont(
+    ImFont *font,
+    std::function<void()> scope);
+
+void PushPopItemWidth(
+    float item_width,
+    std::function<void()> scope);
+
+void PushPopDisabled(
+    bool disabled,
+    std::function<void()> scope);
 
 namespace ImGui
 {

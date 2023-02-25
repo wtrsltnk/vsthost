@@ -15,6 +15,7 @@ public:
     virtual std::vector<Track> &GetTracks() { return _tracks; }
     virtual void SetTracks(
         const std::vector<Track> &tracks);
+
     virtual std::vector<std::shared_ptr<Instrument>> &GetInstruments() { return _instruments; }
 
     virtual Track &GetTrack(

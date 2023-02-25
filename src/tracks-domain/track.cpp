@@ -97,7 +97,7 @@ void Track::DownloadInstrumentSettings()
     auto data = reinterpret_cast<BYTE *>(getLen);
     _instrumentDataBase64 = base64_encode(&data[0], length);
 
-    spdlog::debug("downloading instrumentDataBase64: {0}", _instrumentDataBase64);
+    //spdlog::debug("downloading instrumentDataBase64: {0}", _instrumentDataBase64);
 
     _instrument->Unlock();
 }
@@ -117,7 +117,7 @@ void Track::UploadInstrumentSettings()
         return;
     }
 
-    spdlog::debug("uploading instrumentDataBase64: {0}", _instrumentDataBase64);
+    //spdlog::debug("uploading instrumentDataBase64: {0}", _instrumentDataBase64);
 
     auto data = base64_decode(_instrumentDataBase64);
 

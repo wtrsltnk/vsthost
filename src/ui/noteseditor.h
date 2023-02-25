@@ -1,12 +1,11 @@
 #ifndef NOTESEDITOR_H
 #define NOTESEDITOR_H
 
+#include "../state.h"
 #include "abstracttimelineeditor.h"
-#include "itracksmanager.h"
-#include "midinote.h"
-#include "state.h"
-
 #include <imgui.h>
+#include <itracksmanager.h>
+#include <midinote.h>
 
 class NotesEditor :
     public AbstractTimelineEditor
@@ -29,9 +28,21 @@ private:
 
     void HandleNotesEditorShortCuts();
 
-    void RenderNotesCanvas(
+    void RenderTrackNotes(
+        const ImVec2 &size);
+
+    void RenderEventButtonsInRegion(
         Region &region,
+        const ImVec2 &originContainerScreenPos,
         const ImVec2 &origin);
+    
+    void RenderNoteHelpersInRegion(
+        Region &region,
+        const ImVec2 &originContainerScreenPos,
+        const ImVec2 &origin);
+
+    void RenderNotesCanvas(
+        Region &region);
 
     void RenderEditableNote(
         Region &region,

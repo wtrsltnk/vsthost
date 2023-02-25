@@ -1,7 +1,7 @@
 #ifndef PIANOWINDOW_H
 #define PIANOWINDOW_H
 
-#include "state.h"
+#include "../state.h"
 #include <imgui.h>
 #include <set>
 

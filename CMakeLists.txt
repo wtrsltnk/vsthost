@@ -38,52 +38,6 @@ project(vsthost)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_library(tracks-domain
-    "include/instrument.h"
-    "include/ivstpluginservice.h"
-    "include/midicontrollers.h"
-    "include/midievent.h"
-    "include/midinote.h"
-    "include/region.h"
-    "include/song.h"
-    "include/track.h"
-    "include/tracksmanager.h"
-    "include/tracksserializer.h"
-    "include/vstplugin.h"
-    "include/win32vstpluginservice.h"
-    "src/tracks-domain/base64.cpp"
-    "src/tracks-domain/base64.h"
-    "src/tracks-domain/instrument.cpp"
-    "src/tracks-domain/midievent.cpp"
-    "src/tracks-domain/midinote.cpp"
-    "src/tracks-domain/region.cpp"
-    "src/tracks-domain/song.cpp"
-    "src/tracks-domain/track.cpp"
-    "src/tracks-domain/tracksmanager.cpp"
-    "src/tracks-domain/tracksserializer.cpp"
-    "src/tracks-domain/vstplugin.cpp"
-    "src/tracks-domain/win32vstpluginservice.cpp"
-)
-
-target_compile_features(tracks-domain
-    PRIVATE cxx_auto_type
-    PRIVATE cxx_nullptr
-    PRIVATE cxx_range_for
-    PRIVATE cxx_std_20
-)
-
-target_include_directories(tracks-domain
-    PRIVATE include
-    PRIVATE "VST3 SDK"
-)
-
-target_link_libraries(tracks-domain
-    spdlog
-    yaml-cpp
-    fmt
-    glm
-)
-
 add_library(RtMidi
     "thirdparty/RtMidi/include/RtError.h"
     "thirdparty/RtMidi/include/RtMidi.h"
@@ -149,31 +103,32 @@ target_compile_definitions(minimal-vsthost
 )
 
 add_executable(imgui-vsthost
-    "src/abstracttimelineeditor.cpp"
-    "src/abstracttimelineeditor.h"
     "src/arpeggiator.cpp"
     "src/arpeggiator.h"
     "src/arpeggiatorpreviewservice.cpp"
     "src/arpeggiatorpreviewservice.h"
+    "src/historymanager.cpp"
+    "src/historymanager.h"
     "src/imgui_impl_win32_gl2.cpp"
     "src/imgui_impl_win32_gl2.h"
     "src/imguiutils.cpp"
     "src/imguiutils.h"
-    "src/inspectorwindow.cpp"
-    "src/inspectorwindow.h"
-    "src/historymanager.cpp"
-    "src/historymanager.h"
     "src/main.cpp"
     "src/notepreviewservice.cpp"
     "src/notepreviewservice.h"
-    "src/noteseditor.cpp"
-    "src/noteseditor.h"
-    "src/pianowindow.cpp"
-    "src/pianowindow.h"
     "src/state.cpp"
     "src/state.h"
-    "src/trackseditor.cpp"
-    "src/trackseditor.h"
+    "src/ui/abstracttimelineeditor.cpp"
+    "src/ui/abstracttimelineeditor.h"
+    "src/ui/docs.md"
+    "src/ui/inspectorwindow.cpp"
+    "src/ui/inspectorwindow.h"
+    "src/ui/noteseditor.cpp"
+    "src/ui/noteseditor.h"
+    "src/ui/pianowindow.cpp"
+    "src/ui/pianowindow.h"
+    "src/ui/trackseditor.cpp"
+    "src/ui/trackseditor.h"
     "src/wasapi.cpp"
     "src/wasapi.h"
 )
@@ -209,4 +164,50 @@ target_include_directories(imgui-vsthost
     PRIVATE include
     PRIVATE "VST3 SDK"
     PRIVATE thirdparty/IconFontCppHeaders/include
+)
+
+add_library(tracks-domain
+    "include/instrument.h"
+    "include/ivstpluginservice.h"
+    "include/midicontrollers.h"
+    "include/midievent.h"
+    "include/midinote.h"
+    "include/region.h"
+    "include/song.h"
+    "include/track.h"
+    "include/tracksmanager.h"
+    "include/tracksserializer.h"
+    "include/vstplugin.h"
+    "include/win32vstpluginservice.h"
+    "src/tracks-domain/base64.cpp"
+    "src/tracks-domain/base64.h"
+    "src/tracks-domain/instrument.cpp"
+    "src/tracks-domain/midievent.cpp"
+    "src/tracks-domain/midinote.cpp"
+    "src/tracks-domain/region.cpp"
+    "src/tracks-domain/song.cpp"
+    "src/tracks-domain/track.cpp"
+    "src/tracks-domain/tracksmanager.cpp"
+    "src/tracks-domain/tracksserializer.cpp"
+    "src/tracks-domain/vstplugin.cpp"
+    "src/tracks-domain/win32vstpluginservice.cpp"
+)
+
+target_compile_features(tracks-domain
+    PRIVATE cxx_auto_type
+    PRIVATE cxx_nullptr
+    PRIVATE cxx_range_for
+    PRIVATE cxx_std_20
+)
+
+target_include_directories(tracks-domain
+    PRIVATE include
+    PRIVATE "VST3 SDK"
+)
+
+target_link_libraries(tracks-domain
+    spdlog
+    yaml-cpp
+    fmt
+    glm
 )

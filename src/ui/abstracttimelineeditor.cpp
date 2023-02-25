@@ -85,7 +85,7 @@ void AbstractTimelineEditor::RenderCursor(
 
     ImGui::GetWindowDrawList()->AddLine(
         cursor,
-        ImVec2(cursor.x, cursor.y + size.y - trackToolsHeight),
+        ImVec2(cursor.x, cursor.y + size.y - trackToolsHeight - trackToolsHeight),
         ImGui::GetColorU32(ImGui::GetStyle().Colors[ImGuiCol_PlotHistogramHovered]),
         3.0f);
 }

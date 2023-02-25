@@ -1,7 +1,7 @@
 #ifndef ABSTRACTTIMELINEEDITOR_H
 #define ABSTRACTTIMELINEEDITOR_H
 
-#include "state.h"
+#include "../state.h"
 #include <region.h>
 #include <track.h>
 

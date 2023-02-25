@@ -45,12 +45,20 @@ void NotePreviewService::PreviewNote(
 
     if (instument == nullptr)
     {
+        spdlog::error("missing instrument");
         return;
+    }
+
+    if (length < 100)
+    {
+         // make sure the length is atleast 100, otherwise it might not produce any preview note
+        length = 100;
     }
 
     instument->Lock();
     if (instument->Plugin() == nullptr)
     {
+        spdlog::error("missing plugin");
         instument->Unlock();
 
         return;
@@ -58,9 +66,11 @@ void NotePreviewService::PreviewNote(
 
     if (_activePreviewNote > 0)
     {
+        spdlog::info("note still active: {}", _activePreviewNote);
         instument->Plugin()->sendMidiNote(1, _activePreviewNote, false, 0);
     }
 
+    spdlog::info("sending note {}", note);
     instument->Plugin()->sendMidiNote(1, note, true, velocity);
 
     _activePreviewNote = note;
@@ -72,6 +82,11 @@ void NotePreviewService::PreviewNote(
 void NotePreviewService::HandleMidiEventsInTimeRange(
     std::chrono::milliseconds::rep diff)
 {
+    if (_activePreviewNote <= 0)
+    {
+        return;
+    }
+
     auto instument = GetActiveInstrument();
 
     if (instument == nullptr)
@@ -87,9 +102,11 @@ void NotePreviewService::HandleMidiEventsInTimeRange(
         return;
     }
 
-    if (_activePreviewNoteTimeLeft < diff)
+    if (_activePreviewNoteTimeLeft < diff && _activePreviewNote > 0)
     {
+        spdlog::info("de-activating note: {}", _activePreviewNote);
         instument->Plugin()->sendMidiNote(1, _activePreviewNote, false, 0);
+        _activePreviewNote = 0;
     }
     else
     {

@@ -221,7 +221,7 @@ void VstPlugin::openEditor(
         _editorHwnd = CreateWindow(
             wcex.lpszClassName,
             "VST Plugin",
-            WS_OVERLAPPED | WS_CAPTION,
+            WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
             CW_USEDEFAULT, CW_USEDEFAULT,
             CW_USEDEFAULT, CW_USEDEFAULT,
             hWndParent, nullptr, nullptr,
@@ -393,9 +393,9 @@ void VstPlugin::cleanup()
         dispatcher(effEditClose);
         _editorHwnd = nullptr;
     }
-    //dispatcher(effStopProcess);
-    // dispatcher(effMainsChanged, 0, 0);
-    //dispatcher(effClose);
+    // dispatcher(effStopProcess);
+    //  dispatcher(effMainsChanged, 0, 0);
+    // dispatcher(effClose);
     if (_vstLibraryHandle)
     {
         FreeLibrary(_vstLibraryHandle);

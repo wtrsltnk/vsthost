@@ -1,7 +1,7 @@
 #include "pianowindow.h"
 
-#include "imguiutils.h"
-#include "midinote.h"
+#include "../imguiutils.h"
+#include <midinote.h>
 
 const ImColor PianoWindow::blackKeyButton = ImColor(50, 50, 60);
 const ImColor PianoWindow::blackKeyText = ImColor(250, 250, 250);

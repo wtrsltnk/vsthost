@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="210mm"
+   height="141mm"
+   viewBox="0 0 210 141"
+   version="1.1"
+   id="svg8"
+   inkscape:version="1.0.2-2 (e86c870879, 2021-01-15)"
+   sodipodi:docname="docs-ui-mainwindow.svg">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.98994949"
+     inkscape:cx="301.25583"
+     inkscape:cy="320.73475"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     inkscape:window-width="1786"
+     inkscape:window-height="1057"
+     inkscape:window-x="126"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#cccccc;stroke-width:0.241285"
+       id="rect833"
+       width="206.375"
+       height="13.202305"
+       x="2.2678571"
+       y="1.8898809" />
+    <rect
+       style="fill:#cccccc;stroke-width:0.241285"
+       id="rect833-5"
+       width="206.375"
+       height="13.202305"
+       x="2.2678571"
+       y="17.764881" />
+    <rect
+       style="fill:#cccccc;stroke-width:0.38666"
+       id="rect833-5-6"
+       width="66.523811"
+       height="105.17886"
+       x="2.2678571"
+       y="34.169048" />
+    <rect
+       style="fill:#cccccc;stroke-width:0.4301"
+       id="rect833-5-9"
+       width="136.11867"
+       height="63.60149"
+       x="72.495842"
+       y="34.169048" />
+    <rect
+       style="fill:#cccccc;stroke-width:0.331619"
+       id="rect833-5-9-5"
+       width="136.11867"
+       height="37.809982"
+       x="72.495842"
+       y="101.4747" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:6.35px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="5.2611365"
+       y="10.661425"
+       id="text959"><tspan
+         sodipodi:role="line"
+         id="tspan957"
+         x="5.2611365"
+         y="10.661425"
+         style="font-size:6.35px;stroke-width:0.264583">Main menu</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:6.35px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="5.8202186"
+       y="26.469904"
+       id="text959-7"><tspan
+         sodipodi:role="line"
+         id="tspan957-1"
+         x="5.8202186"
+         y="26.469904"
+         style="font-size:6.35px;stroke-width:0.264583">Toolbar window</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:6.35px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="5.1734624"
+       y="42.543678"
+       id="text959-7-2"><tspan
+         sodipodi:role="line"
+         id="tspan957-1-3"
+         x="5.1734624"
+         y="42.543678"
+         style="font-size:6.35px;stroke-width:0.264583">Inspector window</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:6.35px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="76.256409"
+       y="42.549049"
+       id="text959-7-3"><tspan
+         sodipodi:role="line"
+         x="76.256409"
+         y="42.549049"
+         style="font-size:6.35px;stroke-width:0.264583"
+         id="tspan1033">Tracks editor</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:6.35px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="75.449234"
+       y="109.90646"
+       id="text959-7-1"><tspan
+         sodipodi:role="line"
+         id="tspan957-1-4"
+         x="75.449234"
+         y="109.90646"
+         style="font-size:6.35px;stroke-width:0.264583">Piano window</tspan></text>
+  </g>
+</svg>

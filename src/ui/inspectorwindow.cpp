@@ -1,13 +1,9 @@
 #include "inspectorwindow.h"
 
 #include "IconsFontaudio.h"
-#include "historymanager.h"
+#include "../historymanager.h"
 #include "instrument.h"
 #include "ivstpluginservice.h"
-
-InspectorWindow::InspectorWindow()
-{
-}
 
 void InspectorWindow::SetState(
     State *state)
