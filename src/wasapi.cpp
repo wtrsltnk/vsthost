@@ -272,6 +272,7 @@ void Wasapi::StopAndCleanupDevice()
     RELEASE(_audioClient)
     RELEASE(_mmDevice)
 }
+
 const std::wstring &Wasapi::CurrentDevice() const
 {
     return _currentDevice;

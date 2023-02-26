@@ -77,7 +77,7 @@ static std::map<int, struct MidiNoteState> _keyboardToNoteMap{
 static RtMidiIn *midiIn = nullptr;
 static State state;
 static GLFWwindow *window = nullptr;
-static ImVec4 clear_color = ImVec4(0.9f, 0.9f, 0.9f, 1.00f); //ImVec4(0.3f, 0.3f, 0.3f, 1.00f);
+static ImVec4 clear_color = ImVec4(0.9f, 0.9f, 0.9f, 1.00f); // ImVec4(0.3f, 0.3f, 0.3f, 1.00f);
 static TracksEditor _tracksEditor;
 static NotesEditor _notesEditor;
 static InspectorWindow _inspectorWindow;
@@ -147,7 +147,10 @@ bool refillCallback(
         }
     }
 
-    state._tracks->SendMidiNotesInSong(start, end);
+    if (state.IsPlaying())
+    {
+        state._tracks->SendMidiNotesInSong(start, end);
+    }
 
     _arpeggiatorPreviewService.SendMidiNotesInTimeRange(diff);
     _notePreviewService.HandleMidiEventsInTimeRange(diff);
@@ -329,7 +332,7 @@ void callback(
     unsigned char chan = message->at(0) & 0x0f;
     switch (message->at(0) & 0xf0)
     {
-        case 0x80: //Note Off
+        case 0x80: // Note Off
         {
             ev.type = MidiEventTypes::M_NOTE;
             ev.channel = chan;
@@ -339,7 +342,7 @@ void callback(
             HandleIncomingMidiEvent(ev.channel, ev.num, false, ev.value);
             break;
         }
-        case 0x90: //Note On
+        case 0x90: // Note On
         {
             ev.type = MidiEventTypes::M_NOTE;
             ev.channel = chan;
@@ -357,7 +360,7 @@ void callback(
             ev.value = message->at(2);
             break;
         }
-        case 0xb0: //Controller
+        case 0xb0: // Controller
         {
             ev.type = MidiEventTypes::M_CONTROLLER;
             ev.channel = chan;
@@ -365,7 +368,7 @@ void callback(
             ev.value = message->at(2);
             break;
         }
-        case 0xe0: //Pitch Wheel
+        case 0xe0: // Pitch Wheel
         {
             ev.type = MidiEventTypes::M_CONTROLLER;
             ev.channel = chan;
@@ -373,7 +376,7 @@ void callback(
             ev.value = (message->at(1) + message->at(2) * 128) - 8192;
             break;
         }
-        case 0xc0: //Program Change
+        case 0xc0: // Program Change
         {
             ev.type = MidiEventTypes::M_PGMCHANGE;
             ev.channel = chan;
@@ -851,10 +854,10 @@ int main(
     int argc,
     char **argv)
 {
-    spdlog::set_level(spdlog::level::debug);
-
     (void)argc;
     (void)argv;
+
+    spdlog::set_level(spdlog::level::debug);
 
 #ifdef TEST_YOUR_CODE
     State::Tests();

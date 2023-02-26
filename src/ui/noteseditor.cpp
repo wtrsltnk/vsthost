@@ -100,6 +100,8 @@ void NotesEditor::RenderTrackNotes(
     {
         auto origin = ImGui::GetCursorPos();
 
+        RenderGrid(ImGui::GetCursorScreenPos(), region.Length(), 127 * midiEventHeight);
+
         PushPopStyleVar(
             ImGuiStyleVar_ItemSpacing, ImVec2(0, 1),
             [&]() {
@@ -119,22 +121,21 @@ void NotesEditor::RenderTrackNotes(
         RenderNotesCanvas(region);
 
         _tracksScrollx = ImGui::GetScrollX();
-
-        RenderTimeline(
-            ImVec2(timelineScreenPos.x + offset, timelineScreenPos.y),
-            int(StepsToPixels(region.Length())),
-            int(_tracksScrollx));
-
-        auto regionStart = std::get<std::chrono::milliseconds::rep>(_state->_tracks->GetActiveRegion());
-        RenderCursor(
-            ImVec2(timelineScreenPos.x + offset - StepsToPixels(regionStart), timelineScreenPos.y),
-            ImVec2(StepsToPixels(region.Length()), midiEventHeight * (127 - 21)),
-            int(_tracksScrollx),
-            0);
     }
 
     auto scrollAmount = ImGui::GetScrollY();
     ImGui::EndChild();
+
+    RenderTimeline(
+        ImVec2(timelineScreenPos.x + offset, timelineScreenPos.y),
+        int(StepsToPixels(region.Length())),
+        int(_tracksScrollx));
+
+    RenderCursor(
+        ImVec2(timelineScreenPos.x + offset - StepsToPixels(regionStart), timelineScreenPos.y),
+        ImVec2(StepsToPixels(region.Length()), midiEventHeight * (127 - 21)),
+        int(_tracksScrollx),
+        0);
 
     ImGui::SetCursorPos(noteNamesLocalPos);
 
@@ -150,7 +151,7 @@ void NotesEditor::RenderTrackNotes(
         ImGui::PushFont(_monofont);
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-        
+
         for (int noteNumber = 127; noteNumber >= 21; noteNumber--)
         {
             ImGui::PushID(noteNumber);
@@ -238,12 +239,17 @@ void NotesEditor::RenderEventButtonsInRegion(
 
             if (movingEventId == ImGui::GetID("event") && ImGui::IsMouseReleased(0))
             {
-                auto move = ImGui::GetIO().MousePos.x - ImGui::GetIO().MouseClickedPos[0].x;
+                auto move = SnapNotesSteps(t.first + PixelsToSteps(ImGui::GetIO().MousePos.x - ImGui::GetIO().MouseClickedPos[0].x));
+
+                if (move < 0)
+                {
+                    move = 0;
+                }
 
                 region.MoveEvent(
                     midiEvent,
                     t.first,
-                    t.first + PixelsToSteps(move));
+                    move);
 
                 movingEventId = 0;
             }
@@ -312,7 +318,7 @@ void NotesEditor::RenderNoteHelpersInRegion(
                             notesInTime.first,
                             note.length,
                             note.velocity,
-                            ImVec2(StepsToPixels(note.length) - midiEventHeight, midiEventHeight - 1),
+                            ImVec2(StepsToPixels(note.length) - midiEventHeight + 1, midiEventHeight - 1),
                             originContainerScreenPos);
                     });
             }
@@ -343,9 +349,9 @@ void NotesEditor::RenderEditableNote(
     PushPopStyleColor(
         ImGuiCol_ButtonActive, ImGui::GetStyle().Colors[ImGuiCol_Button],
         [&]() {
-            if (ImGui::ButtonEx("note", noteSize, ImGuiButtonFlags_PressedOnClick))
+            if (ImGui::ButtonEx("##note", noteSize, ImGuiButtonFlags_PressedOnClick))
             {
-                movingNoteId = ImGui::GetID("note");
+                movingNoteId = ImGui::GetID("##note");
                 if (ImGui::GetIO().KeyShift)
                 {
                     // add/remove note to/from selection
@@ -367,8 +373,17 @@ void NotesEditor::RenderEditableNote(
 
     if (ImGui::IsItemActive() && _editingNotes)
     {
+        auto moveSteps = PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x);
+
+        auto newx = SnapNotesSteps(start + moveSteps);
+
+        if (newx < 0)
+        {
+            newx = 0;
+        }
+
         auto noteStart = ImVec2(
-            buttonPos.x + ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x,
+            origin.x + StepsToPixels(newx),
             buttonPos.y + diffy);
 
         ImGui::GetWindowDrawList()->AddRectFilled(
@@ -396,22 +411,27 @@ void NotesEditor::RenderEditableNote(
         region.RemoveEvent(start, noteNumber);
         region.RemoveEvent(start + length, noteNumber);
     }
-    else if (ImGui::GetID("note") == movingNoteId && _editingNotes && ImGui::IsMouseReleased(0))
+    else if (ImGui::GetID("##note") == movingNoteId && _editingNotes && ImGui::IsMouseReleased(0))
     {
         _editingNotes = false;
         auto amountToShiftNote = std::floor(diffy / float(midiEventHeight));
 
-        auto from = start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x);
+        auto from = SnapNotesSteps(start + PixelsToSteps(ImGui::GetMousePos().x - _noteDrawingAndEditingStart.x));
+
+        if (from < 0)
+        {
+            from = 0;
+        }
 
         region.AddEvent(
             from,
-            static_cast < uint32_t>(noteNumber - amountToShiftNote),
+            static_cast<uint32_t>(noteNumber - amountToShiftNote),
             true,
             velocity);
 
         region.AddEvent(
             from + length,
-            static_cast < uint32_t>(noteNumber - amountToShiftNote),
+            static_cast<uint32_t>(noteNumber - amountToShiftNote),
             false,
             0);
 
@@ -425,26 +445,53 @@ void NotesEditor::RenderNotesCanvas(
 {
     static uint32_t previousNoteWhenDragging = 0;
 
-    auto origin = ImGui::GetMousePos();
+    auto origin = ImGui::GetCursorScreenPos();
 
     ImGui::InvisibleButton(
         "##NotesCanvas",
         ImVec2(StepsToPixels(region.Length()), midiEventHeight * (127 - 21)));
 
-    if (ImGui::IsItemHovered() && ImGui::IsMouseDown(0) && !_drawingNotes)
+    if (!_drawingNotes && ImGui::IsItemHovered() && ImGui::IsMouseDown(0))
     {
         _drawingNotes = true;
-        _noteDrawingAndEditingStart = origin;
+        _noteDrawingAndEditingStart = ImGui::GetMousePos();
 
-        auto noteNumber = 127 - std::floor((_noteDrawingAndEditingStart.y - origin.y + ImGui::GetScrollY()) / midiEventHeight);
+        auto noteNumber = 127 - std::floor((_noteDrawingAndEditingStart.y - origin.y) / midiEventHeight);
         _notePreviewService.PreviewNote(uint32_t(noteNumber), 100, 10);
+
+        return;
     }
-    else if (_drawingNotes && ImGui::IsMouseReleased(0))
+
+    if (_drawingNotes && ImGui::IsItemActive())
+    {
+        auto noteToCreate = 127 - std::floor((ImGui::GetMousePos().y - origin.y) / midiEventHeight);
+
+        if (uint32_t(noteToCreate) != previousNoteWhenDragging)
+        {
+            _notePreviewService.PreviewNote(noteToCreate, 100, 100);
+
+            previousNoteWhenDragging = uint32_t(noteToCreate);
+        }
+
+        // Render the preview of the note that wil be created
+        ImGui::GetWindowDrawList()->AddRectFilled(
+            ImVec2(
+                _noteDrawingAndEditingStart.x,
+                1 + origin.y + ((127 - noteToCreate) * midiEventHeight)),
+            ImVec2(
+                ImGui::GetMousePos().x,
+                origin.y + ((127 - noteToCreate) * midiEventHeight) + midiEventHeight),
+            ImColor(ImGui::GetStyle().Colors[ImGuiCol_Button]));
+
+        return;
+    }
+
+    if (_drawingNotes && ImGui::IsMouseReleased(0))
     {
         _drawingNotes = false;
-        auto noteToCreate = 127 - std::floor((_noteDrawingAndEditingStart.y - origin.y + ImGui::GetScrollY()) / midiEventHeight);
-        auto noteStart = PixelsToSteps(_noteDrawingAndEditingStart.x - origin.x);
-        auto noteEnd = PixelsToSteps(ImGui::GetMousePos().x - origin.x);
+        auto noteToCreate = 127 - std::floor((_noteDrawingAndEditingStart.y - origin.y) / midiEventHeight);
+        auto noteStart = SnapNotesSteps(PixelsToSteps(_noteDrawingAndEditingStart.x - origin.x));
+        auto noteEnd = SnapNotesSteps(PixelsToSteps(ImGui::GetMousePos().x - origin.x));
 
         if (noteStart > noteEnd)
         {
@@ -457,28 +504,9 @@ void NotesEditor::RenderNotesCanvas(
         {
             noteEnd = noteStart + std::chrono::milliseconds::rep(1000);
         }
-        region.AddEvent(noteStart, static_cast < uint32_t>(noteToCreate), true, 100);
-        region.AddEvent(noteEnd, static_cast < uint32_t>(noteToCreate), false, 0);
-    }
 
-    if (ImGui::IsItemActive() && _drawingNotes)
-    {
-        auto noteToCreate = std::floor((_noteDrawingAndEditingStart.y - origin.y - timelineHeight - ImGui::GetScrollY()) / midiEventHeight);
-        if (uint32_t(noteToCreate) != previousNoteWhenDragging)
-        {
-            // todo play note with a length from the selected note
-
-            previousNoteWhenDragging = uint32_t(noteToCreate);
-        }
-
-        ImGui::GetWindowDrawList()->AddRectFilled(
-            ImVec2(
-                _noteDrawingAndEditingStart.x,
-                1 + origin.y + timelineHeight + ImGui::GetScrollY() + (noteToCreate * midiEventHeight)),
-            ImVec2(
-                ImGui::GetMousePos().x,
-                origin.y + timelineHeight + ImGui::GetScrollY() + (noteToCreate * midiEventHeight) + midiEventHeight),
-            ImColor(ImGui::GetStyle().Colors[ImGuiCol_Button]));
+        region.AddEvent(noteStart, static_cast<uint32_t>(noteToCreate), true, 100);
+        region.AddEvent(noteEnd, static_cast<uint32_t>(noteToCreate), false, 0);
     }
 }
 

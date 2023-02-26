@@ -1,7 +1,7 @@
 #include "inspectorwindow.h"
 
-#include "IconsFontaudio.h"
 #include "../historymanager.h"
+#include "IconsFontaudio.h"
 #include "instrument.h"
 #include "ivstpluginservice.h"
 
@@ -228,15 +228,19 @@ void InspectorWindow::Render(
 
             ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0.1f));
             ImGui::BeginChild("##trackStrip", ImVec2(stripWidth, stripHeight));
-            ImGui::SetCursorPos(ImVec2(0, stripHeight - 30));
+            ImGui::SetCursorPos(ImVec2(ImGui::GetStyle().ItemSpacing.x, stripHeight - 60 - ImGui::GetStyle().ItemSpacing.y));
+            ImGui::Button("M", ImVec2(stripWidth / 3, 0));
+            ImGui::SetCursorPos(ImVec2(stripWidth - (stripWidth / 3) - ImGui::GetStyle().ItemSpacing.x, stripHeight - 60 - ImGui::GetStyle().ItemSpacing.y));
+            ImGui::Button("S", ImVec2(stripWidth / 3, 0));
             ImGui::Button(track.GetName().c_str(), ImVec2(stripWidth, 0));
             ImGui::EndChild();
 
             ImGui::SameLine();
 
             ImGui::BeginChild("##mainStrip", ImVec2(stripWidth, stripHeight));
-            ImGui::SetCursorPos(ImVec2(0, stripHeight - 30));
-            ImGui::Button("Stereo Out", ImVec2(stripWidth, 0));
+            ImGui::SetCursorPos(ImVec2(ImGui::GetStyle().ItemSpacing.x, stripHeight - 60 - ImGui::GetStyle().ItemSpacing.y));
+            ImGui::Button("M", ImVec2(stripWidth / 3, 0));
+            ImGui::Button("Output", ImVec2(stripWidth, 0));
             ImGui::EndChild();
             ImGui::PopStyleColor();
         }

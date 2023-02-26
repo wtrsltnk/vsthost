@@ -104,7 +104,7 @@ void AbstractTimelineEditor::RenderTimeline(
     }
 
     int step = 1;
-    for (int g = 0; g < windowWidth; g += (_pixelsPerStep * 4))
+    for (int g = 0; g < std::max(windowWidth, int(ImGui::GetContentRegionAvail().x)); g += (_pixelsPerStep * 4))
     {
         std::stringstream ss;
         ss << (step++);
