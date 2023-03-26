@@ -36,6 +36,7 @@ void State::OpenRegion(
     std::tuple<uint32_t, std::chrono::milliseconds::rep> region)
 {
     this->ui._activeCenterScreen = 1;
+    
     this->_cursor = std::get<std::chrono::milliseconds::rep>(region);
 }
 

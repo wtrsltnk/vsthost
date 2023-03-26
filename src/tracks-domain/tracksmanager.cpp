@@ -290,6 +290,59 @@ void TracksManager::CleanupInstruments()
     }
 }
 
+void TracksManager::SendMidiNotesInRegion(
+    std::chrono::milliseconds::rep start,
+    std::chrono::milliseconds::rep end)
+{
+    auto trackId = std::get<uint32_t>(activeRegion);
+
+    if (trackId == Track::Null)
+    {
+        return;
+    }
+
+    if (trackId != _activeTrack)
+    {
+        return;
+    }
+
+    auto &track = GetTrack(trackId);
+
+    if (track.GetInstrument() == nullptr)
+    {
+        return;
+    }
+
+    track.GetInstrument()->Lock();
+
+    if (track.GetInstrument()->Plugin() == nullptr)
+    {
+        track.GetInstrument()->Unlock();
+
+        return;
+    }
+
+    auto regionStart = std::get<std::chrono::milliseconds::rep>(activeRegion);
+
+    auto &region = track.GetRegion(regionStart);
+
+    for (const auto &event : region.Events())
+    {
+        if ((event.first + regionStart) > end) continue;
+        if ((event.first + regionStart) < start) continue;
+        for (const auto &m : event.second)
+        {
+            track.GetInstrument()->Plugin()->sendMidiNote(
+                m.channel,
+                m.num,
+                m.value != 0,
+                m.value);
+        }
+    }
+
+    track.GetInstrument()->Unlock();
+}
+
 void TracksManager::SendMidiNotesInSong(
     std::chrono::milliseconds::rep start,
     std::chrono::milliseconds::rep end)

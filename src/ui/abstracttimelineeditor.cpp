@@ -38,13 +38,27 @@ float AbstractTimelineEditor::StepsToPixels(
 long AbstractTimelineEditor::SnapRegionsSteps(
     long steps)
 {
-    return steps - (steps % _snapRegionsToSteps);
+    auto mod = steps % _snapRegionsToSteps;
+
+    if (mod < (_snapRegionsToSteps / 2))
+    {
+        return steps - (steps % _snapRegionsToSteps);
+    }
+
+    return (steps + _snapRegionsToSteps) - (steps % _snapRegionsToSteps);
 }
 
 long AbstractTimelineEditor::SnapNotesSteps(
     long steps)
 {
-    return steps - (steps % _snapNotesToSteps);
+    auto mod = steps % _snapNotesToSteps;
+
+    if (mod < (_snapNotesToSteps / 2))
+    {
+        return steps - (steps % _snapNotesToSteps);
+    }
+
+    return (steps + _snapNotesToSteps) - (steps % _snapNotesToSteps);
 }
 
 void AbstractTimelineEditor::RenderGrid(

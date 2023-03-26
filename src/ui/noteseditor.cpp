@@ -54,6 +54,13 @@ void NotesEditor::Render(
             ImGui::SameLine();
             ImGui::SliderInt("##zoom", &(_pixelsPerStep), minPixelsPerStep, maxPixelsPerStep);
             ImGui::PopItemWidth();
+
+            ImGui::SameLine();
+
+            if (ImGui::Button(ICON_FAD_PLAY))
+            {
+                _state->TogglePlaying();
+            }
         }
         ImGui::EndChild();
 
@@ -163,7 +170,6 @@ void NotesEditor::RenderTrackNotes(
 
             if (ImGui::Button(noteName, ImVec2(offset, midiEventHeight)))
             {
-                spdlog::debug("{} - {}", noteName, noteNumber);
                 _notePreviewService.PreviewNote(uint32_t(noteNumber), 100, 100);
             }
 
@@ -383,7 +389,7 @@ void NotesEditor::RenderEditableNote(
         }
 
         auto noteStart = ImVec2(
-            origin.x + StepsToPixels(newx),
+            origin.x + StepsToPixels(newx) + (float(midiEventHeight) / 2.0f),
             buttonPos.y + diffy);
 
         ImGui::GetWindowDrawList()->AddRectFilled(

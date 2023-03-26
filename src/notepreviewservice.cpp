@@ -66,11 +66,9 @@ void NotePreviewService::PreviewNote(
 
     if (_activePreviewNote > 0)
     {
-        spdlog::info("note still active: {}", _activePreviewNote);
         instument->Plugin()->sendMidiNote(1, _activePreviewNote, false, 0);
     }
 
-    spdlog::info("sending note {}", note);
     instument->Plugin()->sendMidiNote(1, note, true, velocity);
 
     _activePreviewNote = note;
@@ -104,7 +102,6 @@ void NotePreviewService::HandleMidiEventsInTimeRange(
 
     if (_activePreviewNoteTimeLeft < diff && _activePreviewNote > 0)
     {
-        spdlog::info("de-activating note: {}", _activePreviewNote);
         instument->Plugin()->sendMidiNote(1, _activePreviewNote, false, 0);
         _activePreviewNote = 0;
     }

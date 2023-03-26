@@ -232,8 +232,9 @@ void TracksEditor::StartRegionResize(
     std::pair<long, Region> region)
 {
     _state->_tracks->SetActiveTrack(track.Id());
-    _mouseDragStart = ImGui::GetMousePos();
     _state->_tracks->SetActiveRegion(track.Id(), region.first);
+
+    _mouseDragStart = ImGui::GetMousePos();
 }
 
 void TracksEditor::ResizeRegion(
@@ -366,6 +367,8 @@ void TracksEditor::RenderRegionWithNotes(
 
                             if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0) && _state->_tracks->GetActiveTrackId() == track.Id())
                             {
+                                _state->_tracks->SetActiveTrack(track.Id());
+                                _state->_tracks->SetActiveRegion(track.Id(), region.first);
                                 _state->OpenRegion(_state->_tracks->GetActiveRegion());
                             }
                             else if (ImGui::IsItemClicked(0))

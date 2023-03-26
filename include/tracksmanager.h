@@ -51,6 +51,10 @@ public:
     virtual void SendMidiNotesInSong(
         std::chrono::milliseconds::rep start,
         std::chrono::milliseconds::rep end);
+    
+    virtual void SendMidiNotesInRegion(
+        std::chrono::milliseconds::rep start,
+        std::chrono::milliseconds::rep end);
 
 public:
     uint32_t AddVstTrack(

@@ -22,7 +22,7 @@ protected:
     State *_state = nullptr;
     int _pixelsPerStep = 20;
     int _snapRegionsToSteps = 1000;
-    int _snapNotesToSteps = 1000;
+    long _snapNotesToSteps = 1000;
 
     const int trackHeaderWidth = 250;
     const int trackToolsHeight = 30;

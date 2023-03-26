@@ -74,6 +74,7 @@ static std::map<int, struct MidiNoteState> _keyboardToNoteMap{
     {'0', MidiNoteState(87)}, // D#6
     {'P', MidiNoteState(88)}, // E-6
 };
+
 static RtMidiIn *midiIn = nullptr;
 static State state;
 static GLFWwindow *window = nullptr;
@@ -149,7 +150,14 @@ bool refillCallback(
 
     if (state.IsPlaying())
     {
-        state._tracks->SendMidiNotesInSong(start, end);
+        if (state.ui._activeCenterScreen == 0)
+        {
+            state._tracks->SendMidiNotesInSong(start, end);
+        }
+        else
+        {
+            state._tracks->SendMidiNotesInRegion(start, end);
+        }
     }
 
     _arpeggiatorPreviewService.SendMidiNotesInTimeRange(diff);
@@ -267,6 +275,7 @@ void HandleIncomingMidiEvent(
     {
         return;
     }
+
     auto activeTrack = state._tracks->GetTrack(activeTrackId);
 
     auto instrument = activeTrack.GetInstrument();

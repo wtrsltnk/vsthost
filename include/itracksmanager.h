@@ -46,6 +46,10 @@ public:
     virtual void SendMidiNotesInSong(
         std::chrono::milliseconds::rep start,
         std::chrono::milliseconds::rep end) = 0;
+
+    virtual void SendMidiNotesInRegion(
+        std::chrono::milliseconds::rep start,
+        std::chrono::milliseconds::rep end) = 0;
 };
 
 #endif // ITRACKSMANAGER_H
