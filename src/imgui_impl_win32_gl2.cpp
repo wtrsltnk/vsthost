@@ -13,12 +13,12 @@ static GLFWSystem g_System;
 static GLFWwindow *g_Window = NULL;
 static double g_Time = 0.0f;
 static bool g_MouseJustPressed[3] = {false, false, false};
-//static GLFWcursor*  g_MouseCursors[ImGuiMouseCursor_COUNT] = { 0 };
+// static GLFWcursor*  g_MouseCursors[ImGuiMouseCursor_COUNT] = { 0 };
 
 // OpenGL data
 static GLuint g_FontTexture = 0;
 
-char const szAppName[] = "ImGuiExample";
+wchar_t const szAppName[] = L"ImGuiExample";
 
 // OpenGL2 Render function.
 // (this used to be set in io.RenderDrawListsFn and called by ImGui::Render(), but you can now call this directly from your main loop)
@@ -54,7 +54,7 @@ void ImGui_ImplGlfwGL2_RenderDrawData(ImDrawData *draw_data)
     glEnableClientState(GL_COLOR_ARRAY);
     glEnable(GL_TEXTURE_2D);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    //glUseProgram(0); // You may want this if using this code in an OpenGL 3+ context where shaders may be bound
+    // glUseProgram(0); // You may want this if using this code in an OpenGL 3+ context where shaders may be bound
 
     // Setup viewport, orthographic projection matrix
     glViewport(0, 0, (GLsizei)fb_width, (GLsizei)fb_height);
@@ -437,7 +437,7 @@ static void getFullWindowSize(DWORD style, DWORD exStyle,
 GLFWwindow *glfwCreateWindow(
     int w,
     int h,
-    const char *title,
+    const wchar_t *title,
     GLFWmonitor *monitor,
     GLFWwindow *share)
 {

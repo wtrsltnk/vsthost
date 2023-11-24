@@ -21,7 +21,7 @@
 #include "IconsFontaudio.h"
 #include "IconsForkAwesome.h"
 #include "RtMidi.h"
-#include "arpeggiatorpreviewservice.h"
+//#include "arpeggiatorpreviewservice.h"
 #include "imguiutils.h"
 #include "instrument.h"
 #include "midicontrollers.h"
@@ -85,7 +85,7 @@ static InspectorWindow _inspectorWindow;
 static PianoWindow _pianoWindow;
 static bool _showInspectorWindow = true;
 static bool _showPianoWindow = true;
-ArpeggiatorPreviewService _arpeggiatorPreviewService;
+//ArpeggiatorPreviewService _arpeggiatorPreviewService;
 NotePreviewService _notePreviewService;
 
 void KillAllNotes()
@@ -160,7 +160,7 @@ bool refillCallback(
         }
     }
 
-    _arpeggiatorPreviewService.SendMidiNotesInTimeRange(diff);
+//    _arpeggiatorPreviewService.SendMidiNotesInTimeRange(diff);
     _notePreviewService.HandleMidiEventsInTimeRange(diff);
 
     const auto nDstChannels = mixFormat->nChannels;
@@ -245,7 +245,7 @@ void HandleIncomingMidiEvent(
 {
     if (onOff)
     {
-        _arpeggiatorPreviewService.TriggerNote(noteNumber, velocity);
+//        _arpeggiatorPreviewService.TriggerNote(noteNumber, velocity);
         PianoWindow::downKeys.insert(noteNumber);
     }
     else
@@ -863,10 +863,10 @@ int main(
     int argc,
     char **argv)
 {
-    ComInit comInit{};
-
     (void)argc;
     (void)argv;
+
+    ComInit comInit{};
 
     spdlog::set_level(spdlog::level::debug);
 
@@ -892,7 +892,7 @@ int main(
         _showPianoWindow = false;
     }
 
-    window = glfwCreateWindow(1280, 720, "VstHost", nullptr, nullptr);
+    window = glfwCreateWindow(1280, 720, L"VstHost", nullptr, nullptr);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
@@ -936,8 +936,8 @@ int main(
     _inspectorWindow.SetMidiIn(midiIn);
     _inspectorWindow.SetVstPluginLoader(vstPluginService.get());
 
-    _arpeggiatorPreviewService.SetState(&state);
-    _arpeggiatorPreviewService.SetTracksManager(&_tracks);
+//    _arpeggiatorPreviewService.SetState(&state);
+//    _arpeggiatorPreviewService.SetTracksManager(&_tracks);
 
     _notePreviewService.SetState(&state);
     _notePreviewService.SetTracksManager(&_tracks);

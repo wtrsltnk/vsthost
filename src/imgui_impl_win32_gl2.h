@@ -45,7 +45,7 @@ typedef HANDLE GLFWmonitor;
 
 int glfwInit();
 void glfwTerminate();
-GLFWwindow *glfwCreateWindow(int w, int h, const char *title, GLFWmonitor *monitor, GLFWwindow *share);
+GLFWwindow *glfwCreateWindow(int w, int h, const wchar_t *title, GLFWmonitor *monitor, GLFWwindow *share);
 void glfwSwapBuffers(GLFWwindow *window);
 void glfwMakeContextCurrent(GLFWwindow *window);
 void glfwSwapInterval(int interval);
