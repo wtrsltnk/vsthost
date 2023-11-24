@@ -863,6 +863,8 @@ int main(
     int argc,
     char **argv)
 {
+    ComInit comInit{};
+
     (void)argc;
     (void)argv;
 

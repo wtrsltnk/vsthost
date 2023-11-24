@@ -7,6 +7,12 @@
 #include <windows.h>
 #include <string>
 
+struct ComInit
+{
+    ComInit() { CoInitializeEx(nullptr, COINIT_MULTITHREADED); }
+    ~ComInit() { CoUninitialize(); }
+};
+
 struct Wasapi
 {
     using RefillFunc = std::function<bool(float *, uint32_t, const WAVEFORMATEX *)>;
