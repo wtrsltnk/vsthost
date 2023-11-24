@@ -103,10 +103,6 @@ target_compile_definitions(minimal-vsthost
 )
 
 add_executable(imgui-vsthost
-    "src/arpeggiator.cpp"
-    "src/arpeggiator.h"
-    "src/arpeggiatorpreviewservice.cpp"
-    "src/arpeggiatorpreviewservice.h"
     "src/historymanager.cpp"
     "src/historymanager.h"
     "src/imgui_impl_win32_gl2.cpp"
