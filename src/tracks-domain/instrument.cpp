@@ -26,13 +26,13 @@ void Instrument::SetMidiChannel(
     _midiChannel = midiChannel;
 }
 
-const std::unique_ptr<VstPlugin> &Instrument::Plugin() const
+const std::shared_ptr<VstPlugin> &Instrument::Plugin() const
 {
     return _plugin;
 }
 
 void Instrument::SetPlugin(
-    std::unique_ptr<VstPlugin> plugin)
+    std::shared_ptr<VstPlugin> plugin)
 {
     Lock();
 
@@ -42,7 +42,7 @@ void Instrument::SetPlugin(
         _plugin->cleanup();
     }
 
-    _plugin = std::move(plugin);
+    _plugin = plugin;
 
     Unlock();
 }

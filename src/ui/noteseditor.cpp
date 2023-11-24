@@ -1,6 +1,5 @@
 #include "noteseditor.h"
 
-#include "../arpeggiatorpreviewservice.h"
 #include "../imguiutils.h"
 #include "../notepreviewservice.h"
 #include "pianowindow.h"

@@ -21,10 +21,10 @@ public:
     void SetMidiChannel(
         int midiChannel);
 
-    const std::unique_ptr<VstPlugin> &Plugin() const;
+    const std::shared_ptr<VstPlugin> &Plugin() const;
 
     void SetPlugin(
-        std::unique_ptr<VstPlugin> plugin);
+        std::shared_ptr<VstPlugin> plugin);
 
     void Lock();
 
@@ -33,7 +33,7 @@ public:
 private:
     std::string _name;
     int _midiChannel = 0;
-    std::unique_ptr<VstPlugin> _plugin = nullptr;
+    std::shared_ptr<VstPlugin> _plugin = nullptr;
     std::mutex _mutex;
 };
 

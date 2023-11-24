@@ -57,6 +57,15 @@ target_link_libraries(RtMidi
     winmm
 )
 
+add_library(sqlite
+    "thirdparty/sqlite/sqlite3.c"
+    "thirdparty/sqlite/include/sqlite3.h"
+    "thirdparty/sqlite/include/sqlitelib.h"
+)
+
+target_include_directories(sqlite
+    PUBLIC thirdparty/sqlite/include)
+
 add_library(glad
     "thirdparty/glad/glad.c"
 )
@@ -139,6 +148,7 @@ target_compile_features(imgui-vsthost
 target_link_libraries(imgui-vsthost
     ${OPENGL_LIBRARIES}
     tracks-domain
+    sqlite
     winmm
     RtMidi
     glad
@@ -188,6 +198,7 @@ add_library(tracks-domain
     "src/tracks-domain/tracksserializer.cpp"
     "src/tracks-domain/vstplugin.cpp"
     "src/tracks-domain/win32vstpluginservice.cpp"
+    "src/widestringconversions.cpp"
 )
 
 target_compile_features(tracks-domain
@@ -207,4 +218,10 @@ target_link_libraries(tracks-domain
     yaml-cpp
     fmt
     glm
+    sqlite
+)
+
+target_compile_definitions(tracks-domain
+    PRIVATE -DUNICODE
+    PRIVATE -D_WIN32_WINNT=0x602
 )

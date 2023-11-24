@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
+#include <widestringconversions.hpp>
 
 #define ASSERT_THROW(c, e)           \
     if (!(c))                        \
@@ -84,16 +85,6 @@ std::string const &VstPlugin::getVendorName() const
     return _vstVendorName;
 }
 
-const char *VstPlugin::getVendorString()
-{
-    return "TEST_VENDOR";
-}
-
-const char *VstPlugin::getProductString()
-{
-    return "TEST_PRODUCT";
-}
-
 int VstPlugin::getVendorVersion()
 {
     return 1;
@@ -113,6 +104,16 @@ bool VstPlugin::flagsHasEditor() const
 bool VstPlugin::flagsIsSynth() const
 {
     return getFlags(effFlagsIsSynth);
+}
+
+const char *VstPlugin::getVendorString()
+{
+    return "TEST_VENDOR";
+}
+
+const char *VstPlugin::getProductString()
+{
+    return "TEST_PRODUCT";
 }
 
 static const char *hostCapabilities[] = {
@@ -211,7 +212,7 @@ void VstPlugin::openEditor(
         wcex.style = 0;
         wcex.lpfnWndProc = VstWindowProc;
         wcex.hInstance = GetModuleHandle(nullptr);
-        wcex.lpszClassName = "Minimal VST host - Guest VST Window Frame";
+        wcex.lpszClassName = L"Minimal VST host - Guest VST Window Frame";
         wcex.lpszMenuName = nullptr;
         RegisterClassEx(&wcex);
 
@@ -220,7 +221,7 @@ void VstPlugin::openEditor(
 
         _editorHwnd = CreateWindow(
             wcex.lpszClassName,
-            "VST Plugin",
+            L"VST Plugin",
             WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
             CW_USEDEFAULT, CW_USEDEFAULT,
             CW_USEDEFAULT, CW_USEDEFAULT,
@@ -330,17 +331,22 @@ bool VstPlugin::init(
     _modulePath = vstModulePath;
 
     {
-        char buf[MAX_PATH + 1];
-        char *namePtr = nullptr;
-        const auto r = GetFullPathName(vstModulePath, _countof(buf), buf, &namePtr);
+        wchar_t buf[MAX_PATH + 1];
+        wchar_t *namePtr = nullptr;
+        const auto r = GetFullPathName(
+            ConvertFromBytes(vstModulePath).c_str(),
+            _countof(buf),
+            buf,
+            &namePtr);
+
         if (r && namePtr)
         {
             *namePtr = 0;
-            _moduleDirectory = buf;
+            _moduleDirectory = ConvertWideToBytes(buf);
         }
     }
 
-    _vstLibraryHandle = LoadLibrary(vstModulePath);
+    _vstLibraryHandle = LoadLibrary(ConvertFromBytes(vstModulePath).c_str());
     ASSERT_THROW(_vstLibraryHandle, "Can't open VST DLL")
 
     typedef AEffect *(VstEntryProc)(audioMasterCallback);

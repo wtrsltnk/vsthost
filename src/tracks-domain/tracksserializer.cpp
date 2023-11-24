@@ -1,14 +1,16 @@
 #include "tracksserializer.h"
 
 #include "base64.h"
+#include "track.h"
 #include <fstream>
 #include <glm/glm.hpp>
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
 
 TracksSerializer::TracksSerializer(
-    ITracksManager *tracks)
-    : _tracks(tracks)
+    ITracksManager *tracks,
+    IVstPluginService *vstPluginService)
+    : _tracks(tracks), _vstPluginService(vstPluginService)
 {}
 
 namespace YAML
@@ -51,7 +53,7 @@ YAML::Emitter &operator<<(YAML::Emitter &out, const glm::vec4 &v)
 
 void SerializePlugin(
     YAML::Emitter &out,
-    const std::unique_ptr<VstPlugin> &plugin)
+    const std::shared_ptr<VstPlugin> &plugin)
 {
     if (plugin == nullptr)
     {
@@ -184,8 +186,9 @@ void TracksSerializer::Serialize(
     fout << out.c_str();
 }
 
-std::unique_ptr<VstPlugin> DeserializePlugin(
-    const YAML::Node &instrumentData)
+std::shared_ptr<VstPlugin> DeserializePlugin(
+    const YAML::Node &instrumentData,
+    IVstPluginService *vstPluginService)
 {
     auto pluginData = instrumentData["Plugin"];
     if (!pluginData)
@@ -198,8 +201,9 @@ std::unique_ptr<VstPlugin> DeserializePlugin(
     auto pluginModulePath = pluginData["ModulePath"].as<std::string>();
     auto pluginPluginData = pluginData["PluginData"].as<std::string>();
 
-    auto plugin = std::make_unique<VstPlugin>();
-    if (!plugin->init(pluginModulePath.c_str()))
+    auto plugin = vstPluginService->LoadPlugin(pluginModulePath);
+
+    if (plugin == nullptr)
     {
         spdlog::error("failed to load module");
 
@@ -215,7 +219,8 @@ std::unique_ptr<VstPlugin> DeserializePlugin(
 }
 
 std::shared_ptr<Instrument> DeserializeInstrument(
-    const YAML::Node &trackData)
+    const YAML::Node &trackData,
+    IVstPluginService *vstPluginService)
 {
     auto instrumentData = trackData["Instrument"];
     if (!instrumentData)
@@ -232,7 +237,7 @@ std::shared_ptr<Instrument> DeserializeInstrument(
     instrument->SetName(instrumentName);
     instrument->SetMidiChannel(instrumentMidiChannel);
 
-    auto plugin = DeserializePlugin(instrumentData);
+    auto plugin = DeserializePlugin(instrumentData, vstPluginService);
     if (plugin != nullptr)
     {
         instrument->SetPlugin(std::move(plugin));
@@ -268,7 +273,7 @@ bool TracksSerializer::Deserialize(
         auto trackIsReadyForRecoding = trackData["IsReadyForRecoding"];
         auto regionsData = trackData["Regions"];
 
-        auto trackId = _tracks->AddTrack(trackName, DeserializeInstrument(trackData));
+        auto trackId = _tracks->AddTrack(trackName, DeserializeInstrument(trackData, _vstPluginService));
         if (trackId == Track::Null)
         {
             continue;

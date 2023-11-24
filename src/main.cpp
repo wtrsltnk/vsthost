@@ -21,7 +21,7 @@
 #include "IconsFontaudio.h"
 #include "IconsForkAwesome.h"
 #include "RtMidi.h"
-//#include "arpeggiatorpreviewservice.h"
+// #include "arpeggiatorpreviewservice.h"
 #include "imguiutils.h"
 #include "instrument.h"
 #include "midicontrollers.h"
@@ -85,8 +85,10 @@ static InspectorWindow _inspectorWindow;
 static PianoWindow _pianoWindow;
 static bool _showInspectorWindow = true;
 static bool _showPianoWindow = true;
-//ArpeggiatorPreviewService _arpeggiatorPreviewService;
+// ArpeggiatorPreviewService _arpeggiatorPreviewService;
 NotePreviewService _notePreviewService;
+
+std::unique_ptr<Win32VstPluginService> vstPluginService;
 
 void KillAllNotes()
 {
@@ -160,7 +162,7 @@ bool refillCallback(
         }
     }
 
-//    _arpeggiatorPreviewService.SendMidiNotesInTimeRange(diff);
+    //    _arpeggiatorPreviewService.SendMidiNotesInTimeRange(diff);
     _notePreviewService.HandleMidiEventsInTimeRange(diff);
 
     const auto nDstChannels = mixFormat->nChannels;
@@ -245,7 +247,7 @@ void HandleIncomingMidiEvent(
 {
     if (onOff)
     {
-//        _arpeggiatorPreviewService.TriggerNote(noteNumber, velocity);
+        //        _arpeggiatorPreviewService.TriggerNote(noteNumber, velocity);
         PianoWindow::downKeys.insert(noteNumber);
     }
     else
@@ -609,7 +611,7 @@ void MainMenu()
                 state.StopPlaying();
                 state.StopRecording();
 
-                TracksSerializer serializer(state._tracks);
+                TracksSerializer serializer(state._tracks, vstPluginService.get());
 
                 serializer.Serialize("c:\\temp\\file.yaml");
             }
@@ -697,7 +699,7 @@ void MainMenu()
             std::string filePath = igfd::ImGuiFileDialog::Instance()->GetCurrentPath();
             // action
 
-            TracksSerializer serializer(state._tracks);
+            TracksSerializer serializer(state._tracks, vstPluginService.get());
 
             serializer.Deserialize(filePathName);
         }
@@ -714,7 +716,7 @@ void MainMenu()
             std::string filePath = igfd::ImGuiFileDialog::Instance()->GetCurrentPath();
             // action
 
-            TracksSerializer serializer(state._tracks);
+            TracksSerializer serializer(state._tracks, vstPluginService.get());
 
             serializer.Serialize(filePathName);
         }
@@ -896,7 +898,7 @@ int main(
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
-    auto vstPluginService = std::make_unique<Win32VstPluginService>(window->hwnd);
+    vstPluginService = std::make_unique<Win32VstPluginService>(window->hwnd);
 
     // Setup ImGui binding
     ImGui::CreateContext();
@@ -920,7 +922,7 @@ int main(
 
     SetupFonts();
 
-    TracksSerializer serializer(state._tracks);
+    TracksSerializer serializer(state._tracks, vstPluginService.get());
 
     serializer.Deserialize("c:\\temp\\tracks.state");
 
@@ -936,8 +938,8 @@ int main(
     _inspectorWindow.SetMidiIn(midiIn);
     _inspectorWindow.SetVstPluginLoader(vstPluginService.get());
 
-//    _arpeggiatorPreviewService.SetState(&state);
-//    _arpeggiatorPreviewService.SetTracksManager(&_tracks);
+    //    _arpeggiatorPreviewService.SetState(&state);
+    //    _arpeggiatorPreviewService.SetTracksManager(&_tracks);
 
     _notePreviewService.SetState(&state);
     _notePreviewService.SetTracksManager(&_tracks);

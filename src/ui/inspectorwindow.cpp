@@ -170,7 +170,7 @@ void InspectorWindow::Render(
                             if (plugin != nullptr)
                             {
                                 _state->_historyManager.AddEntry("Load plugin");
-                                track.GetInstrument()->SetPlugin(std::move(plugin));
+                                track.GetInstrument()->SetPlugin(plugin);
                             }
                         }
                     }
