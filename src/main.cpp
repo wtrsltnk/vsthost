@@ -27,6 +27,7 @@
 #include "midicontrollers.h"
 #include "midievent.h"
 #include "notepreviewservice.h"
+#include "pluginservice.h"
 #include "region.h"
 #include "state.h"
 #include "track.h"
@@ -38,7 +39,6 @@
 #include "ui/trackseditor.h"
 #include "vstplugin.h"
 #include "wasapi.h"
-#include "win32vstpluginservice.h"
 
 static std::map<int, bool> _noteStates;
 static std::map<int, struct MidiNoteState> _keyboardToNoteMap{
@@ -88,7 +88,7 @@ static bool _showPianoWindow = true;
 // ArpeggiatorPreviewService _arpeggiatorPreviewService;
 NotePreviewService _notePreviewService;
 
-std::unique_ptr<Win32VstPluginService> vstPluginService;
+std::unique_ptr<PluginService> vstPluginService;
 
 void KillAllNotes()
 {
@@ -99,7 +99,7 @@ void KillAllNotes()
         {
             for (int note = 0; note < 128; note++)
             {
-                instrument->Plugin()
+                instrument->InstrumentPlugin()
                     ->sendMidiNote(
                         channel,
                         note,
@@ -162,7 +162,6 @@ bool refillCallback(
         }
     }
 
-    //    _arpeggiatorPreviewService.SendMidiNotesInTimeRange(diff);
     _notePreviewService.HandleMidiEventsInTimeRange(diff);
 
     const auto nDstChannels = mixFormat->nChannels;
@@ -186,7 +185,7 @@ bool refillCallback(
 
         instrument->Lock();
 
-        auto &vstPlugin = instrument->Plugin();
+        auto &vstPlugin = instrument->InstrumentPlugin();
         if (vstPlugin == nullptr)
         {
             instrument->Unlock();
@@ -209,6 +208,23 @@ bool refillCallback(
             if (vstOutput == nullptr)
             {
                 break;
+            }
+
+            for (int i = 0; i < MAX_EFFECT_PLUGINS; i++)
+            {
+                auto effect = instrument->EffectPlugin(i);
+
+                if (effect == nullptr)
+                {
+                    continue;
+                }
+
+                effect->_inputBufferHeads.clear();
+                for (size_t i = 0; i < vstPlugin->getChannelCount(); i++)
+                {
+                    effect->_inputBufferHeads.push_back(vstOutput[i]);
+                }
+                vstOutput = effect->processAudio(tmpsampleCount, outputFrameCount);
             }
 
             const auto nFrame = outputFrameCount;
@@ -284,14 +300,14 @@ void HandleIncomingMidiEvent(
 
     instrument->Lock();
 
-    if (instrument->Plugin() == nullptr)
+    if (instrument->InstrumentPlugin() == nullptr)
     {
         instrument->Unlock();
 
         return;
     }
 
-    instrument->Plugin()
+    instrument->InstrumentPlugin()
         ->sendMidiNote(
             midiChannel,
             noteNumber,
@@ -603,7 +619,7 @@ void MainMenu()
                 state.StopPlaying();
                 state.StopRecording();
 
-                igfd::ImGuiFileDialog::Instance()->OpenModal("OpenFileDlgKey", "Choose File", ".yaml", ".");
+                ImGuiFileDialog::Instance()->OpenDialog("OpenFileDlgKey", "Choose File", ".yaml", ".");
             }
 
             if (ImGui::MenuItem("Save", "CTRL+S"))
@@ -621,7 +637,7 @@ void MainMenu()
                 state.StopPlaying();
                 state.StopRecording();
 
-                igfd::ImGuiFileDialog::Instance()->OpenModal("SaveFileDlgKey", "Choose File", ".yaml", ".");
+                ImGuiFileDialog::Instance()->OpenDialog("SaveFileDlgKey", "Choose File", ".yaml", ".");
             }
 
             ImGui::Separator();
@@ -690,13 +706,13 @@ void MainMenu()
         ImGui::EndMainMenuBar();
     }
 
-    if (igfd::ImGuiFileDialog::Instance()->FileDialog("OpenFileDlgKey"))
+    if (ImGuiFileDialog::Instance()->Display("OpenFileDlgKey"))
     {
         // action if OK
-        if (igfd::ImGuiFileDialog::Instance()->IsOk == true)
+        if (ImGuiFileDialog::Instance()->IsOk())
         {
-            std::string filePathName = igfd::ImGuiFileDialog::Instance()->GetFilePathName();
-            std::string filePath = igfd::ImGuiFileDialog::Instance()->GetCurrentPath();
+            std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
             // action
 
             TracksSerializer serializer(state._tracks, vstPluginService.get());
@@ -704,16 +720,16 @@ void MainMenu()
             serializer.Deserialize(filePathName);
         }
         // close
-        igfd::ImGuiFileDialog::Instance()->CloseDialog("OpenFileDlgKey");
+        ImGuiFileDialog::Instance()->Close();
     }
 
-    if (igfd::ImGuiFileDialog::Instance()->FileDialog("SaveFileDlgKey"))
+    if (ImGuiFileDialog::Instance()->Display("SaveFileDlgKey"))
     {
         // action if OK
-        if (igfd::ImGuiFileDialog::Instance()->IsOk == true)
+        if (ImGuiFileDialog::Instance()->IsOk())
         {
-            std::string filePathName = igfd::ImGuiFileDialog::Instance()->GetFilePathName();
-            std::string filePath = igfd::ImGuiFileDialog::Instance()->GetCurrentPath();
+            std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
             // action
 
             TracksSerializer serializer(state._tracks, vstPluginService.get());
@@ -721,23 +737,24 @@ void MainMenu()
             serializer.Serialize(filePathName);
         }
         // close
-        igfd::ImGuiFileDialog::Instance()->CloseDialog("SaveFileDlgKey");
+        ImGuiFileDialog::Instance()->Close();
     }
 }
 
 void HandleKeyboardToMidiEvents()
 {
-    if (state._tracks->GetInstruments().size() > 0 && _tracksEditor.EditTrackName() < 0)
+    if (state._tracks->GetInstruments().size() <= 0 || _tracksEditor.EditTrackName() >= 0)
     {
-        for (auto &e : _keyboardToNoteMap)
+    }
+
+    for (auto &e : _keyboardToNoteMap)
+    {
+        auto &key = e.second;
+        const auto on = (GetKeyState(e.first) & 0x8000) != 0;
+        if (key.status != on)
         {
-            auto &key = e.second;
-            const auto on = (GetKeyState(e.first) & 0x8000) != 0;
-            if (key.status != on)
-            {
-                key.status = on;
-                HandleIncomingMidiEvent(0, key.midiNote + (state._octaveShift * 12), on, 100);
-            }
+            key.status = on;
+            HandleIncomingMidiEvent(0, key.midiNote + (state._octaveShift * 12), on, 100);
         }
     }
 }
@@ -756,6 +773,8 @@ void MainLoop()
         });
 
     _inspectorWindow.SetAudioOut(&wasapi);
+
+    glfwMakeContextCurrent(window);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -829,6 +848,11 @@ void MainLoop()
         ImGui_ImplGlfwGL2_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
 
+        for (auto &track : state._tracks->GetTracks())
+        {
+            track.Idle();
+        }
+
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
@@ -898,7 +922,7 @@ int main(
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
-    vstPluginService = std::make_unique<Win32VstPluginService>(window->hwnd);
+    vstPluginService = std::make_unique<PluginService>(window->hwnd);
 
     // Setup ImGui binding
     ImGui::CreateContext();

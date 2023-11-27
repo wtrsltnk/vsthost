@@ -195,15 +195,15 @@ uint32_t TracksManager::AddVstTrack(
     auto newi = new Instrument();
     newi->SetName(instrumentName.str());
     newi->SetMidiChannel(0);
-    newi->SetPlugin(nullptr);
+    newi->SetInstrumentPlugin(nullptr);
 
     if (plugin != nullptr)
     {
-        newi->SetPlugin(std::make_unique<VstPlugin>());
-
-        if (!newi->Plugin()->init(plugin))
+        newi->SetInstrumentPlugin(std::make_unique<VstPlugin>());
+        
+        if (!newi->InstrumentPlugin()->init(plugin))
         {
-            newi->SetPlugin(nullptr);
+            newi->SetInstrumentPlugin(nullptr);
         }
     }
 
@@ -280,11 +280,11 @@ void TracksManager::CleanupInstruments()
     while (!_instruments.empty())
     {
         auto item = _instruments.back();
-
-        if (item->Plugin() != nullptr)
-        {
-            item->SetPlugin(nullptr);
-        }
+        
+//        if (item->InstrumentPlugin() != nullptr)
+//        {
+//            item->SetInstrumentPlugin(nullptr);
+//        }
 
         _instruments.pop_back();
     }
@@ -314,8 +314,8 @@ void TracksManager::SendMidiNotesInRegion(
     }
 
     track.GetInstrument()->Lock();
-
-    if (track.GetInstrument()->Plugin() == nullptr)
+    
+    if (track.GetInstrument()->InstrumentPlugin() == nullptr)
     {
         track.GetInstrument()->Unlock();
 
@@ -332,7 +332,7 @@ void TracksManager::SendMidiNotesInRegion(
         if ((event.first + regionStart) < start) continue;
         for (const auto &m : event.second)
         {
-            track.GetInstrument()->Plugin()->sendMidiNote(
+            track.GetInstrument()->InstrumentPlugin()->sendMidiNote(
                 m.channel,
                 m.num,
                 m.value != 0,
@@ -355,8 +355,8 @@ void TracksManager::SendMidiNotesInSong(
         }
 
         track.GetInstrument()->Lock();
-
-        if (track.GetInstrument()->Plugin() == nullptr)
+        
+        if (track.GetInstrument()->InstrumentPlugin() == nullptr)
         {
             track.GetInstrument()->Unlock();
 
@@ -374,7 +374,7 @@ void TracksManager::SendMidiNotesInSong(
                 if ((event.first + region.first) < start) continue;
                 for (const auto &m : event.second)
                 {
-                    track.GetInstrument()->Plugin()->sendMidiNote(
+                    track.GetInstrument()->InstrumentPlugin()->sendMidiNote(
                         m.channel,
                         m.num,
                         m.value != 0,

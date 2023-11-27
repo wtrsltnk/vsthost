@@ -56,7 +56,7 @@ void NotePreviewService::PreviewNote(
     }
 
     instument->Lock();
-    if (instument->Plugin() == nullptr)
+    if (instument->InstrumentPlugin() == nullptr)
     {
         spdlog::error("missing plugin");
         instument->Unlock();
@@ -66,10 +66,10 @@ void NotePreviewService::PreviewNote(
 
     if (_activePreviewNote > 0)
     {
-        instument->Plugin()->sendMidiNote(1, _activePreviewNote, false, 0);
+        instument->InstrumentPlugin()->sendMidiNote(1, _activePreviewNote, false, 0);
     }
-
-    instument->Plugin()->sendMidiNote(1, note, true, velocity);
+    
+    instument->InstrumentPlugin()->sendMidiNote(1, note, true, velocity);
 
     _activePreviewNote = note;
     _activePreviewNoteTimeLeft = _state->StepsToMs(length);
@@ -93,8 +93,8 @@ void NotePreviewService::HandleMidiEventsInTimeRange(
     }
 
     instument->Lock();
-
-    if (instument->Plugin() == nullptr)
+    
+    if (instument->InstrumentPlugin() == nullptr)
     {
         instument->Unlock();
         return;
@@ -102,7 +102,7 @@ void NotePreviewService::HandleMidiEventsInTimeRange(
 
     if (_activePreviewNoteTimeLeft < diff && _activePreviewNote > 0)
     {
-        instument->Plugin()->sendMidiNote(1, _activePreviewNote, false, 0);
+        instument->InstrumentPlugin()->sendMidiNote(1, _activePreviewNote, false, 0);
         _activePreviewNote = 0;
     }
     else

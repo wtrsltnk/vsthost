@@ -92,6 +92,7 @@ public:
 
     static const char **getCapabilities();
 
+    std::vector<float *> _inputBufferHeads;
 private:
     static VstIntPtr hostCallback_static(
         AEffect *effect,
@@ -109,7 +110,7 @@ private:
         float);
 
 protected:
-    std::string _modulePath;
+    std::wstring _modulePath;
     std::string _moduleDirectory;
 
     HWND _editorHwnd = nullptr;
@@ -121,7 +122,6 @@ protected:
     std::vector<float> _outputBuffer;
     std::vector<float *> _outputBufferHeads;
     std::vector<float> _inputBuffer;
-    std::vector<float *> _inputBufferHeads;
 
     std::vector<VstMidiEvent> _vstMidiEvents;
     std::vector<char> _vstEventBuffer;

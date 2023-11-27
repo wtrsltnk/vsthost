@@ -3,8 +3,8 @@
 
 #include "../state.h"
 #include "../wasapi.h"
+#include <ipluginservice.h>
 #include <itracksmanager.h>
-#include <ivstpluginservice.h>
 
 #include <RtMidi.h>
 #include <imgui.h>
@@ -25,7 +25,7 @@ public:
         struct Wasapi *wasapi);
 
     void SetVstPluginLoader(
-        IVstPluginService *loader);
+        IPluginService *loader);
 
     void Render(
         ImVec2 const &pos,
@@ -36,9 +36,15 @@ private:
     ITracksManager *_tracks = nullptr;
     RtMidiIn *_midiIn = nullptr;
     struct Wasapi *_wasapi = nullptr;
-    IVstPluginService *_vstPluginLoader = nullptr;
+    IPluginService *_vstPluginLoader = nullptr;
     bool _editRegionName = false;
     char _editRegionNameBuffer[128] = {0};
+
+    std::vector<struct PluginDescription> PluginLibrary(
+        const char *id,
+        std::function<void(const std::shared_ptr<class VstPlugin> &)> onPLuginSelected,
+        std::vector<struct PluginDescription> &plugins,
+        std::function<bool(const struct PluginDescription &)> filter);
 };
 
 #endif // INSPECTORWINDOW_H

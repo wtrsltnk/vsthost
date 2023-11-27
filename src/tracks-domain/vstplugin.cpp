@@ -201,20 +201,27 @@ void VstPlugin::openEditor(
 
     if (_editorHwnd == nullptr)
     {
+        const auto className = L"Minimal VST host - Guest VST Window Frame";
+        auto instance = GetModuleHandle(nullptr);
         WNDCLASSEX wcex;
-        wcex.cbSize = sizeof(WNDCLASSEX);
-        wcex.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
-        wcex.hIconSm = LoadIcon(nullptr, IDI_APPLICATION);
-        wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-        wcex.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW);
-        wcex.cbClsExtra = 0;
-        wcex.cbWndExtra = 0;
-        wcex.style = 0;
-        wcex.lpfnWndProc = VstWindowProc;
-        wcex.hInstance = GetModuleHandle(nullptr);
-        wcex.lpszClassName = L"Minimal VST host - Guest VST Window Frame";
-        wcex.lpszMenuName = nullptr;
-        RegisterClassEx(&wcex);
+        memset(&wcex, 0, sizeof(WNDCLASSEX));
+
+        if (!GetClassInfoEx(instance, className, &wcex))
+        {
+            wcex.cbSize = sizeof(WNDCLASSEX);
+            wcex.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+            wcex.hIconSm = LoadIcon(nullptr, IDI_APPLICATION);
+            wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+            wcex.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW);
+            wcex.cbClsExtra = 0;
+            wcex.cbWndExtra = 0;
+            wcex.style = 0;
+            wcex.lpfnWndProc = VstWindowProc;
+            wcex.hInstance = instance;
+            wcex.lpszClassName = className;
+            wcex.lpszMenuName = nullptr;
+            RegisterClassEx(&wcex);
+        }
 
         auto xscreen = GetSystemMetrics(SM_CXSCREEN);
         auto yscreen = GetSystemMetrics(SM_CYSCREEN);
@@ -246,6 +253,7 @@ void VstPlugin::openEditor(
 
     ShowWindow(_editorHwnd, SW_SHOW);
 }
+
 bool VstPlugin::isEditorOpen()
 {
     return _editorHwnd != nullptr;
@@ -328,13 +336,14 @@ float **VstPlugin::processAudio(
 bool VstPlugin::init(
     const char *vstModulePath)
 {
-    _modulePath = vstModulePath;
+    _modulePath = ConvertFromBytes(vstModulePath);
 
     {
         wchar_t buf[MAX_PATH + 1];
         wchar_t *namePtr = nullptr;
+
         const auto r = GetFullPathName(
-            ConvertFromBytes(vstModulePath).c_str(),
+            _modulePath.c_str(),
             _countof(buf),
             buf,
             &namePtr);
@@ -346,8 +355,25 @@ bool VstPlugin::init(
         }
     }
 
-    _vstLibraryHandle = LoadLibrary(ConvertFromBytes(vstModulePath).c_str());
-    ASSERT_THROW(_vstLibraryHandle, "Can't open VST DLL")
+    DWORD dwStatus = 0;
+    DWORD dwBinaryType = 0;
+
+    if (GetBinaryType(_modulePath.c_str(), &dwBinaryType) && dwBinaryType == SCS_64BIT_BINARY)
+    {
+        dwStatus = GetLastError();
+        std::wcerr << L"can only load 64bit DLL's:" << dwStatus << std::endl;
+
+        return false;
+    }
+
+    _vstLibraryHandle = LoadLibrary(_modulePath.c_str());
+
+    if (!_vstLibraryHandle)
+    {
+        std::wcerr << L"Can't open VST DLL" << std::endl;
+
+        return false;
+    }
 
     typedef AEffect *(VstEntryProc)(audioMasterCallback);
     auto *vstEntryProc = reinterpret_cast<VstEntryProc *>(GetProcAddress(_vstLibraryHandle, "VSTPluginMain"));
@@ -355,19 +381,34 @@ bool VstPlugin::init(
     {
         vstEntryProc = reinterpret_cast<VstEntryProc *>(GetProcAddress(_vstLibraryHandle, "main"));
     }
-    ASSERT_THROW(vstEntryProc, "VST's entry point not found")
+
+    if (!vstEntryProc)
+    {
+        std::wcerr << L"VST's entry point not found" << std::endl;
+
+        return false;
+    }
 
     _aEffect = vstEntryProc(hostCallback_static);
-    ASSERT_THROW(_aEffect && _aEffect->magic == kEffectMagic, "Not a VST plugin")
-    ASSERT_THROW(flagsIsSynth(), "Not a VST Synth")
+
+    if (!(_aEffect && _aEffect->magic == kEffectMagic))
+    {
+        std::wcerr << L"Not a VST plugin" << std::endl;
+
+        return false;
+    }
+
     _aEffect->user = this;
 
+    std::wcout << _modulePath << std::endl;
+    std::cout << "_aEffect->numInputs : " << _aEffect->numInputs << std::endl;
     _inputBuffer.resize(static_cast<size_t>(_aEffect->numInputs) * getBlockSize());
     for (int i = 0; i < _aEffect->numInputs; ++i)
     {
         _inputBufferHeads.push_back(&_inputBuffer[static_cast<size_t>(i) * getBlockSize()]);
     }
 
+    std::cout << "_aEffect->numOutputs : " << _aEffect->numOutputs << std::endl;
     _outputBuffer.resize(static_cast<size_t>(_aEffect->numOutputs) * getBlockSize());
     for (int i = 0; i < _aEffect->numOutputs; ++i)
     {
@@ -399,9 +440,10 @@ void VstPlugin::cleanup()
         dispatcher(effEditClose);
         _editorHwnd = nullptr;
     }
-    // dispatcher(effStopProcess);
+     dispatcher(effStopProcess);
     //  dispatcher(effMainsChanged, 0, 0);
-    // dispatcher(effClose);
+    dispatcher(effClose);
+
     if (_vstLibraryHandle)
     {
         FreeLibrary(_vstLibraryHandle);
@@ -500,7 +542,7 @@ VstIntPtr VstPlugin::hostCallback(
         }
         case audioMasterIdle:
         {
-            if (_editorHwnd)
+            if (_editorHwnd != nullptr)
             {
                 dispatcher(effEditIdle);
             }

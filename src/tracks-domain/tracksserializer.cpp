@@ -9,7 +9,7 @@
 
 TracksSerializer::TracksSerializer(
     ITracksManager *tracks,
-    IVstPluginService *vstPluginService)
+    IPluginService *vstPluginService)
     : _tracks(tracks), _vstPluginService(vstPluginService)
 {}
 
@@ -87,8 +87,19 @@ void SerializeInstrument(
     out << YAML::Key << "Name" << YAML::Value << instrument->Name();
     out << YAML::Key << "MidiChannel" << YAML::Value << instrument->MidiChannel();
 
+    out << YAML::Key << "Effects" << YAML::Value << YAML::BeginSeq;
+    for (int i = 0; i < MAX_EFFECT_PLUGINS; i++)
+    {
+        out << YAML::Value << YAML::BeginMap;
+
+        SerializePlugin(out, instrument->EffectPlugin(i));
+
+        out << YAML::EndMap;
+    }
+    out << YAML::EndSeq;
+
     instrument->Lock();
-    SerializePlugin(out, instrument->Plugin());
+    SerializePlugin(out, instrument->InstrumentPlugin());
     instrument->Unlock();
 
     out << YAML::EndMap; // Instrument
@@ -188,7 +199,7 @@ void TracksSerializer::Serialize(
 
 std::shared_ptr<VstPlugin> DeserializePlugin(
     const YAML::Node &instrumentData,
-    IVstPluginService *vstPluginService)
+    IPluginService *vstPluginService)
 {
     auto pluginData = instrumentData["Plugin"];
     if (!pluginData)
@@ -220,7 +231,7 @@ std::shared_ptr<VstPlugin> DeserializePlugin(
 
 std::shared_ptr<Instrument> DeserializeInstrument(
     const YAML::Node &trackData,
-    IVstPluginService *vstPluginService)
+    IPluginService *vstPluginService)
 {
     auto instrumentData = trackData["Instrument"];
     if (!instrumentData)
@@ -237,10 +248,23 @@ std::shared_ptr<Instrument> DeserializeInstrument(
     instrument->SetName(instrumentName);
     instrument->SetMidiChannel(instrumentMidiChannel);
 
+    auto effetcs = instrumentData["Effects"];
+    if (effetcs != nullptr)
+    {
+        for (int i = 0; i < MAX_EFFECT_PLUGINS; i++)
+        {
+            auto effectPlugin = DeserializePlugin(effetcs[i], vstPluginService);
+            if (effectPlugin != nullptr)
+            {
+                instrument->SetEffectPlugin(i, effectPlugin);
+            }
+        }
+    }
+
     auto plugin = DeserializePlugin(instrumentData, vstPluginService);
     if (plugin != nullptr)
     {
-        instrument->SetPlugin(std::move(plugin));
+        instrument->SetInstrumentPlugin(plugin);
     }
 
     return instrument;

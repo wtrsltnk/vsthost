@@ -30,10 +30,17 @@ public:
     void DownloadInstrumentSettings();
     void UploadInstrumentSettings();
 
+    void DownloadEffectSettings(
+        int index);
+    void UploadEffectSettings(
+        int index);
+
     bool IsMuted() { return _muted; }
     void Mute();
     void Unmute();
     void ToggleMuted();
+
+    void Idle();
 
     bool IsReadyForRecoding() { return _readyForRecord; }
     void SetReadyForRecording(
@@ -88,6 +95,7 @@ public:
     static const uint32_t Null = 0;
 
     std::string _instrumentDataBase64;
+    std::string _effectsDataBase64[MAX_EFFECT_PLUGINS];
 
 private:
     Track(

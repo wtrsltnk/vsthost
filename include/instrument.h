@@ -5,6 +5,8 @@
 #include <mutex>
 #include <string>
 
+#define MAX_EFFECT_PLUGINS 4
+
 class Instrument
 {
 public:
@@ -21,9 +23,16 @@ public:
     void SetMidiChannel(
         int midiChannel);
 
-    const std::shared_ptr<VstPlugin> &Plugin() const;
+    const std::shared_ptr<VstPlugin> &InstrumentPlugin() const;
 
-    void SetPlugin(
+    void SetInstrumentPlugin(
+        std::shared_ptr<VstPlugin> plugin);
+
+    const std::shared_ptr<VstPlugin> EffectPlugin(
+        int index) const;
+
+    void SetEffectPlugin(
+        int index,
         std::shared_ptr<VstPlugin> plugin);
 
     void Lock();
@@ -34,6 +43,7 @@ private:
     std::string _name;
     int _midiChannel = 0;
     std::shared_ptr<VstPlugin> _plugin = nullptr;
+    std::shared_ptr<VstPlugin> _effectPlugins[MAX_EFFECT_PLUGINS] = {nullptr};
     std::mutex _mutex;
 };
 

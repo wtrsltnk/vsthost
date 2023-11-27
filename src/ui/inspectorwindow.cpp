@@ -3,7 +3,7 @@
 #include "../historymanager.h"
 #include "IconsFontaudio.h"
 #include "instrument.h"
-#include "ivstpluginservice.h"
+#include "ipluginservice.h"
 
 void InspectorWindow::SetState(
     State *state)
@@ -30,9 +30,104 @@ void InspectorWindow::SetAudioOut(
 }
 
 void InspectorWindow::SetVstPluginLoader(
-    IVstPluginService *loader)
+    IPluginService *loader)
 {
     _vstPluginLoader = loader;
+}
+
+std::vector<struct PluginDescription> InspectorWindow::PluginLibrary(
+    const char *id,
+    std::function<void(const std::shared_ptr<class VstPlugin> &)> onPLuginSelected,
+    std::vector<struct PluginDescription> &plugins,
+    std::function<bool(const struct PluginDescription &)> filter)
+{
+    static std::string vendorNameFilter;
+
+    if (ImGui::BeginPopup(id))
+    {
+        if (ImGui::Button("Add form disk"))
+        {
+            auto plugin = _vstPluginLoader->LoadFromFileDialog();
+            if (plugin != nullptr)
+            {
+                plugins = _vstPluginLoader->ListPlugins(filter);
+            }
+        }
+
+        ImGui::Text("Filter by vendor: %s", vendorNameFilter.c_str());
+
+        if (!vendorNameFilter.empty())
+        {
+            ImGui::SameLine();
+            if (ImGui::SmallButton("X"))
+            {
+                vendorNameFilter = "";
+                plugins = _vstPluginLoader->ListPlugins(filter);
+            }
+        }
+
+        if (ImGui::BeginTable("table1", 4, 0, ImVec2(500, 200)))
+        {
+            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.4f);
+            ImGui::TableSetupColumn("Vendor", ImGuiTableColumnFlags_WidthStretch, 0.3f);
+            ImGui::TableSetupColumn("Effect?", ImGuiTableColumnFlags_WidthStretch, 0.15f);
+            ImGui::TableSetupColumn("Editor?", ImGuiTableColumnFlags_WidthStretch, 0.15f);
+            ImGui::TableHeadersRow();
+
+            std::string changeVendorNameFilter;
+            for (size_t row = 0; row < plugins.size(); row++)
+            {
+                ImGui::PushID(row);
+
+                ImGui::TableNextRow();
+
+                ImGui::TableSetColumnIndex(0);
+                if (ImGui::SmallButton(plugins[row].effectName.c_str()))
+                {
+                    auto plugin = _vstPluginLoader->LoadPlugin(plugins[row].path);
+                    if (plugin != nullptr)
+                    {
+                        onPLuginSelected(plugin);
+
+                        plugins = _vstPluginLoader->ListPlugins(filter);
+                        ImGui::CloseCurrentPopup();
+                    }
+                }
+
+                ImGui::TableSetColumnIndex(1);
+                if (ImGui::SmallButton(plugins[row].vendorName.c_str()))
+                {
+                    changeVendorNameFilter = plugins[row].vendorName;
+                }
+
+                ImGui::TableSetColumnIndex(2);
+                ImGui::Text("%s", plugins[row].isSynth ? "no" : "yes");
+
+                ImGui::TableSetColumnIndex(3);
+                ImGui::Text(plugins[row].hasEditor ? "yes" : "no");
+
+                ImGui::PopID();
+            }
+            ImGui::EndTable();
+
+            if (!changeVendorNameFilter.empty())
+            {
+                vendorNameFilter = changeVendorNameFilter;
+                plugins = _vstPluginLoader->ListPlugins(
+                    [&](struct PluginDescription d) {
+                        return filter(d) && vendorNameFilter == d.vendorName;
+                    });
+            }
+        }
+
+        ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - 80);
+        if (ImGui::Button("Close", ImVec2(80, 0)))
+            ImGui::CloseCurrentPopup();
+
+        ImGui::EndPopup();
+    }
+
+    return plugins;
 }
 
 void InspectorWindow::Render(
@@ -49,33 +144,36 @@ void InspectorWindow::Render(
             ImGui::Text("Help!");
         }
 
-        bool midiPortsAvailable = _midiIn != nullptr && _midiIn->getPortCount() > 0;
-
-        if (ImGui::CollapsingHeader("Midi in", midiPortsAvailable ? ImGuiTreeNodeFlags_DefaultOpen : 0))
+        if (_midiIn != nullptr)
         {
-            ImGui::Text("Midi ports");
-            int ports = _midiIn->getPortCount();
-            std::string portName;
-            static int currentPort = midiPortsAvailable ? 0 : -1;
-            ImGui::BeginGroup();
-            for (int i = 0; i < ports; i++)
+            bool midiPortsAvailable = _midiIn->getPortCount() > 0;
+
+            if (ImGui::CollapsingHeader("Midi in", midiPortsAvailable ? ImGuiTreeNodeFlags_DefaultOpen : 0))
             {
-                try
+                ImGui::Text("Midi ports");
+                int ports = _midiIn->getPortCount();
+                std::string portName;
+                static int currentPort = midiPortsAvailable ? 0 : -1;
+                ImGui::BeginGroup();
+                for (int i = 0; i < ports; i++)
                 {
-                    portName = _midiIn->getPortName(i);
-                    if (ImGui::RadioButton(portName.c_str(), currentPort == i))
+                    try
                     {
-                        _midiIn->closePort();
-                        _midiIn->openPort(i);
-                        currentPort = i;
+                        portName = _midiIn->getPortName(i);
+                        if (ImGui::RadioButton(portName.c_str(), currentPort == i))
+                        {
+                            _midiIn->closePort();
+                            _midiIn->openPort(i);
+                            currentPort = i;
+                        }
+                    }
+                    catch (RtError &error)
+                    {
+                        error.printMessage();
                     }
                 }
-                catch (RtError &error)
-                {
-                    error.printMessage();
-                }
+                ImGui::EndGroup();
             }
-            ImGui::EndGroup();
         }
 
         if (_wasapi != nullptr && ImGui::CollapsingHeader("Audio out"))
@@ -152,7 +250,7 @@ void InspectorWindow::Render(
             {
                 if (track.GetInstrument() != nullptr)
                 {
-                    auto &vstPlugin = track.GetInstrument()->Plugin();
+                    auto &vstPlugin = track.GetInstrument()->InstrumentPlugin();
 
                     if (vstPlugin == nullptr)
                     {
@@ -165,13 +263,7 @@ void InspectorWindow::Render(
 
                         if (_vstPluginLoader != nullptr && ImGui::Button("Load plugin"))
                         {
-                            auto plugin = _vstPluginLoader->LoadFromFileDialog();
-
-                            if (plugin != nullptr)
-                            {
-                                _state->_historyManager.AddEntry("Load plugin");
-                                track.GetInstrument()->SetPlugin(plugin);
-                            }
+                            ImGui::OpenPopup("InstrumentBrowser");
                         }
                     }
                     else
@@ -187,13 +279,9 @@ void InspectorWindow::Render(
                         {
                             if (ImGui::Button("Load different plugin"))
                             {
-                                auto plugin = _vstPluginLoader->LoadFromFileDialog();
-                                if (plugin != nullptr)
-                                {
-                                    _state->_historyManager.AddEntry("Load different plugin");
-                                    track.GetInstrument()->SetPlugin(std::move(plugin));
-                                }
+                                ImGui::OpenPopup("InstrumentBrowser");
                             }
+
                             ImGui::SameLine();
                         }
 
@@ -220,6 +308,17 @@ void InspectorWindow::Render(
                             vstPlugin->getEffectName().c_str(),
                             vstPlugin->getVendorName().c_str());
                     }
+
+                    static auto plugins = _vstPluginLoader->ListPlugins([](struct PluginDescription d) { return d.isSynth; });
+
+                    plugins = PluginLibrary(
+                        "InstrumentBrowser",
+                        [&](const std::shared_ptr<class VstPlugin> &plugin) {
+                            _state->_historyManager.AddEntry("Load different plugin");
+                            track.GetInstrument()->SetInstrumentPlugin(plugin);
+                        },
+                        plugins,
+                        [&](struct PluginDescription d) { return d.isSynth; });
                 }
             }
 
@@ -228,6 +327,49 @@ void InspectorWindow::Render(
 
             ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0.1f));
             ImGui::BeginChild("##trackStrip", ImVec2(stripWidth, stripHeight));
+
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 1));
+            for (int i = 0; i < MAX_EFFECT_PLUGINS; i++)
+            {
+                ImGui::PushID(i);
+                auto effect = track.GetInstrument()->EffectPlugin(i);
+                if (effect == nullptr)
+                {
+                    if (ImGui::Button("No Effect", ImVec2(stripWidth, 0)))
+                    {
+                        ImGui::OpenPopup("EffectBrowser");
+                    }
+
+                    static auto plugins = _vstPluginLoader->ListPlugins([](struct PluginDescription d) { return !d.isSynth; });
+
+                    plugins = PluginLibrary(
+                        "EffectBrowser",
+                        [&](const std::shared_ptr<class VstPlugin> &plugin) {
+                            _state->_historyManager.AddEntry("Load different effect");
+                            track.GetInstrument()->SetEffectPlugin(i, plugin);
+                        },
+                        plugins,
+                        [&](struct PluginDescription d) { return !d.isSynth; });
+                }
+                else
+                {
+                    const auto ih = ImGui::GetTextLineHeight() + ImGui::GetStyle().FramePadding.y * 2;
+
+                    if (ImGui::Button(effect->Title(), ImVec2(stripWidth - ih - 2, ih)))
+                    {
+                        track.DownloadEffectSettings(i);
+                        effect->openEditor(nullptr);
+                    }
+                    ImGui::SameLine(0.0f, 2.0f);
+                    if (ImGui::Button("X", ImVec2(ih, ih)))
+                    {
+                        track.GetInstrument()->SetEffectPlugin(i, nullptr);
+                    }
+                }
+                ImGui::PopID();
+            }
+            ImGui::PopStyleVar();
+
             ImGui::SetCursorPos(ImVec2(ImGui::GetStyle().ItemSpacing.x, stripHeight - 60 - ImGui::GetStyle().ItemSpacing.y));
             ImGui::Button("M", ImVec2(stripWidth / 3, 0));
             ImGui::SetCursorPos(ImVec2(stripWidth - (stripWidth / 3) - ImGui::GetStyle().ItemSpacing.x, stripHeight - 60 - ImGui::GetStyle().ItemSpacing.y));

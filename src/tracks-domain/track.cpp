@@ -85,7 +85,7 @@ void Track::DownloadInstrumentSettings()
 
     _instrument->Lock();
 
-    if (_instrument->Plugin() == nullptr)
+    if (_instrument->InstrumentPlugin() == nullptr)
     {
         _instrument->Unlock();
         return;
@@ -93,7 +93,7 @@ void Track::DownloadInstrumentSettings()
 
     /* Save plugin data*/
     void *getLen;
-    auto length = _instrument->Plugin()->dispatcher(effGetChunk, 0, 0, &getLen, 0.0f);
+    auto length = _instrument->InstrumentPlugin()->dispatcher(effGetChunk, 0, 0, &getLen, 0.0f);
     auto data = reinterpret_cast<BYTE *>(getLen);
     _instrumentDataBase64 = base64_encode(&data[0], length);
 
@@ -109,7 +109,7 @@ void Track::UploadInstrumentSettings()
 
     _instrument->Lock();
 
-    if (_instrument->Plugin() == nullptr)
+    if (_instrument->InstrumentPlugin() == nullptr)
     {
         _instrument->Unlock();
         return;
@@ -118,7 +118,56 @@ void Track::UploadInstrumentSettings()
     auto data = base64_decode(_instrumentDataBase64);
 
     /* Load plugin data*/
-    _instrument->Plugin()->dispatcher(effSetChunk, 0, (VstInt32)data.size(), data.data(), 0);
+    _instrument->InstrumentPlugin()->dispatcher(effSetChunk, 0, (VstInt32)data.size(), data.data(), 0);
+
+    _instrument->Unlock();
+}
+
+void Track::DownloadEffectSettings(
+    int index)
+{
+    if (_instrument.get() == nullptr)
+    {
+        return;
+    }
+
+    _instrument->Lock();
+
+    if (_instrument->EffectPlugin(index) == nullptr)
+    {
+        _instrument->Unlock();
+        return;
+    }
+
+    /* Save plugin data*/
+    void *getLen;
+    auto length = _instrument->EffectPlugin(index)->dispatcher(effGetChunk, 0, 0, &getLen, 0.0f);
+    auto data = reinterpret_cast<BYTE *>(getLen);
+    _effectsDataBase64[index] = base64_encode(&data[0], length);
+
+    _instrument->Unlock();
+}
+
+void Track::UploadEffectSettings(
+    int index)
+{
+    if (_instrument.get() == nullptr)
+    {
+        return;
+    }
+
+    _instrument->Lock();
+
+    if (_instrument->EffectPlugin(index) == nullptr)
+    {
+        _instrument->Unlock();
+        return;
+    }
+
+    auto data = base64_decode(_effectsDataBase64[index]);
+
+    /* Load plugin data*/
+    _instrument->EffectPlugin(index)->dispatcher(effSetChunk, 0, (VstInt32)data.size(), data.data(), 0);
 
     _instrument->Unlock();
 }
@@ -136,6 +185,31 @@ void Track::Unmute()
 void Track::ToggleMuted()
 {
     _muted = !_muted;
+}
+
+void Track::Idle()
+{
+    if (_instrument == nullptr)
+    {
+        return;
+    }
+
+    if (_instrument->InstrumentPlugin() == nullptr)
+    {
+        return;
+    }
+
+    _instrument->InstrumentPlugin()->dispatcher(audioMasterIdle);
+
+    for (int i = 0; i < MAX_EFFECT_PLUGINS; i++)
+    {
+        if (_instrument->EffectPlugin(i) == nullptr)
+        {
+            continue;
+        }
+
+        _instrument->EffectPlugin(i)->dispatcher(audioMasterIdle);
+    }
 }
 
 void Track::SetReadyForRecording(

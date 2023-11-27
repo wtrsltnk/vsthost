@@ -2,14 +2,14 @@
 #define TRACKSSERIALIZER_H
 
 #include <ITracksManager.h>
-#include <ivstpluginservice.h>
+#include <ipluginservice.h>
 
 class TracksSerializer
 {
 public:
     TracksSerializer(
         ITracksManager *tracks,
-        IVstPluginService *vstPluginService);
+        IPluginService *vstPluginService);
 
     void Serialize(
         const std::string &filepath);
@@ -19,7 +19,7 @@ public:
 
 private:
     ITracksManager *_tracks = nullptr;
-    IVstPluginService *_vstPluginService = nullptr;
+    IPluginService *_vstPluginService = nullptr;
 };
 
 #endif // TRACKSSERIALIZER_H

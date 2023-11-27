@@ -26,12 +26,12 @@ void Instrument::SetMidiChannel(
     _midiChannel = midiChannel;
 }
 
-const std::shared_ptr<VstPlugin> &Instrument::Plugin() const
+const std::shared_ptr<VstPlugin> &Instrument::InstrumentPlugin() const
 {
     return _plugin;
 }
 
-void Instrument::SetPlugin(
+void Instrument::SetInstrumentPlugin(
     std::shared_ptr<VstPlugin> plugin)
 {
     Lock();
@@ -43,6 +43,49 @@ void Instrument::SetPlugin(
     }
 
     _plugin = plugin;
+
+    Unlock();
+}
+
+const std::shared_ptr<VstPlugin> Instrument::EffectPlugin(
+    int index) const
+{
+    if (index < 0)
+    {
+        return nullptr;
+    }
+
+    if (index >= MAX_EFFECT_PLUGINS)
+    {
+        return nullptr;
+    }
+
+    return _effectPlugins[index];
+}
+
+void Instrument::SetEffectPlugin(
+    int index,
+    std::shared_ptr<VstPlugin> plugin)
+{
+    if (index < 0)
+    {
+        return;
+    }
+
+    if (index >= MAX_EFFECT_PLUGINS)
+    {
+        return;
+    }
+
+    Lock();
+
+    if (_effectPlugins[index] != nullptr)
+    {
+        _effectPlugins[index]->closeEditor();
+        _effectPlugins[index]->cleanup();
+    }
+
+    _effectPlugins[index] = plugin;
 
     Unlock();
 }

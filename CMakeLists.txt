@@ -105,6 +105,7 @@ target_link_libraries(imgui-vsthost
     spdlog
     yaml-cpp
     fmt
+    boolinq
 )
 
 target_compile_definitions(imgui-vsthost
@@ -123,7 +124,7 @@ target_include_directories(imgui-vsthost
 
 add_library(tracks-domain
     "include/instrument.h"
-    "include/ivstpluginservice.h"
+    "include/ipluginservice.h"
     "include/midicontrollers.h"
     "include/midievent.h"
     "include/midinote.h"
@@ -133,7 +134,7 @@ add_library(tracks-domain
     "include/tracksmanager.h"
     "include/tracksserializer.h"
     "include/vstplugin.h"
-    "include/win32vstpluginservice.h"
+    "include/pluginservice.h"
     "src/tracks-domain/base64.cpp"
     "src/tracks-domain/base64.h"
     "src/tracks-domain/instrument.cpp"
@@ -145,7 +146,7 @@ add_library(tracks-domain
     "src/tracks-domain/tracksmanager.cpp"
     "src/tracks-domain/tracksserializer.cpp"
     "src/tracks-domain/vstplugin.cpp"
-    "src/tracks-domain/win32vstpluginservice.cpp"
+    "src/tracks-domain/pluginservice.cpp"
     "src/widestringconversions.cpp"
 )
 
@@ -167,6 +168,7 @@ target_link_libraries(tracks-domain
     fmt
     glm
     sqlite
+    boolinq
 )
 
 target_compile_definitions(tracks-domain

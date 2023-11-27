@@ -38,9 +38,9 @@ target_include_directories(glad
 
 add_library(imgui
     "ImGuiFileDialog/CustomFont.cpp"
-    "ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialog.cpp"
-    "ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialog.h"
-    "ImGuiFileDialog/ImGuiFileDialog/ImGuiFileDialogConfig.h"
+    "ImGuiFileDialog/ImGuiFileDialog.cpp"
+    "ImGuiFileDialog/ImGuiFileDialog.h"
+    "ImGuiFileDialog/ImGuiFileDialogConfig.h"
     "imgui/imgui.cpp"
     "imgui/imgui_demo.cpp"
     "imgui/imgui_draw.cpp"
@@ -50,7 +50,11 @@ add_library(imgui
 
 target_include_directories(imgui
     PUBLIC imgui
-    PUBLIC ImGuiFileDialog/ImGuiFileDialog
+    PUBLIC ImGuiFileDialog
     PUBLIC ImGuiFileDialog
     PUBLIC dirent/include
 )
+
+add_library(boolinq INTERFACE)
+
+target_include_directories(boolinq SYSTEM INTERFACE "boolinq/include")
