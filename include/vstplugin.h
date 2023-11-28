@@ -41,6 +41,14 @@ public:
 
     std::string const &getVendorName() const;
 
+    int getProgramCount() const;
+
+    int getParamCount() const;
+
+    int getInputCount() const;
+
+    int getOutputCount() const;
+
     bool getFlags(
         int32_t m) const;
 
@@ -93,6 +101,7 @@ public:
     static const char **getCapabilities();
 
     std::vector<float *> _inputBufferHeads;
+
 private:
     static VstIntPtr hostCallback_static(
         AEffect *effect,

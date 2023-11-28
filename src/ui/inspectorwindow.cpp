@@ -66,10 +66,12 @@ std::vector<struct PluginDescription> InspectorWindow::PluginLibrary(
             }
         }
 
-        if (ImGui::BeginTable("table1", 4, 0, ImVec2(500, 200)))
+        if (ImGui::BeginTable("table1", 6, 0, ImVec2(700, 200)))
         {
-            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.4f);
-            ImGui::TableSetupColumn("Vendor", ImGuiTableColumnFlags_WidthStretch, 0.3f);
+            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.3f);
+            ImGui::TableSetupColumn("Vendor", ImGuiTableColumnFlags_WidthStretch, 0.2f);
+            ImGui::TableSetupColumn("Ins", ImGuiTableColumnFlags_WidthStretch, 0.1f);
+            ImGui::TableSetupColumn("Outs", ImGuiTableColumnFlags_WidthStretch, 0.1f);
             ImGui::TableSetupColumn("Effect?", ImGuiTableColumnFlags_WidthStretch, 0.15f);
             ImGui::TableSetupColumn("Editor?", ImGuiTableColumnFlags_WidthStretch, 0.15f);
             ImGui::TableHeadersRow();
@@ -101,9 +103,15 @@ std::vector<struct PluginDescription> InspectorWindow::PluginLibrary(
                 }
 
                 ImGui::TableSetColumnIndex(2);
-                ImGui::Text("%s", plugins[row].isSynth ? "no" : "yes");
+                ImGui::Text("%d", plugins[row].inputCount);
 
                 ImGui::TableSetColumnIndex(3);
+                ImGui::Text("%d", plugins[row].outputCount);
+
+                ImGui::TableSetColumnIndex(4);
+                ImGui::Text("%s", plugins[row].isSynth ? "no" : "yes");
+
+                ImGui::TableSetColumnIndex(5);
                 ImGui::Text(plugins[row].hasEditor ? "yes" : "no");
 
                 ImGui::PopID();

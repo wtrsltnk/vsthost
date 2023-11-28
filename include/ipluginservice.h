@@ -17,6 +17,10 @@ struct PluginDescription
     std::string vendorName;
     int vendorVersion;
     std::string effectName;
+    int programCount;
+    int paramCount;
+    int inputCount;
+    int outputCount;
     bool isSynth;
     bool hasEditor;
 };

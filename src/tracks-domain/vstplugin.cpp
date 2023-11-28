@@ -85,6 +85,26 @@ std::string const &VstPlugin::getVendorName() const
     return _vstVendorName;
 }
 
+int VstPlugin::getProgramCount() const
+{
+    return _aEffect->numPrograms;
+}
+
+int VstPlugin::getParamCount() const
+{
+    return _aEffect->numParams;
+}
+
+int VstPlugin::getInputCount() const
+{
+    return _aEffect->numInputs;
+}
+
+int VstPlugin::getOutputCount() const
+{
+    return _aEffect->numOutputs;
+}
+
 int VstPlugin::getVendorVersion()
 {
     return 1;

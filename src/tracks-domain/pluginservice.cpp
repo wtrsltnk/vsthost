@@ -144,6 +144,10 @@ PluginService::PluginService(
     vendorName TEXT,
     vendorVersion INTEGER,
     effectName TEXT,
+    programCount INTEGER,
+    paramCount INTEGER,
+    inputCount INTEGER,
+    outputCount INTEGER,
     isSynth INTEGER,
     hasEditor INTEGER
   )
@@ -166,16 +170,21 @@ std::shared_ptr<class VstPlugin> PluginService::LoadPlugin(
 
     result->init(fn.c_str());
 
-    struct PluginDescription desc = {
-        .type = "VST2",
-        .path = ConvertWideToBytes(filename),
-        .md5 = r,
-        .vendorName = result->getVendorName(),
-        .vendorVersion = result->getVendorVersion(),
-        .effectName = result->getEffectName(),
-        .isSynth = result->flagsIsSynth(),
-        .hasEditor = result->flagsHasEditor(),
-    };
+    struct PluginDescription desc =
+        {
+            .type = "VST2",
+            .path = ConvertWideToBytes(filename),
+            .md5 = r,
+            .vendorName = result->getVendorName(),
+            .vendorVersion = result->getVendorVersion(),
+            .effectName = result->getEffectName(),
+            .programCount = result->getProgramCount(),
+            .paramCount = result->getParamCount(),
+            .inputCount = result->getInputCount(),
+            .outputCount = result->getOutputCount(),
+            .isSynth = result->flagsIsSynth(),
+            .hasEditor = result->flagsHasEditor(),
+        };
 
     EnsurePluginDescription(desc);
 
@@ -212,8 +221,8 @@ void PluginService::EnsurePluginDescription(
     if (rows.empty())
     {
         auto stmt = _db->prepare(R"(
-INSERT INTO plugins ( type, path, md5,    vendorName, vendorVersion,  effectName, isSynth,    hasEditor )
-             VALUES ( ?,    ?,    ?,      ?,          ?,              ?,          ?,          ? )
+INSERT INTO plugins ( type, path, md5,    vendorName, vendorVersion,  effectName, programCount, paramCount, inputCount, outputCount, isSynth,    hasEditor )
+             VALUES ( ?,    ?,    ?,      ?,          ?,              ?,          ?,            ?,          ?,          ?,           ?,          ? )
 )");
 
         stmt.execute(
@@ -223,6 +232,10 @@ INSERT INTO plugins ( type, path, md5,    vendorName, vendorVersion,  effectName
             desc.vendorName,
             desc.vendorVersion,
             desc.effectName,
+            desc.programCount,
+            desc.paramCount,
+            desc.inputCount,
+            desc.outputCount,
             desc.isSynth ? 1 : 0,
             desc.hasEditor ? 1 : 0);
     }
@@ -230,7 +243,8 @@ INSERT INTO plugins ( type, path, md5,    vendorName, vendorVersion,  effectName
     {
         auto stmt = _db->prepare(R"(
 UPDATE plugins SET
-    type = ?, path = ?, md5 = ?, vendorName = ?, vendorVersion = ?, effectName = ?, isSynth = ?, hasEditor = ?
+    type = ?, path = ?, md5 = ?, vendorName = ?, vendorVersion = ?, effectName = ?,
+    programCount = ?, paramCount = ?, inputCount = ?, outputCount = ?, isSynth = ?, hasEditor = ?
 WHERE id = ?
 )");
 
@@ -241,16 +255,20 @@ WHERE id = ?
             desc.vendorName,
             desc.vendorVersion,
             desc.effectName,
+            desc.programCount,
+            desc.paramCount,
+            desc.inputCount,
+            desc.outputCount,
             desc.isSynth ? 1 : 0,
             desc.hasEditor ? 1 : 0,
             rows[0]);
     }
 }
 
-const char *selectPluginFromSqlite = "SELECT id, type, path, md5, vendorName, vendorVersion, effectName, isSynth, hasEditor FROM plugins";
+const char *selectPluginFromSqlite = "SELECT id, type, path, md5, vendorName, vendorVersion, effectName, programCount, paramCount, inputCount, outputCount, isSynth, hasEditor FROM plugins";
 
 PluginDescription mapPluginFromSqlite(
-    const std::tuple<int, std::string, std::string, std::string, std::string, int, std::string, int, int> &row)
+    const std::tuple<int, std::string, std::string, std::string, std::string, int, std::string, int, int, int, int, int, int> &row)
 {
     return PluginDescription{
         .id = std::get<0>(row),
@@ -260,8 +278,12 @@ PluginDescription mapPluginFromSqlite(
         .vendorName = std::get<4>(row),
         .vendorVersion = std::get<5>(row),
         .effectName = std::get<6>(row),
-        .isSynth = std::get<7>(row) == 1,
-        .hasEditor = std::get<8>(row) == 1,
+        .programCount = std::get<7>(row),
+        .paramCount = std::get<8>(row),
+        .inputCount = std::get<9>(row),
+        .outputCount = std::get<10>(row),
+        .isSynth = std::get<11>(row) == 1,
+        .hasEditor = std::get<12>(row) == 1,
     };
 }
 
@@ -270,7 +292,7 @@ std::vector<struct PluginDescription> PluginService::ListPlugins(
 {
     std::vector<struct PluginDescription> result;
 
-    auto stmt = _db->prepare<int, std::string, std::string, std::string, std::string, int, std::string, int, int>(selectPluginFromSqlite);
+    auto stmt = _db->prepare<int, std::string, std::string, std::string, std::string, int, std::string, int, int, int, int, int, int>(selectPluginFromSqlite);
 
     auto rows = stmt.execute();
 
